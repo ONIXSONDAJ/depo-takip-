@@ -1,14 +1,15 @@
 {
-  "name": "DEPO TAKİP SİSTEMİ",
+  "name": "DEPO TAKİP PRO",
   "short_name": "DEPO TAKİP",
-  "description": "Ostim ve Yenikent depoları için mobil uyumlu stok takip uygulaması",
+  "description": "Ostim ve Yenikent depoları, sondaj makineleri, vinç ve satışlar için profesyonel stok takip sistemi",
   "lang": "tr-TR",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#f3f6fa",
-  "theme_color": "#102544",
+  "background_color": "#f2f5f9",
+  "theme_color": "#0b1f3a",
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
       "src": "./icon.svg",
@@ -16,5 +17,9 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    {"name": "Stokları Gör", "short_name": "Stok", "url": "./"},
+    {"name": "Yeni İşlem", "short_name": "İşlem", "url": "./"}
   ]
 }

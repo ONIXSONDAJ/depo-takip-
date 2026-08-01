@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Onix Sondaj — Su Kuyusu Sondajı & Kuyu Açma</title>
 <meta name="description" content="Onix Sondaj; su kuyusu sondajı, jeolojik etüt, pompa teçhiz ve tarımsal sulama kuyularında uzman ekip ve modern ekipmanla uçtan uca hizmet sunar. Ücretsiz keşif ve teklif.">
-<meta name="theme-color" content="#f4f1ea">
+<meta name="theme-color" content="#071019">
 <meta property="og:title" content="Onix Sondaj — Su Kuyusu Sondajı & Kuyu Açma">
 <meta property="og:description" content="Suyu güvenle yerin derinliklerinden çıkarıyoruz. Ücretsiz keşif ve teklif alın.">
 <meta property="og:type" content="website">
@@ -14,24 +14,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#f4f1ea;
-  --paper-2:#ece7dc;
-  --ink:#171d22;
-  --ink-2:#4a555e;
-  --muted:#7a848c;
-  --teal:#0e7c8c;
-  --teal-deep:#0a5f6e;
-  --amber:#c97b2d;
-  --line:rgba(23,29,34,.1);
-  --line-2:rgba(23,29,34,.18);
-  --glass:rgba(255,255,255,.78);
+  --paper:#071019;
+  --paper-2:#0a1521;
+  --ink:#eef4fb;
+  --ink-2:#a7b6c4;
+  --muted:#7e8fa0;
+  --teal:#2ee6d6;
+  --teal-deep:#22a8ff;
+  --amber:#f6b545;
+  --line:rgba(255,255,255,.1);
+  --line-2:rgba(255,255,255,.18);
+  --glass:rgba(10,20,30,.66);
   --radius:20px;
   --shadow:0 24px 60px -24px rgba(23,29,34,.28);
   --maxw:1180px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body{--bg-a:#0e1a26;--bg-b:#070e15;font-family:'Inter',system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 30%,var(--bg-a),var(--bg-b));background-attachment:fixed;color:var(--ink);line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 h1,h2,h3,h4{font-family:'Sora',sans-serif;letter-spacing:-.02em;line-height:1.08}
 a{color:inherit;text-decoration:none}
 .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 22px}
@@ -39,21 +39,21 @@ a{color:inherit;text-decoration:none}
 .eyebrow::before{content:"";width:26px;height:2px;background:var(--teal)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:600;font-size:.98rem;
   padding:14px 26px;border-radius:999px;border:1px solid transparent;cursor:pointer;transition:.25s ease;white-space:nowrap}
-.btn-primary{background:var(--ink);color:#fff;box-shadow:0 14px 30px -14px rgba(23,29,34,.5)}
-.btn-primary:hover{transform:translateY(-2px);background:#000}
+.btn-primary{background:linear-gradient(120deg,#2ee6d6,#22a8ff);color:#04141a;box-shadow:0 14px 34px -12px rgba(46,230,214,.5)}
+.btn-primary:hover{transform:translateY(-2px)}
 .btn-ghost{background:var(--glass);border-color:var(--line-2);color:var(--ink);backdrop-filter:blur(10px)}
-.btn-ghost:hover{transform:translateY(-2px);background:#fff}
-.btn-wa{background:#25d366;color:#0b3d22}
+.btn-ghost:hover{transform:translateY(-2px);background:rgba(255,255,255,.12)}
+.btn-wa{background:#25d366;color:#04140a}
 .btn-wa:hover{transform:translateY(-2px)}
 
 /* ---------- 3D canvas ---------- */
 #scene{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
 /* cinematic vignette + film grade */
 #grade{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(10,14,18,.24) 100%)}
+  background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(2,6,10,.5) 100%)}
 
 /* ---------- splash ---------- */
-#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:var(--paper);
+#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:radial-gradient(900px 600px at 50% 30%,#0d2236 0%,#060d14 70%);
   transition:opacity .9s ease,visibility .9s;animation:splash-auto 1ms linear 9s forwards}
 #splash.done{opacity:0;visibility:hidden;pointer-events:none}
 @keyframes splash-auto{to{opacity:0;visibility:hidden}}
@@ -61,7 +61,7 @@ a{color:inherit;text-decoration:none}
 .splash-logo{width:min(340px,72vw);animation:logo-in 1.1s cubic-bezier(.2,.7,.2,1) both}
 @keyframes logo-in{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
 .splash-tag{font-size:.74rem;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);animation:logo-in 1.1s .25s both}
-.splash-bar{width:min(300px,60vw);height:3px;border-radius:3px;background:rgba(23,29,34,.12);overflow:hidden;animation:logo-in 1.1s .4s both}
+.splash-bar{width:min(300px,60vw);height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;animation:logo-in 1.1s .4s both}
 .splash-bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--teal),var(--teal-deep));border-radius:3px;transition:width .3s ease;
   animation:bar-auto 7.5s cubic-bezier(.2,.6,.3,1) forwards}
 @keyframes bar-auto{0%{width:0}60%{width:82%}100%{width:100%}}
@@ -69,7 +69,7 @@ a{color:inherit;text-decoration:none}
 
 /* ---------- header ---------- */
 header{position:fixed;inset:0 0 auto 0;z-index:50;transition:.3s ease}
-header.scrolled{background:rgba(244,241,234,.8);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+header.scrolled{background:rgba(7,16,25,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
 .nav{display:flex;align-items:center;justify-content:space-between;height:74px}
 .brand{display:flex;align-items:center;gap:12px;font-family:'Sora';font-weight:800;font-size:1.08rem}
 .brand>div{white-space:nowrap}
@@ -80,7 +80,7 @@ header.scrolled{background:rgba(244,241,234,.8);backdrop-filter:blur(16px);borde
 .nav-links a:hover{color:var(--ink)}
 .nav-cta{display:flex;align-items:center;gap:12px}
 .menu-btn{display:none;background:var(--glass);border:1px solid var(--line-2);border-radius:12px;padding:9px;cursor:pointer}
-.menu-btn span{display:block;width:20px;height:2px;background:var(--ink);margin:4px 0;border-radius:2px}
+.menu-btn span{display:block;width:20px;height:2px;background:#eef4fb;margin:4px 0;border-radius:2px}
 
 /* ---------- depth badge ---------- */
 #depth{position:fixed;left:18px;bottom:18px;z-index:40;display:flex;align-items:center;gap:10px;
@@ -96,7 +96,7 @@ body.digging #depth{opacity:1}
 #scrollspace{position:relative;z-index:10}
 section.stage{min-height:100vh;display:flex;align-items:center;position:relative}
 .block{width:min(430px,90vw);background:var(--glass);backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,.65);outline:1px solid var(--line);
+  border:1px solid rgba(255,255,255,.14);
   border-radius:var(--radius);padding:30px 30px 26px;box-shadow:var(--shadow)}
 .block h2{font-size:clamp(1.5rem,2.8vw,2.1rem);font-weight:700;margin:12px 0 10px}
 .block p{color:var(--ink-2);font-size:.98rem}
@@ -114,11 +114,11 @@ section.stage{min-height:100vh;display:flex;align-items:center;position:relative
 #hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-start;text-align:center;position:relative}
 #hero .inner{padding-top:116px}
 #hero h1{font-size:clamp(2.2rem,5.2vw,4rem);font-weight:800;max-width:900px;margin:14px auto 16px;text-wrap:balance}
-#hero h1 em{font-style:normal;color:var(--teal)}
+#hero h1 em{font-style:normal;background:linear-gradient(120deg,#2ee6d6,#22a8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
 #hero .lead{color:var(--ink-2);max-width:560px;margin:0 auto 26px;font-size:1.08rem}
 #hero .actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 .scroll-cue{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-2);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;font-weight:700}
-.scroll-cue .wheel{width:24px;height:38px;border:2px solid var(--line-2);border-radius:14px;position:relative;background:var(--glass)}
+.scroll-cue .wheel{width:24px;height:38px;border:2px solid var(--line-2);border-radius:14px;position:relative}
 .scroll-cue .wheel::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;border-radius:3px;background:var(--teal);transform:translateX(-50%);animation:wheel 1.6s infinite}
 @keyframes wheel{50%{transform:translate(-50%,10px);opacity:.2}}
 
@@ -132,19 +132,19 @@ section.stage{min-height:100vh;display:flex;align-items:center;position:relative
 .water-title p{color:#bfe9ef;margin-top:6px}
 .contact-lines{display:flex;flex-direction:column;gap:13px}
 .cline{display:flex;align-items:center;gap:14px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)}
-.cline .cic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(14,124,140,.1);border:1px solid var(--line);flex:0 0 auto}
+.cline .cic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(46,230,214,.1);border:1px solid var(--line);flex:0 0 auto}
 .cline .cic svg{width:21px;height:21px;color:var(--teal)}
 .cline small{color:var(--muted);display:block;font-size:.76rem}
 .cline b{font-family:'Sora';font-size:1rem;font-weight:700}
-form.qf{display:flex;flex-direction:column;gap:13px;background:var(--glass);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);outline:1px solid var(--line);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow)}
+form.qf{display:flex;flex-direction:column;gap:13px;background:var(--glass);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.16);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow)}
 form.qf label{font-size:.78rem;color:var(--muted);font-weight:600;margin-bottom:-7px}
-form.qf input,form.qf textarea,form.qf select{width:100%;background:#fff;border:1px solid var(--line-2);border-radius:12px;
+form.qf input,form.qf textarea,form.qf select{width:100%;background:#0a141e;border:1px solid var(--line-2);border-radius:12px;
   padding:12px 14px;color:var(--ink);font-family:inherit;font-size:.95rem;transition:.2s}
 form.qf input:focus,form.qf textarea:focus,form.qf select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,140,.15)}
 form.qf textarea{resize:vertical;min-height:84px}
 
 /* footer */
-footer{position:relative;z-index:10;padding:56px 0 32px;background:var(--ink);color:#cfd6db}
+footer{position:relative;z-index:10;padding:56px 0 32px;background:#04121c;border-top:1px solid var(--line);color:#cfd6db}
 .foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:38px}
 .foot-grid p{color:#9aa5ad;font-size:.93rem;max-width:320px;margin-top:14px}
 .foot-col h5{font-family:'Sora';font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#8b959d;margin-bottom:15px}
@@ -189,15 +189,15 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:var(--ink);co
 <div id="splash" role="status" aria-label="Yükleniyor">
   <div class="splash-in">
     <svg class="splash-logo" viewBox="0 0 640 360" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Onix Sondaj logosu">
-      <g stroke="#171d22" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" fill="none">
+      <g stroke="#eef4fb" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" fill="none">
         <path d="M60 168 L200 52 L258 108 L320 34 L332 46"/>
         <path d="M332 46 L420 108 L470 76 L580 168"/>
         <path d="M150 118 l24 -18 M196 92 l16 22 M420 128 l22 -16 M470 108 l18 20"/>
         <path d="M320 34 L302 148 M348 42 L360 148 M306 78 h48 M300 112 h56"/>
         <path d="M282 148 h96 M290 136 h80"/>
       </g>
-      <path d="M48 178 H592 M48 190 H592" stroke="#171d22" stroke-width="5"/>
-      <g fill="#171d22">
+      <path d="M48 178 H592 M48 190 H592" stroke="#eef4fb" stroke-width="5"/>
+      <g fill="#eef4fb">
         <text x="118" y="292" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="118" letter-spacing="6" text-anchor="middle">O</text>
         <text x="238" y="292" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="118" letter-spacing="6" text-anchor="middle">N</text>
         <text x="502" y="292" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="118" letter-spacing="6" text-anchor="middle">X</text>
@@ -226,8 +226,8 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:var(--ink);co
     <a href="#top" class="brand">
       <svg class="logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#0e7c8c"/><stop offset="1" stop-color="#0a5f6e"/></linearGradient></defs>
-        <rect x="2" y="2" width="44" height="44" rx="13" fill="#fff" stroke="url(#lg)" stroke-width="1.5"/>
+          <stop offset="0" stop-color="#2ee6d6"/><stop offset="1" stop-color="#22a8ff"/></linearGradient></defs>
+        <rect x="2" y="2" width="44" height="44" rx="13" fill="#0e1c2b" stroke="url(#lg)" stroke-width="1.5"/>
         <path d="M7 20 L15 11 L20 16 L26 8 L34 15 L41 20" stroke="url(#lg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
         <g fill="url(#lg)">
           <rect x="17" y="23.5" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 25)"/>

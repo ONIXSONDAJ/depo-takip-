@@ -5,349 +5,202 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Onix Sondaj — Su Kuyusu Sondajı & Kuyu Açma</title>
 <meta name="description" content="Onix Sondaj; su kuyusu sondajı, jeolojik etüt, pompa teçhiz ve tarımsal sulama kuyularında uzman ekip ve modern ekipmanla uçtan uca hizmet sunar. Ücretsiz keşif ve teklif.">
-<meta name="theme-color" content="#060d14">
+<meta name="theme-color" content="#f4f1ea">
 <meta property="og:title" content="Onix Sondaj — Su Kuyusu Sondajı & Kuyu Açma">
 <meta property="og:description" content="Suyu güvenle yerin derinliklerinden çıkarıyoruz. Ücretsiz keşif ve teklif alın.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script type="module" src="./assets/model-viewer.min.js"></script>
 <style>
 :root{
-  --bg:#060d14;
-  --bg-2:#0a1521;
-  --surface:#0e1c2b;
-  --surface-2:#122333;
-  --line:rgba(255,255,255,.08);
-  --line-2:rgba(255,255,255,.14);
-  --text:#eef4fb;
-  --muted:#93a7bd;
-  --aqua:#2ee6d6;
-  --aqua-2:#22a8ff;
-  --grad:linear-gradient(120deg,#2ee6d6 0%,#22a8ff 60%,#4f7bff 100%);
-  --grad-soft:linear-gradient(120deg,rgba(46,230,214,.16),rgba(34,168,255,.16));
+  --paper:#f4f1ea;
+  --paper-2:#ece7dc;
+  --ink:#171d22;
+  --ink-2:#4a555e;
+  --muted:#7a848c;
+  --teal:#0e7c8c;
+  --teal-deep:#0a5f6e;
+  --amber:#c97b2d;
+  --line:rgba(23,29,34,.1);
+  --line-2:rgba(23,29,34,.18);
+  --glass:rgba(255,255,255,.78);
   --radius:20px;
-  --shadow:0 30px 80px -30px rgba(0,0,0,.7);
+  --shadow:0 24px 60px -24px rgba(23,29,34,.28);
   --maxw:1180px;
-  /* soil palette */
-  --soil-top:#2a2015;
-  --soil-clay:#33221a;
-  --soil-gravel:#2c2820;
-  --soil-rock:#222a34;
-  --soil-bed:#161d26;
-  --soil-aqua:#082738;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{
-  font-family:'Inter',system-ui,sans-serif;
-  background:var(--bg);color:var(--text);line-height:1.6;
-  overflow-x:hidden;-webkit-font-smoothing:antialiased;
-}
-h1,h2,h3,h4{font-family:'Sora',sans-serif;letter-spacing:-.02em;line-height:1.1}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Sora',sans-serif;letter-spacing:-.02em;line-height:1.08}
 a{color:inherit;text-decoration:none}
-img{max-width:100%;display:block}
 .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 22px}
-.grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:.74rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--aqua)}
-.eyebrow::before{content:"";width:26px;height:1px;background:var(--aqua);opacity:.7}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:.72rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--teal)}
+.eyebrow::before{content:"";width:26px;height:2px;background:var(--teal)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:600;font-size:.98rem;
-  padding:14px 26px;border-radius:14px;border:1px solid transparent;cursor:pointer;transition:.25s ease;white-space:nowrap}
-.btn-primary{background:var(--grad);color:#04141a;box-shadow:0 14px 34px -12px rgba(46,230,214,.55)}
-.btn-primary:hover{transform:translateY(-2px)}
-.btn-ghost{background:rgba(6,13,20,.55);border-color:var(--line-2);color:var(--text);backdrop-filter:blur(8px)}
-.btn-ghost:hover{background:rgba(255,255,255,.09);transform:translateY(-2px)}
-.btn-wa{background:#25d366;color:#04140a}
+  padding:14px 26px;border-radius:999px;border:1px solid transparent;cursor:pointer;transition:.25s ease;white-space:nowrap}
+.btn-primary{background:var(--ink);color:#fff;box-shadow:0 14px 30px -14px rgba(23,29,34,.5)}
+.btn-primary:hover{transform:translateY(-2px);background:#000}
+.btn-ghost{background:var(--glass);border-color:var(--line-2);color:var(--ink);backdrop-filter:blur(10px)}
+.btn-ghost:hover{transform:translateY(-2px);background:#fff}
+.btn-wa{background:#25d366;color:#0b3d22}
 .btn-wa:hover{transform:translateY(-2px)}
 
-/* ================= SPLASH ================= */
-#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;
-  background:radial-gradient(900px 600px at 50% 30%,#0d2236 0%,#060d14 70%);
-  transition:opacity .9s ease,visibility .9s;
-  animation:splash-auto 1ms linear 9s forwards; /* CSS-only guarantee: hides even without JS */
-}
+/* ---------- 3D canvas ---------- */
+#scene{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+/* cinematic vignette + film grade */
+#grade{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(10,14,18,.24) 100%)}
+
+/* ---------- splash ---------- */
+#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:var(--paper);
+  transition:opacity .9s ease,visibility .9s;animation:splash-auto 1ms linear 9s forwards}
 #splash.done{opacity:0;visibility:hidden;pointer-events:none}
 @keyframes splash-auto{to{opacity:0;visibility:hidden}}
-.splash-in{display:flex;flex-direction:column;align-items:center;gap:26px;padding:24px;text-align:center}
+.splash-in{display:flex;flex-direction:column;align-items:center;gap:24px;padding:24px;text-align:center}
 .splash-logo{width:min(340px,72vw);animation:logo-in 1.1s cubic-bezier(.2,.7,.2,1) both}
 @keyframes logo-in{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
-.splash-tag{font-size:.78rem;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);animation:logo-in 1.1s .25s both}
-.splash-bar{width:min(300px,60vw);height:3px;border-radius:3px;background:rgba(255,255,255,.09);overflow:hidden;animation:logo-in 1.1s .4s both}
-.splash-bar i{display:block;height:100%;width:0%;background:var(--grad);border-radius:3px;transition:width .3s ease}
-/* CSS fallback: bar fills on its own so it never looks stuck */
-.splash-bar i{animation:bar-auto 7.5s cubic-bezier(.2,.6,.3,1) forwards}
+.splash-tag{font-size:.74rem;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);animation:logo-in 1.1s .25s both}
+.splash-bar{width:min(300px,60vw);height:3px;border-radius:3px;background:rgba(23,29,34,.12);overflow:hidden;animation:logo-in 1.1s .4s both}
+.splash-bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--teal),var(--teal-deep));border-radius:3px;transition:width .3s ease;
+  animation:bar-auto 7.5s cubic-bezier(.2,.6,.3,1) forwards}
 @keyframes bar-auto{0%{width:0}60%{width:82%}100%{width:100%}}
 .splash-pct{font-family:'Sora';font-size:.85rem;color:var(--muted);animation:logo-in 1.1s .4s both}
-.splash-drop{width:14px;height:14px;animation:drop-fall 1.6s ease-in infinite}
-@keyframes drop-fall{0%{transform:translateY(-8px);opacity:0}30%{opacity:1}100%{transform:translateY(10px);opacity:0}}
 
-/* ================= HEADER ================= */
+/* ---------- header ---------- */
 header{position:fixed;inset:0 0 auto 0;z-index:50;transition:.3s ease}
-header.scrolled{background:rgba(6,13,20,.82);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+header.scrolled{background:rgba(244,241,234,.8);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
 .nav{display:flex;align-items:center;justify-content:space-between;height:74px}
-.brand{display:flex;align-items:center;gap:12px;font-family:'Sora';font-weight:700;font-size:1.12rem}
+.brand{display:flex;align-items:center;gap:12px;font-family:'Sora';font-weight:800;font-size:1.08rem}
 .brand>div{white-space:nowrap}
 .brand .logo{width:40px;height:40px;flex:0 0 auto}
-.brand small{display:block;font-family:'Inter';font-weight:500;font-size:.6rem;letter-spacing:.28em;color:var(--muted);text-transform:uppercase}
+.brand small{display:block;font-family:'Inter';font-weight:600;font-size:.58rem;letter-spacing:.3em;color:var(--muted);text-transform:uppercase}
 .nav-links{display:flex;align-items:center;gap:28px}
-.nav-links a{font-size:.94rem;color:var(--muted);font-weight:500;transition:.2s}
-.nav-links a:hover{color:var(--text)}
+.nav-links a{font-size:.93rem;color:var(--ink-2);font-weight:600;transition:.2s}
+.nav-links a:hover{color:var(--ink)}
 .nav-cta{display:flex;align-items:center;gap:12px}
-.menu-btn{display:none;background:rgba(6,13,20,.6);border:1px solid var(--line-2);border-radius:10px;padding:9px;cursor:pointer}
-.menu-btn span{display:block;width:20px;height:2px;background:var(--text);margin:4px 0;border-radius:2px}
+.menu-btn{display:none;background:var(--glass);border:1px solid var(--line-2);border-radius:12px;padding:9px;cursor:pointer}
+.menu-btn span{display:block;width:20px;height:2px;background:var(--ink);margin:4px 0;border-radius:2px}
 
-/* ================= FIXED DRILL RIG ================= */
-#rig{position:fixed;left:50%;top:0;height:100vh;width:min(420px,80vw);z-index:6;pointer-events:none;
-  transform:translate(-50%,var(--desc,0vh));transition:opacity .6s ease;will-change:transform}
-body.rig-off #rig{opacity:0}
-/* borehole shadow column */
-#rig .hole{position:absolute;left:50%;transform:translateX(-50%);top:0;height:calc(64vh + 40px);width:64px;
-  background:linear-gradient(90deg,rgba(0,0,0,.38),rgba(0,0,0,.12) 30%,rgba(0,0,0,.12) 70%,rgba(0,0,0,.38));
-  filter:blur(1px)}
-/* steel drill pipe */
-#rig .pipe{position:absolute;left:50%;transform:translateX(-50%);top:0;height:calc(62vh - 148px);width:30px;
-  background:linear-gradient(90deg,#3c4a58 0%,#95a8ba 16%,#e3edf5 30%,#9fb2c4 45%,#5c6e7f 68%,#33404d 100%);
-  box-shadow:0 0 24px rgba(0,0,0,.55), inset 0 -20px 30px rgba(0,0,0,.3)}
-#rig .pipe::after{content:"";position:absolute;inset:0;
-  background:repeating-linear-gradient(180deg,transparent 0 44px,rgba(0,0,0,.22) 44px 48px)}
-/* pipe collar (tool joint) */
-#rig .collar{position:absolute;left:50%;transform:translateX(-50%);top:calc(62vh - 158px);width:44px;height:30px;border-radius:5px;
-  background:linear-gradient(90deg,#2e3945,#8496a8 20%,#cfdae4 34%,#8496a8 52%,#465563 78%,#242f3a);
-  box-shadow:0 6px 14px rgba(0,0,0,.5);
-  }
-#rig .collar::after{content:"";position:absolute;inset:4px 3px;
-  background:repeating-linear-gradient(180deg,rgba(0,0,0,.25) 0 3px,transparent 3px 7px);border-radius:3px}
-#rig model-viewer{position:absolute;left:50%;transform:translateX(-50%);top:calc(62vh - 138px);
-  width:100%;height:330px;background:transparent;--poster-color:transparent;pointer-events:none;display:block}
-/* glow under the bit while drilling */
-#rig .bit-glow{position:absolute;left:50%;transform:translateX(-50%);top:calc(62vh + 168px);width:130px;height:40px;border-radius:50%;
-  background:radial-gradient(closest-side,rgba(246,181,69,.5),rgba(246,181,69,0));
-  animation:glow-pulse 1.6s ease-in-out infinite}
-@keyframes glow-pulse{50%{opacity:.45;transform:translateX(-50%) scale(1.15)}}
-body.at-water #rig .bit-glow{background:radial-gradient(closest-side,rgba(46,230,214,.65),rgba(46,230,214,0))}
-
-/* depth badge */
+/* ---------- depth badge ---------- */
 #depth{position:fixed;left:18px;bottom:18px;z-index:40;display:flex;align-items:center;gap:10px;
-  background:rgba(6,13,20,.72);backdrop-filter:blur(10px);border:1px solid var(--line-2);
-  padding:10px 16px;border-radius:14px;opacity:0;transition:.4s;pointer-events:none}
+  background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--line-2);
+  padding:10px 16px;border-radius:16px;opacity:0;transition:.4s;pointer-events:none;box-shadow:var(--shadow)}
 body.digging #depth{opacity:1}
-body.rig-off #depth{opacity:0}
-#depth .dot{width:9px;height:9px;border-radius:50%;background:var(--amber,#f6b545);background:var(--aqua);animation:glow-pulse 1.6s infinite}
+#depth .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
 #depth b{font-family:'Sora';font-size:1.05rem;min-width:64px}
-#depth small{color:var(--muted);display:block;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase}
+#depth small{color:var(--muted);display:block;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase}
 
-/* ================= SURFACE (HERO) ================= */
-.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden;
-  background:
-    radial-gradient(1000px 620px at 78% -8%,rgba(34,168,255,.25),transparent 60%),
-    radial-gradient(760px 520px at 8% 12%,rgba(46,230,214,.15),transparent 60%),
-    linear-gradient(180deg,#081420 0%,#0a1a29 70%,#0c1d2c 100%)}
-.hero .grid-bg{position:absolute;inset:0;opacity:.35;
-  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-  background-size:64px 64px;mask-image:radial-gradient(circle at 50% 20%,#000,transparent 78%)}
-.hero .mountains{position:absolute;left:0;right:0;bottom:-2px;width:100%;height:auto;opacity:.9}
-.hero-inner{position:relative;z-index:7;text-align:center;padding:118px 0 0}
-.hero h1{font-size:clamp(2.1rem,5vw,3.7rem);font-weight:800;margin:16px auto 16px;max-width:880px;text-shadow:0 2px 22px rgba(0,0,0,.65)}
-.hero p.lead{font-size:1.06rem;color:var(--muted);max-width:560px;margin:0 auto 26px;text-shadow:0 2px 14px rgba(0,0,0,.7)}
-.hero-actions{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
-.hero-mini{position:absolute;left:0;right:0;bottom:86px;z-index:7;display:flex;gap:64px;flex-wrap:wrap;justify-content:center}
-.hero-mini div{display:flex;flex-direction:column;align-items:center;text-shadow:0 2px 12px rgba(0,0,0,.7)}
-.hero-mini b{font-family:'Sora';font-size:1.45rem;font-weight:700}
-.hero-mini span{font-size:.8rem;color:var(--muted)}
-.scroll-cue{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:7;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-size:.75rem;letter-spacing:.2em;text-transform:uppercase}
-.scroll-cue .wheel{width:24px;height:38px;border:2px solid var(--line-2);border-radius:14px;position:relative}
-.scroll-cue .wheel::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;border-radius:3px;background:var(--aqua);transform:translateX(-50%);animation:wheel 1.6s infinite}
+/* ---------- scroll content ---------- */
+#scrollspace{position:relative;z-index:10}
+section.stage{min-height:100vh;display:flex;align-items:center;position:relative}
+.block{width:min(430px,90vw);background:var(--glass);backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.65);outline:1px solid var(--line);
+  border-radius:var(--radius);padding:30px 30px 26px;box-shadow:var(--shadow)}
+.block h2{font-size:clamp(1.5rem,2.8vw,2.1rem);font-weight:700;margin:12px 0 10px}
+.block p{color:var(--ink-2);font-size:.98rem}
+.block ul{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:9px}
+.block li{display:flex;gap:10px;align-items:flex-start;font-size:.93rem;color:var(--ink-2)}
+.block li::before{content:"";flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--teal);margin-top:8px}
+.stage .wrap{display:flex}
+.stage.left .wrap{justify-content:flex-start}
+.stage.right .wrap{justify-content:flex-end}
+.kpis{display:flex;gap:22px;margin-top:16px;flex-wrap:wrap}
+.kpis div b{font-family:'Sora';font-size:1.5rem;font-weight:800;display:block;line-height:1.1}
+.kpis div span{font-size:.78rem;color:var(--muted)}
+
+/* hero */
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-start;text-align:center;position:relative}
+#hero .inner{padding-top:116px}
+#hero h1{font-size:clamp(2.2rem,5.2vw,4rem);font-weight:800;max-width:900px;margin:14px auto 16px;text-wrap:balance}
+#hero h1 em{font-style:normal;color:var(--teal)}
+#hero .lead{color:var(--ink-2);max-width:560px;margin:0 auto 26px;font-size:1.08rem}
+#hero .actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.scroll-cue{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-2);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;font-weight:700}
+.scroll-cue .wheel{width:24px;height:38px;border:2px solid var(--line-2);border-radius:14px;position:relative;background:var(--glass)}
+.scroll-cue .wheel::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;border-radius:3px;background:var(--teal);transform:translateX(-50%);animation:wheel 1.6s infinite}
 @keyframes wheel{50%{transform:translate(-50%,10px);opacity:.2}}
 
-/* ================= UNDERGROUND JOURNEY ================= */
-#journey{position:relative}
-.stratum{position:relative;padding:110px 0 130px}
-.stratum .noise{position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E")}
-.stratum .darken{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.22))}
-/* jagged divider that sits on top of each stratum */
-.divider{display:block;width:100%;height:64px;margin-bottom:-1px;position:relative;z-index:2}
-/* layer colors + light texture accents */
-.s-top{background:
-  radial-gradient(3px 3px at 12% 30%,rgba(90,66,40,.55) 40%,transparent 60%),
-  radial-gradient(2px 2px at 34% 70%,rgba(120,92,60,.4) 40%,transparent 60%),
-  radial-gradient(3px 3px at 62% 45%,rgba(70,52,32,.5) 40%,transparent 60%),
-  radial-gradient(2px 2px at 85% 25%,rgba(120,92,60,.35) 40%,transparent 60%),
-  linear-gradient(180deg,#33271a 0%,var(--soil-top) 60%)}
-.s-clay{background:
-  radial-gradient(60px 8px at 25% 30%,rgba(96,54,38,.35) 40%,transparent 70%),
-  radial-gradient(80px 10px at 75% 60%,rgba(96,54,38,.3) 40%,transparent 70%),
-  linear-gradient(180deg,#3a2820 0%,var(--soil-clay) 60%)}
-.s-gravel{background:
-  radial-gradient(5px 4px at 15% 20%,rgba(150,140,120,.35) 45%,transparent 65%),
-  radial-gradient(4px 3px at 42% 65%,rgba(170,160,140,.3) 45%,transparent 65%),
-  radial-gradient(6px 5px at 68% 35%,rgba(140,130,110,.32) 45%,transparent 65%),
-  radial-gradient(4px 3px at 88% 75%,rgba(160,150,130,.3) 45%,transparent 65%),
-  radial-gradient(5px 4px at 30% 85%,rgba(150,140,120,.28) 45%,transparent 65%),
-  linear-gradient(180deg,#332e24 0%,var(--soil-gravel) 60%)}
-.s-rock{background:
-  linear-gradient(115deg,transparent 44%,rgba(0,0,0,.14) 45%,transparent 46%),
-  linear-gradient(75deg,transparent 64%,rgba(0,0,0,.12) 65%,transparent 66%),
-  linear-gradient(150deg,transparent 24%,rgba(0,0,0,.1) 25%,transparent 26%),
-  linear-gradient(180deg,#28303b 0%,var(--soil-rock) 60%)}
-.s-bed{background:linear-gradient(180deg,#1b222c 0%,var(--soil-bed) 60%)}
-.s-aqua{background:
-  radial-gradient(800px 300px at 50% 55%,rgba(34,168,255,.22),transparent 70%),
-  linear-gradient(180deg,#0a2233 0%,var(--soil-aqua) 55%,#051a28 100%)}
-
-/* depth ruler labels */
-.depth-mark{position:absolute;left:14px;top:-14px;z-index:3;font-family:'Sora';font-size:.78rem;color:rgba(255,255,255,.5);
-  background:rgba(0,0,0,.35);border:1px solid var(--line);padding:4px 10px;border-radius:8px;backdrop-filter:blur(4px)}
-
-/* content split: keeps a clear channel in the middle for the drill */
-.split{position:relative;z-index:8;display:grid;grid-template-columns:1fr minmax(150px,290px) 1fr;gap:22px;align-items:start}
-.split .lcol,.split .rcol{display:flex;flex-direction:column;gap:20px}
-.split .lcol{grid-column:1}
-.split .rcol{grid-column:3}
-.head-pill{position:relative;z-index:8;text-align:center;margin-bottom:46px}
-.head-pill .inner{display:inline-block;background:rgba(6,13,20,.62);backdrop-filter:blur(10px);
-  border:1px solid var(--line);border-radius:18px;padding:22px 34px;max-width:640px}
-.head-pill h2{font-size:clamp(1.6rem,3.4vw,2.4rem);font-weight:700;margin:12px 0 8px}
-.head-pill p{color:var(--muted);font-size:1rem}
-
-/* cards */
-.card{position:relative;padding:26px 24px;border-radius:var(--radius);
-  background:rgba(10,18,28,.82);backdrop-filter:blur(10px);border:1px solid var(--line);transition:.3s ease}
-.card:hover{transform:translateY(-4px);border-color:var(--line-2)}
-.card .ic{width:50px;height:50px;border-radius:13px;display:grid;place-items:center;margin-bottom:16px;
-  background:var(--grad-soft);border:1px solid var(--line-2)}
-.card .ic svg{width:24px;height:24px;color:var(--aqua)}
-.card h3{font-size:1.14rem;font-weight:600;margin-bottom:8px}
-.card p{color:var(--muted);font-size:.94rem}
-/* milestone (process) */
-.mile{position:relative;padding:24px;border-radius:var(--radius);background:rgba(10,18,28,.82);backdrop-filter:blur(10px);border:1px solid var(--line)}
-.mile .num{position:absolute;top:16px;right:20px;font-family:'Sora';font-weight:800;font-size:2rem;color:transparent;-webkit-text-stroke:1.2px var(--line-2)}
-.mile h4{font-size:1.08rem;margin-bottom:6px}
-.mile p{color:var(--muted);font-size:.92rem}
-.mile .sic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;margin-bottom:14px;background:var(--grad-soft);border:1px solid var(--line-2)}
-.mile .sic svg{width:22px;height:22px;color:var(--aqua)}
-/* stat chip */
-.stat{padding:22px;border-radius:var(--radius);text-align:center;background:rgba(10,18,28,.82);backdrop-filter:blur(10px);border:1px solid var(--line)}
-.stat b{display:block;font-family:'Sora';font-size:2rem;font-weight:800;line-height:1}
-.stat span{color:var(--muted);font-size:.85rem;margin-top:6px;display:block}
-/* gallery */
-.g-item{border-radius:16px;overflow:hidden;position:relative;border:1px solid var(--line);
-  background:rgba(10,18,28,.82);backdrop-filter:blur(8px);min-height:150px;display:grid;place-items:center}
-.g-item svg{width:40px;height:40px;color:rgba(255,255,255,.18)}
-.g-item .cap{position:absolute;left:0;right:0;bottom:0;padding:12px 14px;font-size:.82rem;color:var(--muted);
-  background:linear-gradient(0deg,rgba(6,13,20,.9),transparent)}
-/* faq */
-.q{border:1px solid var(--line);border-radius:16px;background:rgba(10,18,28,.85);backdrop-filter:blur(10px);overflow:hidden}
-.q summary{list-style:none;cursor:pointer;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;font-family:'Sora';font-weight:600;font-size:.98rem}
-.q summary::-webkit-details-marker{display:none}
-.q summary .pm{flex:0 0 auto;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;border:1px solid var(--line-2);transition:.3s;color:var(--aqua)}
-.q[open] summary .pm{transform:rotate(45deg);background:var(--grad-soft)}
-.q .a{padding:0 20px 18px;color:var(--muted);font-size:.93rem}
-
-/* ================= AQUIFER / CONTACT ================= */
-.water-banner{position:relative;z-index:8;text-align:center;margin-bottom:50px}
-.water-banner .inner{display:inline-block;background:rgba(4,20,30,.7);backdrop-filter:blur(12px);
-  border:1px solid rgba(46,230,214,.35);border-radius:20px;padding:26px 40px;box-shadow:0 0 60px -10px rgba(46,230,214,.35)}
-.water-banner h2{font-size:clamp(1.7rem,3.8vw,2.6rem);font-weight:800;margin-bottom:8px}
-.water-banner p{color:var(--muted)}
-.waves{position:absolute;left:0;right:0;pointer-events:none;opacity:.5}
-.bubble{position:absolute;bottom:8%;width:10px;height:10px;border-radius:50%;border:1px solid rgba(46,230,214,.5);animation:bub 6s linear infinite;pointer-events:none}
-.bubble.b2{left:38%;width:7px;height:7px;animation-delay:2s}
-.bubble.b3{left:62%;width:12px;height:12px;animation-delay:4s}
-.bubble.b1{left:45%}
-@keyframes bub{0%{transform:translateY(0);opacity:0}15%{opacity:.8}100%{transform:translateY(-46vh);opacity:0}}
-.contact-info,.qf-card{position:relative;z-index:8}
-.contact-lines{display:flex;flex-direction:column;gap:14px}
-.cline{display:flex;align-items:center;gap:14px;background:rgba(10,18,28,.82);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
-.cline .cic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.05);border:1px solid var(--line-2);flex:0 0 auto}
-.cline .cic svg{width:21px;height:21px;color:var(--aqua)}
-.cline small{color:var(--muted);display:block;font-size:.78rem}
-.cline b{font-family:'Sora';font-size:1rem;font-weight:600}
-form.qf{display:flex;flex-direction:column;gap:13px;background:rgba(6,13,20,.85);backdrop-filter:blur(12px);border:1px solid var(--line-2);border-radius:20px;padding:24px}
-form.qf label{font-size:.8rem;color:var(--muted);margin-bottom:-7px}
-form.qf input,form.qf textarea,form.qf select{width:100%;background:var(--bg);border:1px solid var(--line-2);border-radius:12px;
-  padding:12px 14px;color:var(--text);font-family:inherit;font-size:.95rem;transition:.2s}
-form.qf input:focus,form.qf textarea:focus,form.qf select:focus{outline:none;border-color:var(--aqua);box-shadow:0 0 0 3px rgba(46,230,214,.15)}
+/* aquifer finale */
+#finale{min-height:110vh;display:flex;align-items:center}
+.finale-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;width:100%;align-items:start}
+.water-title{grid-column:1/-1;text-align:center;margin-bottom:8px}
+.water-title .pill{display:inline-block;background:rgba(6,26,34,.55);color:#eafcff;border:1px solid rgba(46,230,214,.4);
+  backdrop-filter:blur(12px);border-radius:22px;padding:22px 38px;box-shadow:0 0 70px -12px rgba(46,230,214,.55)}
+.water-title h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800}
+.water-title p{color:#bfe9ef;margin-top:6px}
+.contact-lines{display:flex;flex-direction:column;gap:13px}
+.cline{display:flex;align-items:center;gap:14px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)}
+.cline .cic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(14,124,140,.1);border:1px solid var(--line);flex:0 0 auto}
+.cline .cic svg{width:21px;height:21px;color:var(--teal)}
+.cline small{color:var(--muted);display:block;font-size:.76rem}
+.cline b{font-family:'Sora';font-size:1rem;font-weight:700}
+form.qf{display:flex;flex-direction:column;gap:13px;background:var(--glass);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);outline:1px solid var(--line);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow)}
+form.qf label{font-size:.78rem;color:var(--muted);font-weight:600;margin-bottom:-7px}
+form.qf input,form.qf textarea,form.qf select{width:100%;background:#fff;border:1px solid var(--line-2);border-radius:12px;
+  padding:12px 14px;color:var(--ink);font-family:inherit;font-size:.95rem;transition:.2s}
+form.qf input:focus,form.qf textarea:focus,form.qf select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,140,.15)}
 form.qf textarea{resize:vertical;min-height:84px}
 
-/* ================= FOOTER ================= */
-footer{position:relative;z-index:9;padding:60px 0 34px;border-top:1px solid var(--line);background:#04121c}
-.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:40px}
-.foot-grid p{color:var(--muted);font-size:.94rem;max-width:320px;margin-top:16px}
-.foot-col h5{font-family:'Sora';font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
-.foot-col a{display:block;color:var(--muted);font-size:.94rem;margin-bottom:10px;transition:.2s}
-.foot-col a:hover{color:var(--aqua)}
-.foot-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+/* footer */
+footer{position:relative;z-index:10;padding:56px 0 32px;background:var(--ink);color:#cfd6db}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:38px}
+.foot-grid p{color:#9aa5ad;font-size:.93rem;max-width:320px;margin-top:14px}
+.foot-col h5{font-family:'Sora';font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#8b959d;margin-bottom:15px}
+.foot-col a{display:block;color:#aeb8bf;font-size:.93rem;margin-bottom:9px;transition:.2s}
+.foot-col a:hover{color:#fff}
+.foot-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:22px;border-top:1px solid rgba(255,255,255,.12);color:#8b959d;font-size:.84rem}
+.foot-brand{display:flex;align-items:center;gap:12px;font-family:'Sora';font-weight:800;color:#fff}
 
-/* floating whatsapp */
+/* whatsapp float */
 .wa-float{position:fixed;right:20px;bottom:20px;z-index:60;width:56px;height:56px;border-radius:50%;
-  background:#25d366;display:grid;place-items:center;box-shadow:0 14px 30px -8px rgba(37,211,102,.6)}
-.wa-float svg{width:29px;height:29px;color:#04140a}
+  background:#25d366;display:grid;place-items:center;box-shadow:0 14px 30px -8px rgba(37,211,102,.55)}
+.wa-float svg{width:29px;height:29px;color:#0b3d22}
 
-/* entrance animation (pure CSS, can never hide content permanently) */
-.reveal{animation:reveal-in .8s cubic-bezier(.2,.7,.2,1) forwards}
-@keyframes reveal-in{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){.reveal,.splash-logo,.splash-bar,.splash-pct,.splash-tag{animation:none}}
-
-/* ================= RESPONSIVE ================= */
+/* responsive */
 @media(max-width:960px){
   .nav-links{display:none}
   .menu-btn{display:block}
   .nav-links.open{display:flex;position:absolute;top:74px;left:0;right:0;flex-direction:column;gap:0;
-    background:rgba(6,13,20,.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);padding:12px 22px 20px}
+    background:rgba(244,241,234,.98);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);padding:12px 22px 20px}
   .nav-links.open a{padding:14px 0;border-bottom:1px solid var(--line)}
-  .foot-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:860px){
-  /* mobile: single column, drill passes behind; cards keep solid bg */
-  .split{grid-template-columns:1fr;gap:18px}
-  .split .lcol,.split .rcol{grid-column:1;gap:18px}
-  .split .rcol{margin-top:18px}
-  #rig{width:70vw}
-  #rig .pipe{width:22px;height:calc(70vh - 118px)}
-  #rig .collar{top:calc(70vh - 126px);width:34px;height:24px}
-  #rig model-viewer{top:calc(70vh - 110px);height:250px}
-  #rig .hole{width:46px;height:calc(72vh + 20px)}
-  #rig .bit-glow{top:calc(70vh + 122px)}
-  .hero-inner{padding:104px 0 0}
-  .hero h1{font-size:clamp(1.9rem,7.4vw,2.5rem)}
-  .hero-mini{display:none}
-  .brand{font-size:.98rem;gap:9px}
-  .brand .logo{width:34px;height:34px}
-  .brand small{font-size:.55rem;letter-spacing:.2em}
-  #depth{left:12px;bottom:12px;padding:8px 12px}
-  .stratum{padding:84px 0 100px}
-  .head-pill .inner{padding:18px 22px}
+  section.stage{min-height:92vh;align-items:flex-end;padding-bottom:8vh}
+  .stage .wrap{justify-content:center !important}
+  .block{width:100%;padding:24px 22px 20px}
+  #hero h1{font-size:clamp(1.9rem,7.2vw,2.6rem)}
+  .finale-grid{grid-template-columns:1fr}
   .nav-cta .btn-ghost{display:none}
+  .brand{font-size:.95rem;gap:9px}
+  .brand .logo{width:34px;height:34px}
+  #depth{left:12px;bottom:12px;padding:8px 12px}
   .foot-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
-<!-- ============ SPLASH / WELCOME ============ -->
+<canvas id="scene"></canvas>
+<div id="grade"></div>
+
+<!-- ============ SPLASH ============ -->
 <div id="splash" role="status" aria-label="Yükleniyor">
   <div class="splash-in">
-    <!-- ONIX DRILLING logo lockup (white) -->
     <svg class="splash-logo" viewBox="0 0 640 360" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Onix Sondaj logosu">
-      <g stroke="#eef4fb" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" fill="none">
-        <!-- mountains -->
+      <g stroke="#171d22" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" fill="none">
         <path d="M60 168 L200 52 L258 108 L320 34 L332 46"/>
         <path d="M332 46 L420 108 L470 76 L580 168"/>
         <path d="M150 118 l24 -18 M196 92 l16 22 M420 128 l22 -16 M470 108 l18 20"/>
-        <!-- rig on the ridge -->
         <path d="M320 34 L302 148 M348 42 L360 148 M306 78 h48 M300 112 h56"/>
         <path d="M282 148 h96 M290 136 h80"/>
       </g>
-      <!-- ground rules -->
-      <path d="M48 178 H592 M48 190 H592" stroke="#eef4fb" stroke-width="5"/>
-      <!-- ONIX with auger I -->
-      <g fill="#eef4fb">
+      <path d="M48 178 H592 M48 190 H592" stroke="#171d22" stroke-width="5"/>
+      <g fill="#171d22">
         <text x="118" y="292" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="118" letter-spacing="6" text-anchor="middle">O</text>
         <text x="238" y="292" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="118" letter-spacing="6" text-anchor="middle">N</text>
         <text x="502" y="292" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="118" letter-spacing="6" text-anchor="middle">X</text>
-        <!-- auger I -->
         <g transform="translate(360 0)">
           <rect x="-34" y="200" width="68" height="13" rx="6.5" transform="rotate(-9 0 206)"/>
           <rect x="-34" y="219" width="68" height="13" rx="6.5" transform="rotate(-9 0 225)"/>
@@ -356,16 +209,14 @@ footer{position:relative;z-index:9;padding:60px 0 34px;border-top:1px solid var(
           <path d="M-16 276 h32 L0 296 Z"/>
         </g>
       </g>
-      <!-- DRILLING -->
-      <g fill="#93a7bd">
-        <path d="M74 330 h70 M496 330 h70" stroke="#93a7bd" stroke-width="4"/>
+      <g fill="#7a848c">
+        <path d="M74 330 h70 M496 330 h70" stroke="#7a848c" stroke-width="4"/>
         <text x="320" y="340" font-family="Inter,Arial,sans-serif" font-weight="700" font-size="34" letter-spacing="16" text-anchor="middle">DRILLING</text>
       </g>
     </svg>
     <div class="splash-tag">SU SONDAJINDA UZMAN EKİP</div>
     <div class="splash-bar"><i id="splashFill"></i></div>
-    <div class="splash-pct"><span id="splashPct">0%</span> — sistem hazırlanıyor</div>
-    <svg class="splash-drop" viewBox="0 0 24 24" fill="#2ee6d6"><path d="M12 2s7 8 7 12a7 7 0 1 1-14 0C5 10 12 2 12 2Z"/></svg>
+    <div class="splash-pct"><span id="splashPct">0%</span> — sahne hazırlanıyor</div>
   </div>
 </div>
 
@@ -375,9 +226,9 @@ footer{position:relative;z-index:9;padding:60px 0 34px;border-top:1px solid var(
     <a href="#top" class="brand">
       <svg class="logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#2ee6d6"/><stop offset="1" stop-color="#22a8ff"/></linearGradient></defs>
-        <rect x="2" y="2" width="44" height="44" rx="13" fill="#0e1c2b" stroke="url(#lg)" stroke-width="1.5"/>
-        <path d="M7 20 L15 11 L20 16 L26 8 L34 15 L41 20" stroke="url(#lg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" fill="none" opacity=".85"/>
+          <stop offset="0" stop-color="#0e7c8c"/><stop offset="1" stop-color="#0a5f6e"/></linearGradient></defs>
+        <rect x="2" y="2" width="44" height="44" rx="13" fill="#fff" stroke="url(#lg)" stroke-width="1.5"/>
+        <path d="M7 20 L15 11 L20 16 L26 8 L34 15 L41 20" stroke="url(#lg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
         <g fill="url(#lg)">
           <rect x="17" y="23.5" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 25)"/>
           <rect x="17" y="28.2" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 29.8)"/>
@@ -389,10 +240,9 @@ footer{position:relative;z-index:9;padding:60px 0 34px;border-top:1px solid var(
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="#hizmetler">Hizmetler</a>
-      <a href="#neden">Neden Onix</a>
-      <a href="#surec">Süreç</a>
+      <a href="#muhendislik">Mühendislik</a>
+      <a href="#kapasite">Kapasite</a>
       <a href="#projeler">Projeler</a>
-      <a href="#sss">S.S.S.</a>
       <a href="#iletisim">İletişim</a>
     </nav>
     <div class="nav-cta">
@@ -404,277 +254,157 @@ footer{position:relative;z-index:9;padding:60px 0 34px;border-top:1px solid var(
 </header>
 
 <span id="top"></span>
-
-<!-- ============ FIXED DRILL (center of screen, always spinning) ============ -->
-<div id="rig" aria-hidden="true">
-  <div class="hole"></div>
-  <div class="pipe"></div>
-  <div class="collar"></div>
-  <model-viewer
-    src="./assets/drill-bit.glb"
-    alt=""
-    orientation="0deg 180deg 0deg"
-    auto-rotate
-    auto-rotate-delay="0"
-    rotation-per-second="42deg"
-    interaction-prompt="none"
-    disable-zoom disable-pan disable-tap
-    shadow-intensity="0"
-    exposure="1.55"
-    tone-mapping="neutral"
-    camera-orbit="0deg 82deg 108%"
-    loading="eager"></model-viewer>
-  <div class="bit-glow"></div>
-</div>
-
-<!-- depth badge -->
 <div id="depth"><span class="dot"></span><div><b id="depthVal">0 m</b><small>Derinlik</small></div></div>
 
-<!-- ============ SURFACE / HERO ============ -->
-<section class="hero">
-  <div class="grid-bg"></div>
-  <div class="wrap hero-inner reveal">
-    <span class="eyebrow" style="justify-content:center">Su Sondaj &amp; Kuyu Açma Uzmanı</span>
-    <h1>Suyu, güvenle yerin <span class="grad-text">derinliklerinden</span> çıkarıyoruz.</h1>
-    <p class="lead">Onix Sondaj; modern ekipman ve deneyimli ekibiyle su kuyusu sondajında uçtan uca hizmet sunar. Aşağı kaydırın — matkabımızla birlikte suya doğru inelim. 💧</p>
-    <div class="hero-actions">
-      <a href="https://wa.me/90XXXXXXXXXX?text=Merhaba%2C%20su%20kuyusu%20i%C3%A7in%20teklif%20almak%20istiyorum." class="btn btn-wa" target="_blank" rel="noopener">WhatsApp'tan Yaz</a>
-      <a href="#iletisim" class="btn btn-ghost">Ücretsiz Keşif İste →</a>
-    </div>
-  </div>
-  <div class="hero-mini">
-    <div><b>15+</b><span>Yıl Tecrübe</span></div>
-    <div><b>1.200+</b><span>Açılan Kuyu</span></div>
-    <div><b>%100</b><span>Ruhsatlı İşlem</span></div>
-  </div>
-  <!-- mountain silhouettes (brand echo) -->
-  <svg class="mountains" viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M0 220 L0 150 L180 60 L320 140 L470 40 L640 150 L780 90 L960 170 L1120 70 L1300 160 L1440 110 L1440 220 Z" fill="#0d1d2b"/>
-    <path d="M0 220 L0 190 L240 120 L420 180 L620 110 L840 190 L1040 140 L1240 200 L1440 150 L1440 220 Z" fill="#122333"/>
-  </svg>
-  <div class="scroll-cue"><div class="wheel"></div>Sondaja Başla</div>
-</section>
+<!-- ============ SCROLL CONTENT ============ -->
+<div id="scrollspace">
 
-<!-- ============ UNDERGROUND JOURNEY ============ -->
-<div id="journey">
-
-  <!-- ---- TOPSOIL: SERVICES ---- -->
-  <section class="stratum s-top" id="hizmetler">
-    <svg class="divider" viewBox="0 0 1440 64" preserveAspectRatio="none" style="position:absolute;top:-63px;left:0" aria-hidden="true">
-      <path d="M0 64 L0 40 L90 28 L200 44 L330 22 L480 46 L610 26 L760 48 L900 24 L1050 44 L1180 28 L1320 46 L1440 30 L1440 64 Z" fill="#33271a"/>
-    </svg>
-    <span class="depth-mark">0 m — Yüzey toprağı</span>
-    <div class="noise"></div><div class="darken"></div>
-    <div class="wrap">
-      <div class="head-pill"><div class="inner">
-        <span class="eyebrow" style="justify-content:center">Hizmetlerimiz</span>
-        <h2>Sudan sondaja, uçtan uca çözüm</h2>
-        <p>İçme suyundan tarımsal sulamaya kadar her ihtiyaca profesyonel sondaj hizmeti.</p>
-      </div></div>
-      <div class="split">
-        <div class="lcol">
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s7 8 7 12a7 7 0 1 1-14 0C5 10 12 2 12 2Z"/></svg></div><h3>Su Kuyusu Sondajı</h3><p>İçme, kullanma ve sulama amaçlı derin su kuyularının modern yöntemlerle açılması.</p></div>
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18M6 20V9l6-4 6 4v11"/><path d="M10 20v-5h4v5"/></svg></div><h3>Jeolojik &amp; Jeofizik Etüt</h3><p>Su damarı tespiti ve verim analizi ile doğru noktadan sondaja başlama.</p></div>
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l-2 6H8L6 3Z"/><path d="M12 9v12M8 21h8"/></svg></div><h3>Pompa &amp; Dalgıç Teçhiz</h3><p>Kuyuya uygun dalgıç pompa seçimi, boru teçhizi ve profesyonel montaj.</p></div>
-        </div>
-        <div class="rcol">
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 1-3-6.3"/><path d="M20 4v5h-5"/></svg></div><h3>Kuyu Geliştirme &amp; Temizleme</h3><p>Verimi düşen kuyuların temizlenip yeniden verimli hale getirilmesi.</p></div>
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20c4-6 12-6 16 0"/><path d="M12 3v6M9 6h6"/><circle cx="12" cy="12" r="2"/></svg></div><h3>Tarımsal Sulama Kuyuları</h3><p>Araziniz için yüksek debili, sürdürülebilir sulama kuyuları.</p></div>
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></div><h3>Ruhsat &amp; Danışmanlık</h3><p>DSİ kuyu izni ve ruhsat sürecinin uçtan uca takibi.</p></div>
-        </div>
+  <section id="hero">
+    <div class="wrap inner">
+      <span class="eyebrow" style="justify-content:center">Su Sondaj &amp; Kuyu Açma Uzmanı</span>
+      <h1>Derinlerdeki suya,<br><em>mühendislikle</em> ulaşıyoruz.</h1>
+      <p class="lead">Onix Sondaj; modern ekipman ve deneyimli ekibiyle su kuyusu sondajında uçtan uca hizmet sunar. Aşağı kaydırın — matkabımız sizinle birlikte suya insin.</p>
+      <div class="actions">
+        <a href="https://wa.me/90XXXXXXXXXX?text=Merhaba%2C%20su%20kuyusu%20i%C3%A7in%20teklif%20almak%20istiyorum." class="btn btn-wa" target="_blank" rel="noopener">WhatsApp'tan Yaz</a>
+        <a href="#iletisim" class="btn btn-ghost">Ücretsiz Keşif İste →</a>
       </div>
     </div>
+    <div class="scroll-cue"><div class="wheel"></div>Sondaja Başla</div>
   </section>
 
-  <!-- ---- CLAY: WHY + STATS ---- -->
-  <section class="stratum s-clay" id="neden">
-    <svg class="divider" viewBox="0 0 1440 64" preserveAspectRatio="none" style="position:absolute;top:-63px;left:0" aria-hidden="true">
-      <path d="M0 64 L0 36 L120 46 L260 24 L400 44 L560 26 L700 48 L860 28 L1000 46 L1160 24 L1300 44 L1440 32 L1440 64 Z" fill="#3a2820"/>
-    </svg>
-    <span class="depth-mark">-18 m — Kil tabakası</span>
-    <div class="noise"></div><div class="darken"></div>
-    <div class="wrap">
-      <div class="head-pill"><div class="inner">
-        <span class="eyebrow" style="justify-content:center">Neden Onix Sondaj?</span>
-        <h2>İşini bilen ekip, arkasında durduğu iş</h2>
-      </div></div>
-      <div class="split">
-        <div class="lcol">
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div><h3>Modern Ekipman</h3><p>Güncel rotary ve darbeli sondaj makineleriyle her zemine hızlı çözüm.</p></div>
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M4 20a5 5 0 0 1 10 0M17 11l2 2 4-4"/></svg></div><h3>Deneyimli Ekip</h3><p>15 yılı aşkın saha tecrübesine sahip uzman sondaj kadrosu.</p></div>
-          <div class="stat"><b>15+</b><span>Yıl Saha Tecrübesi</span></div>
-          <div class="stat"><b>1.200+</b><span>Açılan Su Kuyusu</span></div>
-        </div>
-        <div class="rcol">
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><h3>Şeffaf Fiyat</h3><p>Keşif sonrası net, sürprizsiz fiyat; sözleşmeli ve kayıtlı çalışma.</p></div>
-          <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5Z"/></svg></div><h3>Ruhsatlı İşlem</h3><p>DSİ izin ve ruhsat süreçleri baştan sona tarafımızca yönetilir.</p></div>
-          <div class="stat"><b>40+</b><span>Hizmet Bölgesi</span></div>
-          <div class="stat"><b>%100</b><span>Ruhsatlı &amp; Kayıtlı İş</span></div>
-        </div>
+  <section class="stage left" id="hizmetler">
+    <div class="wrap"><div class="block">
+      <span class="eyebrow">Hizmetler</span>
+      <h2>Sudan sondaja, uçtan uca</h2>
+      <p>İçme suyundan tarımsal sulamaya, her ihtiyaca profesyonel çözüm.</p>
+      <ul>
+        <li>Su kuyusu sondajı (içme, kullanma, sulama)</li>
+        <li>Jeolojik &amp; jeofizik etüt — doğru noktadan başlama</li>
+        <li>Pompa &amp; dalgıç teçhiz, borulama</li>
+        <li>Kuyu geliştirme, temizleme ve verim artırma</li>
+        <li>DSİ ruhsat ve izin süreçlerinin takibi</li>
+      </ul>
+    </div></div>
+  </section>
+
+  <section class="stage right" id="muhendislik">
+    <div class="wrap"><div class="block">
+      <span class="eyebrow">Mühendislik</span>
+      <h2>Etütle başlayan doğruluk</h2>
+      <p>Sondaj öncesi jeofizik ölçümlerle su damarını ve verimi analiz ederiz. Boşa metraj yok; kuyu, en doğru noktada ve doğru çapta açılır.</p>
+      <ul>
+        <li>Rezistivite ölçümü ile damar tespiti</li>
+        <li>Zemin sınıfına uygun matkap ve takım seçimi</li>
+        <li>Sözleşmeli, kayıtlı ve şeffaf süreç</li>
+      </ul>
+    </div></div>
+  </section>
+
+  <section class="stage left" id="kapasite">
+    <div class="wrap"><div class="block">
+      <span class="eyebrow">Teknik Kapasite</span>
+      <h2>Ağır işin ekipmanı</h2>
+      <p>Rotary ve darbeli sondaj makineleri, kompresörler ve çamur pompalarıyla her formasyonda ilerleriz — kilden granite kadar.</p>
+      <div class="kpis">
+        <div><b>300 m+</b><span>Delme kapasitesi</span></div>
+        <div><b>15+</b><span>Yıl tecrübe</span></div>
+        <div><b>1.200+</b><span>Açılan kuyu</span></div>
       </div>
-    </div>
+    </div></div>
   </section>
 
-  <!-- ---- GRAVEL: PROCESS ---- -->
-  <section class="stratum s-gravel" id="surec">
-    <svg class="divider" viewBox="0 0 1440 64" preserveAspectRatio="none" style="position:absolute;top:-63px;left:0" aria-hidden="true">
-      <path d="M0 64 L0 42 L140 26 L300 46 L440 24 L600 44 L740 28 L900 48 L1060 26 L1200 44 L1340 30 L1440 42 L1440 64 Z" fill="#332e24"/>
-    </svg>
-    <span class="depth-mark">-46 m — Çakıl / kum</span>
-    <div class="noise"></div><div class="darken"></div>
+  <section class="stage right" id="projeler">
+    <div class="wrap"><div class="block">
+      <span class="eyebrow">Projeler</span>
+      <h2>Sahada kanıtlanmış iş</h2>
+      <p>Sanayi tesislerinden çiftliklere, sitelerden seralara kadar her ölçekte kuyu teslim ettik.</p>
+      <ul>
+        <li>Sanayi tesisi — derin kuyu &amp; yüksek debi</li>
+        <li>Tarımsal sulama — sera ve arazi kuyuları</li>
+        <li>Villa &amp; site — içme/kullanma suyu</li>
+        <li>Kamu &amp; kurumsal projeler</li>
+      </ul>
+      <p style="margin-top:12px;font-size:.85rem;color:var(--muted)">Bu bölüme gerçek proje fotoğraflarınız eklenecek.</p>
+    </div></div>
+  </section>
+
+  <section class="stage left">
+    <div class="wrap"><div class="block">
+      <span class="eyebrow">Derinlik Günlüğü</span>
+      <h2>Kaya sertleşiyor, biz durmuyoruz</h2>
+      <p>Çatlaklı kalker ve granit; sondajın en zorlu etabı. Üç konili matkap (tricone), yüksek baskı ve doğru devirle kayayı öğüterek ilerler. Az kaldı — suyun sesi duyuluyor.</p>
+    </div></div>
+  </section>
+
+  <section id="finale">
     <div class="wrap">
-      <div class="head-pill"><div class="inner">
-        <span class="eyebrow" style="justify-content:center">Çalışma Sürecimiz</span>
-        <h2>Keşiften teslimata 4 adım</h2>
-        <p>Şeffaf, planlı ve kayıtlı bir süreç — her aşamada bilgilendirilirsiniz.</p>
-      </div></div>
-      <div class="split">
-        <div class="lcol">
-          <div class="mile"><span class="num">01</span><div class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h4>Keşif &amp; Etüt</h4><p>Sahaya gelir, jeolojik yapıyı inceler, su potansiyelini ve en doğru noktayı belirleriz.</p></div>
-          <div class="mile"><span class="num">03</span><div class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v14M8 6h8M9 22h6"/></svg></div><h4>Sondaj &amp; Kuyu Açma</h4><p>Modern ekipmanla kuyuyu açar, borulama ve çakıllama işlemlerini yaparız.</p></div>
-        </div>
-        <div class="rcol">
-          <div class="mile"><span class="num">02</span><div class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></div><h4>Planlama &amp; Ruhsat</h4><p>Metraj, çap ve maliyeti netleştirir; DSİ ruhsat sürecini sizin için yürütürüz.</p></div>
-          <div class="mile"><span class="num">04</span><div class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div><h4>Teçhiz &amp; Teslim</h4><p>Dalgıç pompa montajını yapar, test eder ve suyu kullanıma hazır teslim ederiz.</p></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ---- ROCK: GALLERY + FAQ ---- -->
-  <section class="stratum s-rock" id="projeler">
-    <svg class="divider" viewBox="0 0 1440 64" preserveAspectRatio="none" style="position:absolute;top:-63px;left:0" aria-hidden="true">
-      <path d="M0 64 L0 34 L110 48 L250 22 L410 46 L550 26 L710 44 L850 24 L1010 48 L1150 28 L1310 46 L1440 30 L1440 64 Z" fill="#28303b"/>
-    </svg>
-    <span class="depth-mark">-78 m — Çatlaklı kaya</span>
-    <div class="noise"></div><div class="darken"></div>
-    <div class="wrap">
-      <div class="head-pill"><div class="inner">
-        <span class="eyebrow" style="justify-content:center">Projelerimiz</span>
-        <h2>Sahadan kareler</h2>
-        <p>Bu alana kendi proje fotoğraflarınız eklenecek.</p>
-      </div></div>
-      <div class="split">
-        <div class="lcol">
-          <div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2s7 8 7 12a7 7 0 1 1-14 0C5 10 12 2 12 2Z"/></svg><div class="cap">Derin su kuyusu — Sanayi tesisi</div></div>
-          <div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2v14M8 6h8"/></svg><div class="cap">Sondaj çalışması</div></div>
-        </div>
-        <div class="rcol">
-          <div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 20h18M6 20V9l6-4 6 4v11"/></svg><div class="cap">Tarımsal sulama</div></div>
-          <div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 3h12l-2 6H8Z"/><path d="M12 9v12"/></svg><div class="cap">Pompa teçhiz</div></div>
-        </div>
-      </div>
-
-      <div class="head-pill" id="sss" style="margin-top:80px"><div class="inner">
-        <span class="eyebrow" style="justify-content:center">Sık Sorulan Sorular</span>
-        <h2>Merak edilenler</h2>
-      </div></div>
-      <div class="split">
-        <div class="lcol">
-          <details class="q"><summary>Kaç metre derinliğe kadar sondaj yapıyorsunuz?<span class="pm">+</span></summary><div class="a">Derinlik, bölgenin jeolojik yapısına ve suyun bulunduğu katmana göre değişir. Keşif ve etüt sonrası gerekli metraj netleşir; ekipmanımız derin kuyulara uygundur.</div></details>
-          <details class="q"><summary>Bir kuyu ne kadar sürede açılıyor?<span class="pm">+</span></summary><div class="a">Zemin yapısına ve derinliğe bağlı olarak ortalama bir su kuyusu 1-3 gün içinde açılır. Süreyi keşif sırasında net olarak paylaşırız.</div></details>
-          <details class="q"><summary>Kuyu açmak için ruhsat gerekiyor mu?<span class="pm">+</span></summary><div class="a">Evet, yer altı suyu kullanımı için DSİ'den kuyu açma izni/ruhsatı gerekir. Bu süreci sizin adınıza biz takip ederiz.</div></details>
-        </div>
-        <div class="rcol">
-          <details class="q"><summary>Fiyat nasıl belirleniyor?<span class="pm">+</span></summary><div class="a">Fiyat; metraj, kuyu çapı ve zemin yapısına göre belirlenir. Ücretsiz keşif sonrası sürprizsiz, net bir teklif sunarız.</div></details>
-          <details class="q"><summary>Hangi bölgelerde hizmet veriyorsunuz?<span class="pm">+</span></summary><div class="a">Merkez bölgemiz ve çevre illerde hizmet veriyoruz. Bölgenizi öğrenmek için bize ulaşmanız yeterli.</div></details>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ---- BEDROCK (short transition) ---- -->
-  <section class="stratum s-bed" style="padding:70px 0 90px">
-    <svg class="divider" viewBox="0 0 1440 64" preserveAspectRatio="none" style="position:absolute;top:-63px;left:0" aria-hidden="true">
-      <path d="M0 64 L0 38 L160 46 L320 24 L480 44 L640 26 L800 46 L960 24 L1120 44 L1280 28 L1440 40 L1440 64 Z" fill="#1b222c"/>
-    </svg>
-    <span class="depth-mark">-104 m — Ana kaya</span>
-    <div class="noise"></div>
-    <div class="wrap" style="position:relative;z-index:8;text-align:center">
-      <p style="color:var(--muted);font-family:'Sora';letter-spacing:.18em;text-transform:uppercase;font-size:.85rem">Az kaldı… suyun sesi duyuluyor 💧</p>
-    </div>
-  </section>
-
-  <!-- ---- AQUIFER: WATER + CONTACT ---- -->
-  <section class="stratum s-aqua" id="iletisim" style="padding-bottom:160px">
-    <svg class="divider" viewBox="0 0 1440 64" preserveAspectRatio="none" style="position:absolute;top:-63px;left:0" aria-hidden="true">
-      <path d="M0 64 L0 40 Q120 20 240 40 T480 40 T720 40 T960 40 T1200 40 T1440 40 L1440 64 Z" fill="#0a2233"/>
-    </svg>
-    <span class="depth-mark">-120 m — Su taşıyan katman (akifer)</span>
-    <div class="noise"></div>
-    <div class="bubble b1"></div><div class="bubble b2"></div><div class="bubble b3"></div>
-    <div class="wrap">
-      <div class="water-banner"><div class="inner">
-        <span class="eyebrow" style="justify-content:center">Hedefe Ulaştık</span>
-        <h2><span class="grad-text">SUYA ULAŞTIK!</span> 💧</h2>
-        <p>Sıra sizde — kuyunuz için ücretsiz keşif ve net teklif alın.</p>
-      </div></div>
-      <div class="split">
-        <div class="lcol contact-info">
-          <div class="contact-lines">
-            <a class="cline" href="tel:+90XXXXXXXXXX"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg></span><span><small>Telefon</small><b>0 (5XX) XXX XX XX</b></span></a>
-            <a class="cline" href="https://wa.me/90XXXXXXXXXX" target="_blank" rel="noopener"><span class="cic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.3-1.2l-.3-.2-3 .8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.6-6.1c-.3-.1-1.7-.8-2-.9-.3-.1-.4-.1-.6.1l-.9 1c-.2.2-.3.2-.6.1-1.6-.8-2.6-1.4-3.7-3.2-.3-.5.3-.5.8-1.4.1-.2 0-.4 0-.5l-.9-2.1c-.2-.5-.4-.5-.6-.5H7c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3 2.1 3.2 5.1 4.5c2.5 1.1 3 1 3.6.9.7-.1 1.7-.7 1.9-1.4.2-.6.2-1.2.2-1.3-.1-.2-.3-.2-.6-.4Z"/></svg></span><span><small>WhatsApp</small><b>Hızlı Yanıt Hattı</b></span></a>
-            <div class="cline"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span><span><small>Hizmet Bölgesi</small><b>[Şehir / Bölge]</b></span></div>
+      <div class="finale-grid" id="iletisim">
+        <div class="water-title">
+          <div class="pill">
+            <h2>SUYA ULAŞTIK 💧</h2>
+            <p>Sıra sizde — kuyunuz için ücretsiz keşif ve net teklif alın.</p>
           </div>
         </div>
-        <div class="rcol qf-card">
-          <form class="qf" id="quoteForm">
-            <label for="ad">Ad Soyad</label>
-            <input id="ad" name="ad" placeholder="Adınız Soyadınız" required>
-            <label for="tel">Telefon</label>
-            <input id="tel" name="tel" type="tel" placeholder="0 (5XX) XXX XX XX" required>
-            <label for="konu">Konu</label>
-            <select id="konu" name="konu">
-              <option>Su Kuyusu Sondajı</option>
-              <option>Jeolojik / Jeofizik Etüt</option>
-              <option>Pompa &amp; Teçhiz</option>
-              <option>Tarımsal Sulama Kuyusu</option>
-              <option>Kuyu Temizleme / Geliştirme</option>
-              <option>Diğer</option>
-            </select>
-            <label for="mesaj">Mesajınız</label>
-            <textarea id="mesaj" name="mesaj" placeholder="Arazi konumu, ihtiyaç ve detaylar..."></textarea>
-            <button type="submit" class="btn btn-primary" style="width:100%">WhatsApp ile Gönder</button>
-            <small style="color:var(--muted);text-align:center">Form, bilgilerinizle WhatsApp mesajı olarak açılır.</small>
-          </form>
+        <div class="contact-lines">
+          <a class="cline" href="tel:+90XXXXXXXXXX"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg></span><span><small>Telefon</small><b>0 (5XX) XXX XX XX</b></span></a>
+          <a class="cline" href="https://wa.me/90XXXXXXXXXX" target="_blank" rel="noopener"><span class="cic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.3-1.2l-.3-.2-3 .8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.6-6.1c-.3-.1-1.7-.8-2-.9-.3-.1-.4-.1-.6.1l-.9 1c-.2.2-.3.2-.6.1-1.6-.8-2.6-1.4-3.7-3.2-.3-.5.3-.5.8-1.4.1-.2 0-.4 0-.5l-.9-2.1c-.2-.5-.4-.5-.6-.5H7c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3 2.1 3.2 5.1 4.5c2.5 1.1 3 1 3.6.9.7-.1 1.7-.7 1.9-1.4.2-.6.2-1.2.2-1.3-.1-.2-.3-.2-.6-.4Z"/></svg></span><span><small>WhatsApp</small><b>Hızlı Yanıt Hattı</b></span></a>
+          <div class="cline"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span><span><small>Hizmet Bölgesi</small><b>[Şehir / Bölge]</b></span></div>
         </div>
+        <form class="qf" id="quoteForm">
+          <label for="ad">Ad Soyad</label>
+          <input id="ad" name="ad" placeholder="Adınız Soyadınız" required>
+          <label for="tel">Telefon</label>
+          <input id="tel" name="tel" type="tel" placeholder="0 (5XX) XXX XX XX" required>
+          <label for="konu">Konu</label>
+          <select id="konu" name="konu">
+            <option>Su Kuyusu Sondajı</option>
+            <option>Jeolojik / Jeofizik Etüt</option>
+            <option>Pompa &amp; Teçhiz</option>
+            <option>Tarımsal Sulama Kuyusu</option>
+            <option>Kuyu Temizleme / Geliştirme</option>
+            <option>Diğer</option>
+          </select>
+          <label for="mesaj">Mesajınız</label>
+          <textarea id="mesaj" name="mesaj" placeholder="Arazi konumu, ihtiyaç ve detaylar..."></textarea>
+          <button type="submit" class="btn btn-primary" style="width:100%">WhatsApp ile Gönder</button>
+          <small style="color:var(--muted);text-align:center">Form, bilgilerinizle WhatsApp mesajı olarak açılır.</small>
+        </form>
       </div>
     </div>
   </section>
 
-</div><!-- /journey -->
+</div>
 
 <!-- ============ FOOTER ============ -->
 <footer>
   <div class="wrap">
     <div class="foot-grid">
       <div>
-        <a href="#top" class="brand">
-          <svg class="logo" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-            <rect x="2" y="2" width="44" height="44" rx="13" fill="#0e1c2b" stroke="url(#lg)" stroke-width="1.5"/>
-            <path d="M7 20 L15 11 L20 16 L26 8 L34 15 L41 20" stroke="url(#lg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" fill="none" opacity=".85"/>
-            <g fill="url(#lg)">
+        <div class="foot-brand">
+          <svg class="logo" width="38" height="38" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <rect x="2" y="2" width="44" height="44" rx="13" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+            <path d="M7 20 L15 11 L20 16 L26 8 L34 15 L41 20" stroke="#2ee6d6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+            <g fill="#2ee6d6">
               <rect x="17" y="23.5" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 25)"/>
               <rect x="17" y="28.2" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 29.8)"/>
               <rect x="17" y="32.9" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 34.5)"/>
               <path d="M20.5 38 h7 L24 43.5 Z"/>
             </g>
           </svg>
-          <div>ONIX SONDAJ<small>Su Kuyusu &amp; Sondaj</small></div>
-        </a>
+          <div>ONIX SONDAJ</div>
+        </div>
         <p>Suyu güvenle yerin derinliklerinden çıkarıyoruz. Su kuyusu sondajı, jeolojik etüt ve pompa teçhizinde uçtan uca profesyonel hizmet.</p>
       </div>
       <div class="foot-col">
         <h5>Hizmetler</h5>
         <a href="#hizmetler">Su Kuyusu Sondajı</a>
-        <a href="#hizmetler">Jeolojik Etüt</a>
+        <a href="#muhendislik">Jeolojik Etüt</a>
         <a href="#hizmetler">Pompa &amp; Teçhiz</a>
         <a href="#hizmetler">Tarımsal Sulama</a>
       </div>
       <div class="foot-col">
         <h5>Kurumsal</h5>
-        <a href="#neden">Neden Onix</a>
-        <a href="#surec">Çalışma Süreci</a>
+        <a href="#kapasite">Teknik Kapasite</a>
         <a href="#projeler">Projeler</a>
         <a href="#iletisim">İletişim</a>
       </div>
@@ -691,56 +421,23 @@ footer{position:relative;z-index:9;padding:60px 0 34px;border-top:1px solid var(
 </a>
 
 <script>
-// ===== splash: wait for 3D model + minimum display time =====
+// splash progress (listens to 3D loader events)
 (function(){
   const splash=document.getElementById('splash'),fill=document.getElementById('splashFill'),pct=document.getElementById('splashPct');
-  const t0=performance.now(),MIN=2600;
-  let prog=0,loaded=false,hidden=false;
-  const mv=document.querySelector('#rig model-viewer');
+  const t0=performance.now(),MIN=2600;let prog=0,ready=false,hidden=false;
   function paint(){const p=Math.round(prog*100);fill.style.animation='none';fill.style.width=p+'%';pct.textContent=p+'%';}
   function hide(){if(hidden)return;hidden=true;splash.classList.add('done');}
-  function maybe(){const dt=performance.now()-t0;if((loaded||prog>=1)&&dt>=MIN)hide();}
-  if(mv){
-    mv.addEventListener('progress',e=>{prog=e.detail.totalProgress||0;paint();maybe();});
-    mv.addEventListener('load',()=>{loaded=true;prog=1;paint();maybe();});
-  }
-  setTimeout(maybe,MIN+50);
-  setTimeout(hide,8000); // hard safety
+  function maybe(){if((ready||prog>=1)&&performance.now()-t0>=MIN)hide();}
+  addEventListener('onix-progress',e=>{prog=e.detail||0;paint();maybe();});
+  addEventListener('onix-ready',()=>{ready=true;prog=1;paint();maybe();});
+  setTimeout(maybe,MIN+60);setTimeout(hide,9000);
 })();
-
-// ===== header scroll state =====
+// header + menu + form
 const header=document.getElementById('header');
 addEventListener('scroll',()=>header.classList.toggle('scrolled',scrollY>20),{passive:true});
-
-// ===== mobile menu =====
 const mb=document.getElementById('menuBtn'),nl=document.getElementById('navLinks');
 mb.addEventListener('click',()=>nl.classList.toggle('open'));
 nl.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>nl.classList.remove('open')));
-
-// ===== drill descent + depth counter =====
-(function(){
-  const rig=document.getElementById('rig'),journey=document.getElementById('journey'),
-        dv=document.getElementById('depthVal'),body=document.body;
-  const MAXD=120; // meters shown at the aquifer
-  let tick=false;
-  function update(){
-    tick=false;
-    const r=journey.getBoundingClientRect();
-    const total=Math.max(1,journey.offsetHeight-innerHeight);
-    const y=Math.min(Math.max(-r.top,0),total);
-    const t=y/total;
-    rig.style.setProperty('--desc',(t*8)+'vh');           // subtle descent with scroll
-    dv.textContent=(t<=0?'0':'-'+Math.round(t*MAXD))+' m';
-    body.classList.toggle('digging',r.top<innerHeight*0.4&&r.bottom>innerHeight*0.6);
-    body.classList.toggle('at-water',t>0.86);
-    body.classList.toggle('rig-off',r.bottom<innerHeight*0.55); // park & fade at footer
-  }
-  addEventListener('scroll',()=>{if(!tick){tick=true;requestAnimationFrame(update);}},{passive:true});
-  addEventListener('resize',update);
-  update();
-})();
-
-// ===== quote form -> whatsapp =====
 document.getElementById('quoteForm').addEventListener('submit',ev=>{
   ev.preventDefault();
   const g=id=>document.getElementById(id).value;
@@ -748,5 +445,6 @@ document.getElementById('quoteForm').addEventListener('submit',ev=>{
   window.open(`https://wa.me/90XXXXXXXXXX?text=${txt}`,'_blank');
 });
 </script>
+<script type="module" src="./assets/app.bundle.js"></script>
 </body>
 </html>

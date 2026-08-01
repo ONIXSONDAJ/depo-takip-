@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="module" src="./assets/model-viewer.min.js"></script>
 <style>
 :root{
   --bg:#060d14;
@@ -110,12 +111,17 @@ header.scrolled{background:rgba(6,13,20,.82);backdrop-filter:blur(16px);border-b
 .rig-badge .dot{width:10px;height:10px;border-radius:50%;background:var(--aqua);box-shadow:0 0 0 5px rgba(46,230,214,.18);animation:pulse 2s infinite}
 .rig-badge b{font-family:'Sora';font-size:.95rem}
 .rig-badge span{font-size:.76rem;color:var(--muted);display:block}
+.rig-hint{position:absolute;top:14px;left:16px;z-index:3;font-size:.74rem;color:var(--muted);
+  background:rgba(6,13,20,.6);backdrop-filter:blur(8px);border:1px solid var(--line);
+  padding:6px 11px;border-radius:20px;pointer-events:none}
+model-viewer{display:block;border-radius:26px;--progress-bar-color:var(--aqua)}
 @keyframes pulse{50%{box-shadow:0 0 0 11px rgba(46,230,214,0)}}
 .float-tag{position:absolute;display:flex;align-items:center;gap:8px;background:rgba(14,28,43,.9);
   border:1px solid var(--line-2);padding:10px 14px;border-radius:12px;font-size:.84rem;font-weight:600;
   box-shadow:var(--shadow);animation:floaty 5s ease-in-out infinite}
-.float-tag.t1{top:24px;right:-8px}
-.float-tag.t2{bottom:80px;right:-14px;animation-delay:1.2s}
+.float-tag{z-index:3}
+.float-tag.t1{top:18px;right:18px}
+.float-tag.t2{bottom:22px;right:18px;animation-delay:1.2s}
 .float-tag svg{width:18px;height:18px}
 @keyframes floaty{50%{transform:translateY(-12px)}}
 
@@ -278,10 +284,17 @@ footer{padding:60px 0 34px;border-top:1px solid var(--line);margin-top:96px;back
         <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stop-color="#2ee6d6"/><stop offset="1" stop-color="#22a8ff"/></linearGradient></defs>
         <rect x="2" y="2" width="44" height="44" rx="13" fill="#0e1c2b" stroke="url(#lg)" stroke-width="1.5"/>
-        <path d="M24 11c5.5 6.7 8.5 11 8.5 15.2A8.5 8.5 0 0 1 24 35a8.5 8.5 0 0 1-8.5-8.8C15.5 22 18.5 17.7 24 11Z" fill="url(#lg)"/>
-        <circle cx="21" cy="25" r="2.4" fill="#04141a" opacity=".55"/>
+        <!-- mountain ridge (from brand logo) -->
+        <path d="M7 20 L15 11 L20 16 L26 8 L34 15 L41 20" stroke="url(#lg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" fill="none" opacity=".85"/>
+        <!-- drill auger (the 'I' of ONIX) -->
+        <g fill="url(#lg)">
+          <rect x="17" y="23.5" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 25)"/>
+          <rect x="17" y="28.2" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 29.8)"/>
+          <rect x="17" y="32.9" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 34.5)"/>
+          <path d="M20.5 38 h7 L24 43.5 Z"/>
+        </g>
       </svg>
-      <div>ONIX SONDAJ<small>Su Kuyusu & Sondaj</small></div>
+      <div>ONIX DRILLING<small>Su Kuyusu & Sondaj</small></div>
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="#hizmetler">Hizmetler</a>
@@ -333,44 +346,27 @@ footer{padding:60px 0 34px;border-top:1px solid var(--line);margin-top:96px;back
         Garantili İşçilik
       </div>
       <div class="rig-visual">
-        <!-- Underground water strata + drilling rig illustration -->
-        <svg viewBox="0 0 520 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sondaj kulesi ve yer altı su katmanları illüstrasyonu">
-          <defs>
-            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e2438"/><stop offset="1" stop-color="#0a1826"/></linearGradient>
-            <linearGradient id="earth1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2b1f"/><stop offset="1" stop-color="#15241b"/></linearGradient>
-            <linearGradient id="earth2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2318"/><stop offset="1" stop-color="#221c12"/></linearGradient>
-            <linearGradient id="water" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2ee6d6"/><stop offset="1" stop-color="#22a8ff"/></linearGradient>
-            <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3a5169"/><stop offset="1" stop-color="#22384c"/></linearGradient>
-          </defs>
-          <rect width="520" height="200" fill="url(#sky)"/>
-          <rect y="200" width="520" height="90" fill="url(#earth1)"/>
-          <rect y="290" width="520" height="80" fill="url(#earth2)"/>
-          <rect y="370" width="520" height="90" fill="#101f2e"/>
-          <!-- aquifer -->
-          <rect y="372" width="520" height="60" fill="url(#water)" opacity=".22"/>
-          <path d="M0 372 q65 14 130 0 t130 0 t130 0 t130 0" fill="none" stroke="url(#water)" stroke-width="2" opacity=".7"/>
-          <!-- water droplets in aquifer -->
-          <circle cx="90" cy="405" r="5" fill="url(#water)" opacity=".7"/><circle cx="180" cy="415" r="4" fill="url(#water)" opacity=".6"/>
-          <circle cx="300" cy="400" r="6" fill="url(#water)" opacity=".7"/><circle cx="420" cy="418" r="4" fill="url(#water)" opacity=".6"/>
-          <!-- derrick tower -->
-          <g stroke="#4a6480" stroke-width="4" fill="none" stroke-linecap="round">
-            <path d="M250 40 L215 250 M290 40 L325 250"/>
-            <path d="M255 80 L285 80 M247 120 L293 120 M240 165 L300 165 M233 210 L307 210"/>
-            <path d="M250 40 L285 80 M290 40 L255 80 M247 120 L293 160 M293 120 L247 160" stroke-width="2.5" opacity=".8"/>
-          </g>
-          <rect x="248" y="30" width="44" height="14" rx="3" fill="#5b7790"/>
-          <!-- drill pipe into ground -->
-          <rect x="266" y="44" width="8" height="360" rx="4" fill="url(#steel)"/>
-          <!-- drill bit -->
-          <path d="M262 404 h16 l-8 20 Z" fill="url(#water)"/>
-          <!-- rig base -->
-          <rect x="205" y="250" width="130" height="20" rx="5" fill="#26374a"/>
-          <rect x="330" y="230" width="60" height="40" rx="6" fill="#2c3f54"/>
-          <circle cx="345" cy="270" r="12" fill="#1c2b3a" stroke="#43607c" stroke-width="3"/>
-          <circle cx="375" cy="270" r="12" fill="#1c2b3a" stroke="#43607c" stroke-width="3"/>
-          <!-- sun glow -->
-          <circle cx="440" cy="60" r="40" fill="#2ee6d6" opacity=".1"/>
-        </svg>
+        <!-- Interactive 3D roller cone drill bit -->
+        <model-viewer
+          src="./assets/drill-bit.glb"
+          alt="Onix Sondaj — üç konili matkap ucu (roller cone bit) 3D modeli"
+          orientation="0deg 180deg 0deg"
+          camera-controls
+          disable-zoom
+          auto-rotate
+          auto-rotate-delay="0"
+          rotation-per-second="24deg"
+          interaction-prompt="none"
+          shadow-intensity="1.1"
+          shadow-softness="0.8"
+          exposure="1.55"
+          tone-mapping="neutral"
+          camera-orbit="35deg 78deg 105%"
+          loading="eager"
+          style="width:100%;height:480px;background:radial-gradient(520px 340px at 50% 32%,rgba(34,168,255,.16),transparent 65%),linear-gradient(160deg,#0b1a28,#08121c);--poster-color:transparent">
+          <div slot="poster" style="display:grid;place-items:center;height:100%;color:#6d829a;font-size:.9rem">3D model yükleniyor…</div>
+        </model-viewer>
+        <div class="rig-hint">↻ 3D — sürükleyerek döndürebilirsiniz</div>
       </div>
     </div>
   </div>
@@ -579,9 +575,15 @@ footer{padding:60px 0 34px;border-top:1px solid var(--line);margin-top:96px;back
         <a href="#top" class="brand">
           <svg class="logo" viewBox="0 0 48 48" fill="none" aria-hidden="true">
             <rect x="2" y="2" width="44" height="44" rx="13" fill="#0e1c2b" stroke="url(#lg)" stroke-width="1.5"/>
-            <path d="M24 11c5.5 6.7 8.5 11 8.5 15.2A8.5 8.5 0 0 1 24 35a8.5 8.5 0 0 1-8.5-8.8C15.5 22 18.5 17.7 24 11Z" fill="url(#lg)"/>
+            <path d="M7 20 L15 11 L20 16 L26 8 L34 15 L41 20" stroke="url(#lg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" fill="none" opacity=".85"/>
+            <g fill="url(#lg)">
+              <rect x="17" y="23.5" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 25)"/>
+              <rect x="17" y="28.2" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 29.8)"/>
+              <rect x="17" y="32.9" width="14" height="3.2" rx="1.6" transform="rotate(-10 24 34.5)"/>
+              <path d="M20.5 38 h7 L24 43.5 Z"/>
+            </g>
           </svg>
-          <div>ONIX SONDAJ<small>Su Kuyusu &amp; Sondaj</small></div>
+          <div>ONIX DRILLING<small>Su Kuyusu &amp; Sondaj</small></div>
         </a>
         <p>Suyu güvenle yerin derinliklerinden çıkarıyoruz. Su kuyusu sondajı, jeolojik etüt ve pompa teçhizinde uçtan uca profesyonel hizmet.</p>
       </div>

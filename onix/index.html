@@ -235,10 +235,15 @@ footer{padding:60px 0 34px;border-top:1px solid var(--line);margin-top:96px;back
   animation:floaty 4s ease-in-out infinite}
 .wa-float svg{width:30px;height:30px;color:#04140a}
 
-/* REVEAL — only hidden when JS is active AND animations allowed; always visible otherwise */
-.js .reveal{opacity:0;transform:translateY(26px);transition:.7s cubic-bezier(.2,.7,.2,1)}
-.js .reveal.in{opacity:1;transform:none}
-@media(prefers-reduced-motion:reduce){.js .reveal{opacity:1;transform:none;transition:none}}
+/* REVEAL — pure CSS entrance. Content is visible by default; the animation
+   only adds a fade-in on load. No JavaScript required, so it can never get stuck hidden. */
+.reveal{animation:reveal-in .8s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes reveal-in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.reveal:nth-child(2){animation-delay:.08s}
+.reveal:nth-child(3){animation-delay:.16s}
+.cards .reveal:nth-child(2){animation-delay:.06s}.cards .reveal:nth-child(3){animation-delay:.12s}
+.cards .reveal:nth-child(4){animation-delay:.18s}.cards .reveal:nth-child(5){animation-delay:.24s}.cards .reveal:nth-child(6){animation-delay:.3s}
+@media(prefers-reduced-motion:reduce){.reveal{animation:none}}
 
 /* ===== RESPONSIVE ===== */
 @media(max-width:960px){
@@ -264,7 +269,6 @@ footer{padding:60px 0 34px;border-top:1px solid var(--line);margin-top:96px;back
 </style>
 </head>
 <body>
-<script>document.documentElement.className+=' js';</script>
 
 <!-- ============ HEADER ============ -->
 <header id="header">
@@ -468,10 +472,10 @@ footer{padding:60px 0 34px;border-top:1px solid var(--line);margin-top:96px;back
 <section class="block">
   <div class="wrap">
     <div class="stats">
-      <div class="stat reveal"><b data-count="15" data-suffix="+">0</b><span>Yıl Saha Tecrübesi</span></div>
-      <div class="stat reveal"><b data-count="1200" data-suffix="+">0</b><span>Açılan Su Kuyusu</span></div>
-      <div class="stat reveal"><b data-count="40" data-suffix="+">0</b><span>Hizmet Bölgesi</span></div>
-      <div class="stat reveal"><b data-count="100" data-suffix="%">0</b><span>Ruhsatlı &amp; Kayıtlı İş</span></div>
+      <div class="stat reveal"><b data-count="15" data-suffix="+">15+</b><span>Yıl Saha Tecrübesi</span></div>
+      <div class="stat reveal"><b data-count="1200" data-suffix="+">1.200+</b><span>Açılan Su Kuyusu</span></div>
+      <div class="stat reveal"><b data-count="40" data-suffix="+">40+</b><span>Hizmet Bölgesi</span></div>
+      <div class="stat reveal"><b data-count="100" data-prefix="%">%100</b><span>Ruhsatlı &amp; Kayıtlı İş</span></div>
     </div>
   </div>
 </section>
@@ -597,7 +601,7 @@ footer{padding:60px 0 34px;border-top:1px solid var(--line);margin-top:96px;back
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© <span id="yil"></span> Onix Sondaj. Tüm hakları saklıdır.</span>
+      <span>© <span id="yil">2026</span> Onix Sondaj. Tüm hakları saklıdır.</span>
       <span>Su Kuyusu Sondajı • Kuyu Açma • Pompa Teçhiz</span>
     </div>
   </div>
@@ -617,24 +621,15 @@ mb.addEventListener('click',()=>nl.classList.toggle('open'));
 nl.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>nl.classList.remove('open')));
 // year
 document.getElementById('yil').textContent=new Date().getFullYear();
-// reveal on scroll — with robust fallbacks so content is NEVER stuck hidden
-const reveals=[...document.querySelectorAll('.reveal')];
-function showAll(){reveals.forEach(el=>el.classList.add('in'));}
-function showInView(){const h=innerHeight||800;reveals.forEach(el=>{const r=el.getBoundingClientRect();if(r.top<h*0.95&&r.bottom>0)el.classList.add('in');});}
+// count up (progressive enhancement — stats already show final values in HTML)
 if('IntersectionObserver'in window){
-  const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -5% 0px'});
-  reveals.forEach(el=>io.observe(el));
-  requestAnimationFrame(showInView);          // reveal above-the-fold immediately
-  addEventListener('load',showInView);
-  setTimeout(showAll,1500);                    // safety net: nothing stays hidden
-}else{showAll();}                              // no observer support -> just show
-// count up
-const cio=new IntersectionObserver((es)=>es.forEach(e=>{
-  if(!e.isIntersecting)return; const el=e.target; cio.unobserve(el);
-  const end=+el.dataset.count,suf=el.dataset.suffix||'';let cur=0;const step=Math.max(1,Math.ceil(end/60));
-  const t=setInterval(()=>{cur+=step;if(cur>=end){cur=end;clearInterval(t)}el.textContent=cur.toLocaleString('tr-TR')+suf},18);
-},{threshold:.5});
-document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
+  const cio=new IntersectionObserver((es)=>es.forEach(e=>{
+    if(!e.isIntersecting)return; const el=e.target; cio.unobserve(el);
+    const end=+el.dataset.count,suf=el.dataset.suffix||'',pre=el.dataset.prefix||'';let cur=0;const step=Math.max(1,Math.ceil(end/60));
+    const t=setInterval(()=>{cur+=step;if(cur>=end){cur=end;clearInterval(t)}el.textContent=pre+cur.toLocaleString('tr-TR')+suf},18);
+  },{threshold:.5});
+  document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
+}
 // quote form -> whatsapp
 document.getElementById('quoteForm').addEventListener('submit',ev=>{
   ev.preventDefault();

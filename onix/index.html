@@ -9,6 +9,7 @@
 <meta property="og:title" content="ONIX Sondaj — Su Sondajı ve Jeotermal Enerji Çözümleri">
 <meta property="og:description" content="Ankara'da su sondajı, jeotermal enerji ve kuyu açma hizmetleri. Ücretsiz keşif ve teklif alın.">
 <meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230a1930%22/%3E%3Cg stroke=%22%23ffffff%22 stroke-width=%223%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M8 34 L22 16 L30 24 L36 12 L46 22 L56 34%22/%3E%3Cpath d=%22M37 12 L36 34 M42 16 L42 34%22/%3E%3Cpath d=%22M8 40 H56 M8 46 H56%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -58,7 +59,7 @@ a{color:inherit;text-decoration:none}
 #splash.done{opacity:0;visibility:hidden;pointer-events:none}
 @keyframes splash-auto{to{opacity:0;visibility:hidden}}
 .splash-in{display:flex;flex-direction:column;align-items:center;gap:24px;padding:24px;text-align:center}
-.splash-logo{width:min(340px,72vw);animation:logo-in 1.1s cubic-bezier(.2,.7,.2,1) both}
+.splash-logo{width:min(340px,72vw);aspect-ratio:1170/680;height:auto;color:#eef4fb;animation:logo-in 1.1s cubic-bezier(.2,.7,.2,1) both}
 @keyframes logo-in{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
 .splash-tag{font-size:.74rem;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);animation:logo-in 1.1s .25s both}
 .splash-bar{width:min(300px,60vw);height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;animation:logo-in 1.1s .4s both}
@@ -71,10 +72,8 @@ a{color:inherit;text-decoration:none}
 header{position:fixed;inset:0 0 auto 0;z-index:50;transition:.3s ease}
 header.scrolled{background:rgba(6,14,28,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
 .nav{display:flex;align-items:center;justify-content:space-between;gap:10px;height:74px}
-.brand{display:flex;align-items:center;gap:12px;font-family:'Sora',sans-serif;font-weight:800;font-size:1.08rem}
-.brand>div{white-space:nowrap}
-.brand .logo{width:52px;height:40px;flex:0 0 auto}
-.brand small{display:block;font-family:'Inter';font-weight:600;font-size:.58rem;letter-spacing:.3em;color:var(--muted);text-transform:uppercase}
+.brand{display:flex;align-items:center}
+.brand .lockup{height:60px;width:103px;color:var(--ink)}
 .nav-links{display:flex;align-items:center;gap:20px}
 .nav-links a{font-size:.9rem;color:var(--ink-2);font-weight:600;transition:.2s;white-space:nowrap}
 .nav-links a:hover{color:var(--ink)}
@@ -111,8 +110,16 @@ section.stage{min-height:100vh;display:flex;align-items:center;position:relative
 .kpis div span{font-size:.78rem;color:var(--muted)}
 
 /* hero */
-#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-start;text-align:center;position:relative}
-#hero .inner{padding-top:116px}
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-start;text-align:center;position:relative;overflow:hidden}
+#hero .inner{padding-top:116px;position:relative;z-index:2}
+/* hero photo: drill pipe in the photo (~66% from left) is shifted onto the
+   exact center line where the 3D drill string descends */
+#heroPhoto{position:absolute;inset:0;z-index:1;overflow:hidden;will-change:opacity,transform}
+#heroPhoto img{position:absolute;top:-8%;left:50%;height:116%;transform:translateX(-66%)}
+.hp-fade{position:absolute;inset:0;background:
+  radial-gradient(120% 70% at 50% 25%,transparent 35%,rgba(5,11,22,.6) 100%),
+  linear-gradient(180deg,rgba(5,11,22,.72) 0%,rgba(5,11,22,.28) 26%,rgba(5,11,22,.3) 58%,#050b16 97%)}
+#hero:has(#heroPhoto) h1,#hero:has(#heroPhoto) .lead{text-shadow:0 2px 24px rgba(2,6,12,.65)}
 #hero h1{font-size:clamp(2.2rem,5.2vw,4rem);font-weight:800;max-width:900px;margin:14px auto 16px;text-wrap:balance}
 #hero h1 em{font-style:normal;background:linear-gradient(120deg,#4fb3ff,#1e6bff);-webkit-background-clip:text;background-clip:text;color:transparent}
 #hero .lead{color:var(--ink-2);max-width:560px;margin:0 auto 26px;font-size:1.08rem}
@@ -151,7 +158,8 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
 .foot-col a{display:block;color:#aeb8bf;font-size:.93rem;margin-bottom:9px;transition:.2s}
 .foot-col a:hover{color:#fff}
 .foot-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:22px;border-top:1px solid rgba(255,255,255,.12);color:#8b959d;font-size:.84rem}
-.foot-brand{display:flex;align-items:center;gap:12px;font-family:'Sora',sans-serif;font-weight:800;color:#fff}
+.foot-brand{display:flex;align-items:center}
+.foot-brand .lockup{height:96px;width:165px;color:#fff}
 
 /* whatsapp float */
 .wa-float{position:fixed;right:20px;bottom:20px;z-index:60;width:56px;height:56px;border-radius:50%;
@@ -175,12 +183,10 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
   .nav-cta .btn-ghost{display:none}
   .nav-cta{gap:8px}
   .nav-cta .btn-primary{padding:10px 16px;font-size:.85rem}
-  .brand{font-size:.88rem;gap:8px;min-width:0}
-  .brand .logo{width:38px;height:30px}
-  .brand small{font-size:.5rem;letter-spacing:.2em}
+  .brand .lockup{height:48px;width:83px}
 }
 @media(max-width:520px){
-  .brand small{display:none}
+  .brand .lockup{height:44px;width:76px}
   .nav-cta .btn-primary{padding:9px 14px;font-size:.82rem}
   #depth{left:12px;bottom:12px;padding:8px 12px}
   .foot-grid{grid-template-columns:1fr}
@@ -189,43 +195,59 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
 </head>
 <body>
 
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<symbol id="onixLogo" viewBox="0 0 1170 680">
+  <!-- mountain ridge -->
+  <g stroke="currentColor" fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <path stroke-width="11" d="M165 278 L238 231 L272 217 L332 172 L354 149 L374 158 L400 127 L414 138 L450 99 L472 108 L504 77 L524 86 L558 42 L582 21 L606 40 L624 62 L642 55 L664 84 L690 75 L720 108 L762 149 L790 137 L814 152 L840 127 L864 142 L890 121 L920 142 L954 168 L990 200 L1024 233 L1043 253"/>
+    <!-- crag marks -->
+    <path stroke-width="7" d="M341 190 L311 216 M398 152 L372 180 M432 156 L456 131 M357 205 L385 178"/>
+    <path stroke-width="7" d="M521 121 L549 100 L566 115 L542 135 Z M584 78 L604 96 L586 114 M617 118 L595 141"/>
+    <path stroke-width="7" d="M840 166 L862 149 M880 152 L896 165 M900 168 L876 187 M934 172 L956 190"/>
+  </g>
+  <!-- drill rig: crawler base, body, lattice mast -->
+  <g fill="currentColor">
+    <path d="M632 259 L644 235 L752 235 L766 251 L766 259 Z"/>
+    <path d="M650 235 L694 235 L687 214 L657 214 Z"/>
+    <rect x="708" y="20" width="26" height="17" rx="3"/>
+  </g>
+  <g stroke="currentColor" fill="none" stroke-linecap="round">
+    <path stroke-width="9" d="M705 235 L716 37 M739 235 L731 37"/>
+    <path stroke-width="5" d="M712 62 h21 M710 88 h24 M708 114 h27 M707 140 h29 M706 166 h31 M705 192 h32 M704 218 h34"/>
+    <path stroke-width="4" d="M713 62 L732 88 M710 114 L730 140 M708 166 L728 192"/>
+  </g>
+  <!-- foreground band -->
+  <path fill="currentColor" d="M165 268 C260 252 340 263 430 258 C540 252 640 265 740 258 C840 252 950 263 1040 258 L1040 274 C950 281 840 273 740 278 C640 284 540 273 430 280 C340 285 260 276 165 282 Z"/>
+  <!-- double ground rules -->
+  <rect fill="currentColor" x="150" y="299" width="895" height="7" rx="3.5"/>
+  <rect fill="currentColor" x="150" y="315" width="895" height="7" rx="3.5"/>
+  <!-- ONIX -->
+  <circle cx="288" cy="462" r="99" fill="none" stroke="currentColor" stroke-width="62"/>
+  <text x="524" y="588" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="352" text-anchor="middle" fill="currentColor">N</text>
+  <g fill="currentColor">
+    <rect x="656" y="330" width="132" height="30" rx="15" transform="rotate(-9 722 345)"/>
+    <rect x="656" y="366" width="132" height="30" rx="15" transform="rotate(-9 722 381)"/>
+    <rect x="656" y="402" width="132" height="30" rx="15" transform="rotate(-9 722 417)"/>
+    <rect x="656" y="438" width="132" height="30" rx="15" transform="rotate(-9 722 453)"/>
+    <rect x="656" y="474" width="132" height="30" rx="15" transform="rotate(-9 722 489)"/>
+    <rect x="656" y="510" width="132" height="30" rx="15" transform="rotate(-9 722 525)"/>
+    <path d="M690 548 L754 548 L722 612 Z"/>
+  </g>
+  <text x="938" y="588" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="352" text-anchor="middle" fill="currentColor">X</text>
+  <!-- DRILLING -->
+  <text x="585" y="662" font-family="Inter,Arial,sans-serif" font-weight="700" font-size="56" letter-spacing="30" text-anchor="middle" fill="currentColor">DRILLING</text>
+  <rect fill="currentColor" x="158" y="632" width="112" height="9" rx="4.5"/>
+  <rect fill="currentColor" x="900" y="632" width="112" height="9" rx="4.5"/>
+</symbol>
+</svg>
+
 <canvas id="scene"></canvas>
 <div id="grade"></div>
 
 <!-- ============ SPLASH ============ -->
 <div id="splash" role="status" aria-label="Yükleniyor">
   <div class="splash-in">
-    <svg class="splash-logo" viewBox="0 0 640 360" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Onix Sondaj logosu">
-      <g stroke="#eef4fb" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" fill="none">
-        <!-- mountain range: big left massif, summit, slope to rig plateau, right ridge -->
-        <path d="M48 172 L118 152 L162 128 L214 84 L268 40 L316 88 L348 116 L390 138 L462 138 L502 116 L546 132 L592 172"/>
-        <!-- interior crags -->
-        <path d="M170 116 l24 -16 M206 88 l16 20 M236 62 l14 18 M258 78 l-20 24 M292 92 l-14 18 M502 126 l14 -10 M524 132 l12 12" stroke-width="4.5"/>
-        <!-- rig mast -->
-        <path d="M430 52 L424 138 M446 52 L449 138 M424 46 h28 M438 52 L438 132" stroke-width="4.5"/>
-        <path d="M427 66 h18 M426 82 h20 M425 98 h21 M424 114 h23" stroke-width="3.5"/>
-        <!-- crawler base -->
-        <path d="M398 138 h64 M394 146 h70 M398 154 h62" stroke-width="5"/>
-        <path d="M404 130 h18 M404 130 l-6 8" stroke-width="4.5"/>
-      </g>
-      <path d="M48 178 H592 M48 190 H592" stroke="#eef4fb" stroke-width="5"/>
-      <g fill="#eef4fb">
-        <text x="118" y="292" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="118" letter-spacing="6" text-anchor="middle">O</text>
-        <text x="238" y="292" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="118" letter-spacing="6" text-anchor="middle">N</text>
-        <text x="502" y="292" font-family="Sora,Arial,sans-serif" font-weight="800" font-size="118" letter-spacing="6" text-anchor="middle">X</text>
-        <g transform="translate(360 0)">
-          <rect x="-34" y="200" width="68" height="13" rx="6.5" transform="rotate(-9 0 206)"/>
-          <rect x="-34" y="219" width="68" height="13" rx="6.5" transform="rotate(-9 0 225)"/>
-          <rect x="-34" y="238" width="68" height="13" rx="6.5" transform="rotate(-9 0 244)"/>
-          <rect x="-34" y="257" width="68" height="13" rx="6.5" transform="rotate(-9 0 263)"/>
-          <path d="M-16 276 h32 L0 296 Z"/>
-        </g>
-      </g>
-      <g fill="#7a848c">
-        <path d="M74 330 h70 M496 330 h70" stroke="#7a848c" stroke-width="4"/>
-        <text x="320" y="340" font-family="Inter,Arial,sans-serif" font-weight="700" font-size="34" letter-spacing="16" text-anchor="middle">DRILLING</text>
-      </g>
-    </svg>
+    <svg class="splash-logo" viewBox="0 0 1170 680" role="img" aria-label="Onix Drilling logosu"><use href="#onixLogo"/></svg>
     <div class="splash-tag">SU SONDAJI &amp; JEOTERMAL ENERJİ ÇÖZÜMLERİ</div>
     <div class="splash-bar"><i id="splashFill"></i></div>
     <div class="splash-pct"><span id="splashPct">0%</span> — sahne hazırlanıyor</div>
@@ -235,19 +257,8 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
 <!-- ============ HEADER ============ -->
 <header id="header">
   <div class="wrap nav">
-    <a href="#top" class="brand">
-      <svg class="logo" viewBox="0 0 64 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#4fb3ff"/><stop offset="1" stop-color="#1e6bff"/></linearGradient></defs>
-        <g stroke="url(#lg)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" fill="none">
-          <path d="M2 30 L18 9 L26 17 L33 6 L34 7"/>
-          <path d="M34 7 L44 15 L50 10 L62 30"/>
-          <path d="M12 19 l5 -4 M20 13 l3 4 M44 18 l4 -3"/>
-          <path d="M31 30 L33.6 8 M37.4 30 L34.6 8 M32.6 15 h4 M31.8 22 h5.6 M29.5 30 h9.5"/>
-        </g>
-        <path d="M2 34 H62 M2 38 H62" stroke="url(#lg)" stroke-width="2"/>
-      </svg>
-      <div>ONIX SONDAJ<small>Su Sondajı & Jeotermal</small></div>
+    <a href="#top" class="brand" aria-label="ONIX Drilling — Ana sayfa">
+      <svg class="lockup" viewBox="0 0 1170 680" aria-hidden="true"><use href="#onixLogo"/></svg>
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="#hizmetler">Hizmetler</a>
@@ -272,6 +283,11 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
 <div id="scrollspace">
 
   <section id="hero">
+    <div id="heroPhoto" aria-hidden="true">
+      <img src="./assets/hero-rig.jpg" alt="" loading="eager"
+        onerror="var h=document.getElementById('heroPhoto');h&&h.parentNode.removeChild(h)">
+      <div class="hp-fade"></div>
+    </div>
     <div class="wrap inner">
       <span class="eyebrow" style="justify-content:center">Su Sondajı ve Jeotermal Enerji Çözümleri</span>
       <h1>Derinlerdeki suya,<br><em>mühendislikle</em> ulaşıyoruz.</h1>
@@ -434,16 +450,7 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
     <div class="foot-grid">
       <div>
         <div class="foot-brand">
-          <svg class="logo" width="50" height="38" viewBox="0 0 64 46" fill="none" aria-hidden="true">
-            <g stroke="#4fb3ff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" fill="none">
-              <path d="M2 30 L18 9 L26 17 L33 6 L34 7"/>
-              <path d="M34 7 L44 15 L50 10 L62 30"/>
-              <path d="M12 19 l5 -4 M20 13 l3 4 M44 18 l4 -3"/>
-              <path d="M31 30 L33.6 8 M37.4 30 L34.6 8 M32.6 15 h4 M31.8 22 h5.6 M29.5 30 h9.5"/>
-            </g>
-            <path d="M2 34 H62 M2 38 H62" stroke="#4fb3ff" stroke-width="2"/>
-          </svg>
-          <div>ONIX SONDAJ</div>
+          <svg class="lockup" viewBox="0 0 1170 680" aria-hidden="true" role="img" aria-label="ONIX Drilling"><use href="#onixLogo"/></svg>
         </div>
         <p>Su kaynaklarına ve jeotermal enerjiye erişimde en yenilikçi ve güvenilir çözümler. Ankara'da su sondajı, jeotermal sondaj, kuyu açma ve pompa teçhizinde uçtan uca profesyonel hizmet.</p>
       </div>
@@ -489,7 +496,11 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
 })();
 // header + menu + form
 const header=document.getElementById('header');
-addEventListener('scroll',()=>header.classList.toggle('scrolled',scrollY>20),{passive:true});
+addEventListener('scroll',()=>{
+  header.classList.toggle('scrolled',scrollY>20);
+  const hp=document.getElementById('heroPhoto');
+  if(hp){const k=Math.min(1,scrollY/(innerHeight*.85));hp.style.opacity=(1-k).toFixed(3);hp.style.transform=`translateY(${(k*innerHeight*.22).toFixed(1)}px)`;}
+},{passive:true});
 const mb=document.getElementById('menuBtn'),nl=document.getElementById('navLinks');
 mb.addEventListener('click',()=>nl.classList.toggle('open'));
 nl.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>nl.classList.remove('open')));

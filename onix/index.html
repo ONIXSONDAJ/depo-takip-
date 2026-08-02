@@ -3,12 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ONIX Sondaj — Su, Jeotermal ve Endüstriyel Sondajda Mühendislik Çözümleri</title>
-<meta name="description" content="ONIX Sondaj; Ankara'da profesyonel su sondajı, jeotermal enerji çözümleri ve kuyu açma hizmetleri sunar. 20 yılı aşkın deneyim, modern ekipman, uzman ekip. Ücretsiz keşif ve teklif.">
+<title>ONIX Sondaj | Su Sondajı ve Jeotermal Enerji Çözümleri</title>
+<meta name="description" content="20 yıllık tecrübemizle Türkiye'nin her bölgesinde profesyonel su sondajı, jeotermal sondaj ve enerji çözümleri sunuyoruz. ✓ Uzman Ekip ✓ 7/24 Hizmet ✓ Garantili İşçilik">
 <meta name="theme-color" content="#061020">
-<meta property="og:title" content="ONIX Sondaj — Su, Jeotermal ve Endüstriyel Sondajda Mühendislik Çözümleri">
-<meta property="og:description" content="Ankara'da su sondajı, jeotermal enerji ve kuyu açma hizmetleri. Ücretsiz keşif ve teklif alın.">
+<meta property="og:title" content="ONIX Sondaj | Su Sondajı ve Jeotermal Enerji Çözümleri">
+<meta property="og:description" content="20 yıllık tecrübemizle Türkiye'nin her bölgesinde profesyonel su sondajı ve jeotermal enerji çözümleri sunuyoruz.">
 <meta property="og:type" content="website">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"LocalBusiness","name":"ONIX Sondaj","url":"https://www.onixsondaj.com","telephone":"+90-551-671-1052","email":"info@onixsondaj.com","priceRange":"₺₺₺","description":"Profesyonel su sondajı, kuyu açma ve pompa sistemleri çözümleri sunan uzman kuruluş.","address":{"@type":"PostalAddress","streetAddress":"Yeni Bağlıca Mah. Etimesgut Bulv. 90B/36","addressLocality":"Etimesgut","addressRegion":"Ankara","addressCountry":"TR"},"openingHoursSpecification":{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],"opens":"08:00","closes":"18:00"},"sameAs":["https://www.facebook.com/profile.php?id=61573608422346","https://www.instagram.com/onixsondaj","https://www.linkedin.com/company/onixsondaj"]}
+</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230a1930%22/%3E%3Cg stroke=%22%23ffffff%22 stroke-width=%223%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M8 34 L22 16 L30 24 L36 12 L46 22 L56 34%22/%3E%3Cpath d=%22M37 12 L36 34 M42 16 L42 34%22/%3E%3Cpath d=%22M8 40 H56 M8 46 H56%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,8 +23,8 @@
   --ink:#eef4fb;
   --ink-2:#a7b6c4;
   --muted:#7e8fa0;
-  --teal:#ffc93c;
-  --teal-deep:#f0a72b;
+  --teal:#FFD700;
+  --teal-deep:#e6b400;
   --amber:#f6b545;
   --line:rgba(255,255,255,.1);
   --line-2:rgba(255,255,255,.18);
@@ -40,12 +43,12 @@ a{color:inherit;text-decoration:none}
 .eyebrow::before{content:"";width:26px;height:2px;background:var(--teal)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:600;font-size:.98rem;
   padding:14px 26px;border-radius:999px;border:1px solid transparent;cursor:pointer;transition:.25s ease;white-space:nowrap}
-.btn-primary{background:linear-gradient(120deg,#ffd45e,#f0a72b);color:#1c1200;box-shadow:0 14px 34px -12px rgba(240,167,43,.5)}
+.btn-primary{background:linear-gradient(135deg,#FFD700,#f0c000);color:#2c3e50;box-shadow:0 14px 34px -12px rgba(255,215,0,.45)}
 .btn-primary:hover{transform:translateY(-2px)}
-.btn-ghost{background:rgba(52,96,141,.5);border-color:rgba(255,255,255,.22);color:var(--ink);backdrop-filter:blur(10px)}
-.btn-ghost:hover{transform:translateY(-2px);background:rgba(62,112,163,.62)}
-.btn-wa{background:rgba(52,96,141,.5);border-color:rgba(255,255,255,.22);color:var(--ink);backdrop-filter:blur(10px)}
-.btn-wa:hover{transform:translateY(-2px);background:rgba(62,112,163,.62)}
+.btn-ghost{background:linear-gradient(135deg,#1e3a5f,#2c5282);border-color:rgba(255,255,255,.2);color:#fff;box-shadow:0 4px 20px rgba(44,82,130,.5)}
+.btn-ghost:hover{transform:translateY(-2px);filter:brightness(1.12)}
+.btn-wa{background:linear-gradient(135deg,#34495e,#2c3e50);border-color:rgba(255,255,255,.2);color:#fff;box-shadow:0 4px 20px rgba(52,73,94,.5)}
+.btn-wa:hover{transform:translateY(-2px);filter:brightness(1.12)}
 
 /* ---------- 3D canvas ---------- */
 #scene{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
@@ -54,7 +57,7 @@ a{color:inherit;text-decoration:none}
   background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(2,6,10,.5) 100%)}
 
 /* ---------- splash ---------- */
-#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:radial-gradient(1300px 900px at 44% 36%,#26497f 0%,#17315c 75%);
+#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:linear-gradient(135deg,#1a2a6c 0%,#2c3e50 100%);
   transition:opacity .9s ease,visibility .9s;animation:splash-auto 1ms linear 9s forwards}
 #splash.done{opacity:0;visibility:hidden;pointer-events:none}
 @keyframes splash-auto{to{opacity:0;visibility:hidden}}
@@ -157,12 +160,12 @@ form.qf input:focus,form.qf textarea:focus,form.qf select:focus{outline:none;bor
 form.qf textarea{resize:vertical;min-height:84px}
 
 /* footer */
-footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;border-top:1px solid var(--line);color:#cfd6db}
-.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:38px}
+footer{position:relative;z-index:10;padding:56px 0 32px;background:linear-gradient(135deg,#2c3e50 0%,#34495e 100%);border-top:1px solid var(--line);color:#cfd6db}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:36px;margin-bottom:38px}
 .foot-grid p{color:#9aa5ad;font-size:.93rem;max-width:320px;margin-top:14px}
 .foot-col h5{font-family:'Sora',sans-serif;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#8b959d;margin-bottom:15px}
 .foot-col a{display:block;color:#aeb8bf;font-size:.93rem;margin-bottom:9px;transition:.2s}
-.foot-col a:hover{color:#fff}
+.foot-col a:hover{color:#FFD700}
 .foot-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:22px;border-top:1px solid rgba(255,255,255,.12);color:#8b959d;font-size:.84rem}
 .foot-brand{display:flex;align-items:center}
 .foot-brand .lockup{height:96px;width:165px;color:#fff}
@@ -276,7 +279,7 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
     </nav>
     <div class="nav-cta">
       <a href="#iletisim" class="btn btn-ghost">Teklif Al</a>
-      <a href="tel:+903123854041" class="btn btn-primary">Hemen Ara</a>
+      <a href="tel:+905516711052" class="btn btn-primary">Hemen Ara</a>
       <button class="menu-btn" id="menuBtn" aria-label="Menü"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -299,7 +302,7 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
       <h1>Derinlerdeki suya,<br><em>mühendislikle</em> ulaşıyoruz.</h1>
       <p class="lead">Uluslararası saha deneyimi, modern ekipman ve mühendislik disipliniyle projeye özel, güvenilir ve sürdürülebilir sondaj çözümleri sunuyoruz. Aşağı kaydırın — matkabımız sizinle birlikte suya insin.</p>
       <div class="actions">
-        <a href="https://wa.me/905322744041?text=Merhaba%2C%20su%20kuyusu%20i%C3%A7in%20teklif%20almak%20istiyorum." class="btn btn-wa" target="_blank" rel="noopener">WhatsApp'tan Danışın</a>
+        <a href="https://wa.me/905516711052?text=Merhaba%20ONIX%20Sondaj,%20bilgi%20almak%20istiyorum" class="btn btn-wa" target="_blank" rel="noopener">WhatsApp'tan Danışın</a>
         <a href="#iletisim" class="btn btn-ghost">Hemen Teklif Al</a>
       </div>
     </div>
@@ -310,16 +313,14 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
     <div class="wrap"><div class="block">
       <span class="eyebrow">Hizmetler</span>
       <h2>Sudan sondaja, uçtan uca</h2>
-      <p>Su sondajı, kuyu açma, pompa montajı ve bakım çözümleri — içme suyundan tarımsal sulamaya, her ihtiyaca profesyonel çözüm. Ücretsiz keşif ve 7/24 teknik destek.</p>
+      <p>Profesyonel ekibimizle sunduğumuz başlıca hizmetler — Türkiye'nin her bölgesinde, 7/24 teknik destekle.</p>
       <ul>
-        <li>Su kuyusu sondajı ve kuyu açma (içme, kullanma, sulama)</li>
-        <li>Jeotermal sondaj — enerji araştırması, test ve analiz</li>
-        <li>Jeolojik &amp; jeofizik etüt — doğru noktadan başlama</li>
-        <li>Pompa montajı, dalgıç teçhiz, periyodik bakım</li>
-        <li>Kuyu geliştirme, temizleme ve verim artırma</li>
-        <li>Su kalitesi analizi — pH ve mineral içerik ölçümü</li>
-        <li>Endüstriyel ve maden sahası sondaj çözümleri</li>
-        <li>DSİ ruhsat ve izin süreçlerinin takibi</li>
+        <li>Su Sondajı — en son teknoloji ekipmanlarla profesyonel su sondaj hizmeti</li>
+        <li>Jeotermal Sondaj — sürdürülebilir enerji için profesyonel çözümler</li>
+        <li>Etüt ve Fizibilite — detaylı saha analizi ve fizibilite çalışmaları</li>
+        <li>Pompa Sistemleri — modern pompa sistemleri kurulumu ve bakımı</li>
+        <li>Pompa Kurtarma — acil müdahale ve profesyonel kurtarma hizmetleri</li>
+        <li>Kuyu İnkişafı ve Temizliği — kuyu verimliliğini artırma, sürdürülebilir su temini</li>
       </ul>
     </div></div>
   </section>
@@ -327,12 +328,12 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
   <section class="stage right" id="hakkimizda">
     <div class="wrap"><div class="block">
       <span class="eyebrow">Hakkımızda</span>
-      <h2>Madenden suya, iki dünyanın deneyimi</h2>
-      <p>ONIX Sondaj'ın kurucusu Jeoloji Mühendisi Alper Umut Kadıoğlu; Özbekistan ve Fas'taki maden sahalarında sondaj operasyon yöneticiliği dahil, yurt içi ve yurt dışında edindiği deneyimle sektöre farklı bir bakış açısı getiriyor. Hem maden hem su sondajındaki bu çifte uzmanlık, ONIX Sondaj'ın temelini oluşturuyor.</p>
+      <h2>Sondaj yapan değil, süreci yöneten iş ortağı</h2>
+      <p>ONIX Sondaj; su, maden ve jeotermal sondaj alanlarında uçtan uca mühendislik çözümleri sunmak amacıyla kurulmuş, sahada yetişmiş bir teknik ekibin bilgi birikimini kurumsal disiplinle birleştiren bir mühendislik firmasıdır. Her proje kendine özgü jeolojik, hidrolik ve operasyonel koşullar içerir; bu nedenle standart uygulamalar yerine projeye özel analiz ve yöntemler geliştirerek ilerleriz.</p>
       <ul>
-        <li>Misyonumuz: Su kaynaklarına ve jeotermal enerjiye erişimde en yenilikçi ve güvenilir çözümleri sunmak</li>
-        <li>Vizyonumuz: Sektörde teknoloji ve inovasyonun öncüsü olmak; sürekli gelişim, müşteri odaklılık ve çevre bilinciyle referans noktası haline gelmek</li>
-        <li>Müşteri memnuniyetini en üst düzeyde tutma ve kaliteli, sürdürülebilir hizmet verme ilkesiyle çalışırız</li>
+        <li>Misyonumuz: Su kaynaklarına ve jeotermal enerjiye ulaşımda en yenilikçi ve güvenilir çözümleri sunmak</li>
+        <li>Vizyonumuz: Sektörde teknoloji ve inovasyonun öncüsü olmak; sürekli gelişim, müşteri odaklılık ve çevreye duyarlı yaklaşımla referans noktası haline gelmek</li>
+        <li>Değerlerimiz: Yenilikçilik, müşteri memnuniyeti ve güven, profesyonellik, çevreye saygı, yenilenebilir enerji odaklılık</li>
       </ul>
     </div></div>
   </section>
@@ -343,9 +344,9 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
       <h2>Etütle başlayan doğruluk</h2>
       <p>Sondaj öncesi jeofizik ölçümlerle su damarını ve verimi analiz ederiz. Boşa metraj yok; kuyu, en doğru noktada ve doğru çapta açılır.</p>
       <ul>
-        <li>Rezistivite ölçümü ile damar tespiti</li>
+        <li>Hassas zemin analizi ve rezistivite ölçümü</li>
+        <li>GPS kontrollü sondaj ve dijital raporlama</li>
         <li>Detaylı saha analizi ve fizibilite raporu</li>
-        <li>Zemin sınıfına uygun matkap ve takım seçimi</li>
         <li>Sözleşmeli, kayıtlı ve şeffaf süreç</li>
       </ul>
     </div></div>
@@ -369,7 +370,7 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
     <div class="wrap"><div class="block">
       <span class="eyebrow">Teknik Kapasite</span>
       <h2>Ağır işin ekipmanı</h2>
-      <p>Rotary ve darbeli sondaj makineleri, kompresörler ve çamur pompalarıyla her formasyonda ilerleriz — kilden granite kadar.</p>
+      <p>Son model, yüksek kapasiteli sondaj makineleri ve özel üretim ekipmanlarla her formasyonda maksimum verimlilikle ilerleriz — kilden granite kadar.</p>
       <div class="kpis">
         <div><b>300 m+</b><span>Delme kapasitesi</span></div>
         <div><b>20+</b><span>Yıl tecrübe</span></div>
@@ -388,8 +389,14 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
         <li>Tarımsal sulama — sera ve arazi kuyuları</li>
         <li>Villa &amp; site — içme/kullanma suyu</li>
         <li>Kamu &amp; kurumsal projeler</li>
+        <li>Yurt dışı tecrübe — Özbekistan projeleri, Fas operasyonları</li>
       </ul>
-      <p style="margin-top:12px;font-size:.85rem;color:var(--muted)">Bu bölüme gerçek proje fotoğraflarınız eklenecek.</p>
+      <video id="inkVideo" controls playsinline preload="metadata" muted
+        style="width:100%;border-radius:12px;margin-top:14px;background:#000"
+        onerror="this.style.display='none'">
+        <source src="./assets/kuyu-inkisafi.mp4" type="video/mp4">
+      </video>
+      <p style="margin-top:8px;font-size:.85rem;color:var(--muted)">Sahadan: kuyu inkişafı çalışması</p>
     </div></div>
   </section>
 
@@ -419,10 +426,11 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
           </div>
         </div>
         <div class="contact-lines">
-          <a class="cline" href="tel:+903123854041"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg></span><span><small>Telefon</small><b>0 (312) 385 40 41</b></span></a>
-          <a class="cline" href="https://wa.me/905322744041" target="_blank" rel="noopener"><span class="cic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.3-1.2l-.3-.2-3 .8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.6-6.1c-.3-.1-1.7-.8-2-.9-.3-.1-.4-.1-.6.1l-.9 1c-.2.2-.3.2-.6.1-1.6-.8-2.6-1.4-3.7-3.2-.3-.5.3-.5.8-1.4.1-.2 0-.4 0-.5l-.9-2.1c-.2-.5-.4-.5-.6-.5H7c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3 2.1 3.2 5.1 4.5c2.5 1.1 3 1 3.6.9.7-.1 1.7-.7 1.9-1.4.2-.6.2-1.2.2-1.3-.1-.2-.3-.2-.6-.4Z"/></svg></span><span><small>WhatsApp</small><b>0 (532) 274 40 41</b></span></a>
-          <div class="cline"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span><span><small>Adres</small><b>Eymir Mah. Köyceğiz Gölü Cad. C2-82 No:9K İç Kapı No:16, Gölbaşı / Ankara</b></span></div>
-          <div class="cline"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg></span><span><small>Hizmet Bölgesi</small><b>Ankara'nın tüm ilçeleri ve çevre iller</b></span></div>
+          <a class="cline" href="tel:+905516711052"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg></span><span><small>Telefon — 7/24 hizmetinizdeyiz</small><b>+90 551 671 10 52</b></span></a>
+          <a class="cline" href="https://wa.me/905516711052?text=Merhaba%20ONIX%20Sondaj,%20bilgi%20almak%20istiyorum" target="_blank" rel="noopener"><span class="cic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.3-1.2l-.3-.2-3 .8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.6-6.1c-.3-.1-1.7-.8-2-.9-.3-.1-.4-.1-.6.1l-.9 1c-.2.2-.3.2-.6.1-1.6-.8-2.6-1.4-3.7-3.2-.3-.5.3-.5.8-1.4.1-.2 0-.4 0-.5l-.9-2.1c-.2-.5-.4-.5-.6-.5H7c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3 2.1 3.2 5.1 4.5c2.5 1.1 3 1 3.6.9.7-.1 1.7-.7 1.9-1.4.2-.6.2-1.2.2-1.3-.1-.2-.3-.2-.6-.4Z"/></svg></span><span><small>WhatsApp</small><b>+90 551 671 10 52</b></span></a>
+          <a class="cline" href="mailto:info@onixsondaj.com"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span><span><small>E-posta — size hemen dönüş yapalım</small><b>info@onixsondaj.com</b></span></a>
+          <div class="cline"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span><span><small>Adres</small><b>Yeni Bağlıca Mah. Etimesgut Bulv. 90B/36, Etimesgut / Ankara</b></span></div>
+          <div class="cline"><span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg></span><span><small>Çalışma Saatleri — Türkiye'nin her bölgesinde hizmet</small><b>Pzt–Cmt 08:00–18:00 · 7/24 acil destek</b></span></div>
         </div>
         <form class="qf" id="quoteForm">
           <label for="ad">Ad Soyad</label>
@@ -431,13 +439,12 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
           <input id="tel" name="tel" type="tel" placeholder="0 (5XX) XXX XX XX" required>
           <label for="konu">Konu</label>
           <select id="konu" name="konu">
-            <option>Su Kuyusu Sondajı</option>
+            <option>Su Sondajı</option>
             <option>Jeotermal Sondaj</option>
-            <option>Jeolojik / Jeofizik Etüt</option>
-            <option>Pompa &amp; Teçhiz</option>
-            <option>Tarımsal Sulama Kuyusu</option>
-            <option>Kuyu Temizleme / Geliştirme</option>
-            <option>Su Kalitesi Analizi</option>
+            <option>Etüt ve Fizibilite</option>
+            <option>Pompa Sistemleri</option>
+            <option>Pompa Kurtarma</option>
+            <option>Kuyu İnkişafı ve Temizliği</option>
             <option>Diğer</option>
           </select>
           <label for="mesaj">Mesajınız</label>
@@ -459,16 +466,23 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
         <div class="foot-brand">
           <span class="logo-slot lockup" role="img" aria-label="ONIX Drilling"><img src="./assets/logo.png" alt="" onerror="this.parentNode.classList.add('nofile')"><svg viewBox="0 0 1170 680" aria-hidden="true"><use href="#onixLogo"/></svg></span>
         </div>
-        <p>Su kaynaklarına ve jeotermal enerjiye erişimde en yenilikçi ve güvenilir çözümler. Ankara'da su sondajı, jeotermal sondaj, kuyu açma ve pompa teçhizinde uçtan uca profesyonel hizmet.</p>
+        <p>Profesyonel su sondaj çözümleri sunuyoruz. Kaliteli hizmet ve müşteri memnuniyeti önceliğimizdir. 7/24 teknik destek ve danışmanlık hizmeti veriyoruz.<br><br>Tel: +90 551 671 10 52<br>info@onixsondaj.com</p>
       </div>
       <div class="foot-col">
         <h5>Hizmetler</h5>
-        <a href="#hizmetler">Su Kuyusu Sondajı</a>
+        <a href="#hizmetler">Su Sondajı</a>
         <a href="#jeotermal">Jeotermal Sondaj</a>
-        <a href="#muhendislik">Jeolojik Etüt</a>
-        <a href="#hizmetler">Pompa &amp; Teçhiz</a>
-        <a href="#hizmetler">Su Kalitesi Analizi</a>
-        <a href="#hizmetler">Endüstriyel Sondaj</a>
+        <a href="#muhendislik">Etüt ve Fizibilite</a>
+        <a href="#hizmetler">Pompa Sistemleri</a>
+        <a href="#hizmetler">Pompa Kurtarma</a>
+        <a href="#hizmetler">Kuyu İnkişafı</a>
+      </div>
+      <div class="foot-col">
+        <h5>Sosyal Medya</h5>
+        <a href="https://www.instagram.com/onixsondaj" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.facebook.com/profile.php?id=61573608422346" target="_blank" rel="noopener">Facebook</a>
+        <a href="https://www.linkedin.com/company/onixsondaj" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://wa.me/905516711052" target="_blank" rel="noopener">WhatsApp</a>
       </div>
       <div class="foot-col">
         <h5>Kurumsal</h5>
@@ -480,13 +494,13 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© <span id="yil">2026</span> ONIX Sondaj San. Tic. Ltd. Şti. Tüm hakları saklıdır.</span>
+      <span>© <span id="yil">2026</span> ONIX Sondaj. Tüm hakları saklıdır.</span>
       <span>Su • Jeotermal • Endüstriyel Sondaj • Pompa Teçhiz</span>
     </div>
   </div>
 </footer>
 
-<a class="wa-float" href="https://wa.me/905322744041?text=Merhaba%2C%20bilgi%20almak%20istiyorum." target="_blank" rel="noopener" aria-label="WhatsApp">
+<a class="wa-float" href="https://wa.me/905516711052?text=Merhaba%20ONIX%20Sondaj,%20bilgi%20almak%20istiyorum" target="_blank" rel="noopener" aria-label="WhatsApp">
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.3-1.2l-.3-.2-3 .8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.6-6.1c-.3-.1-1.7-.8-2-.9-.3-.1-.4-.1-.6.1l-.9 1c-.2.2-.3.2-.6.1-1.6-.8-2.6-1.4-3.7-3.2-.3-.5.3-.5.8-1.4.1-.2 0-.4 0-.5l-.9-2.1c-.2-.5-.4-.5-.6-.5H7c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3 2.1 3.2 5.1 4.5c2.5 1.1 3 1 3.6.9.7-.1 1.7-.7 1.9-1.4.2-.6.2-1.2.2-1.3-.1-.2-.3-.2-.6-.4Z"/></svg>
 </a>
 
@@ -516,7 +530,7 @@ document.getElementById('quoteForm').addEventListener('submit',ev=>{
   ev.preventDefault();
   const g=id=>document.getElementById(id).value;
   const txt=`Merhaba, teklif almak istiyorum.%0AAd: ${g('ad')}%0ATelefon: ${g('tel')}%0AKonu: ${g('konu')}%0AMesaj: ${g('mesaj')}`;
-  window.open(`https://wa.me/905322744041?text=${txt}`,'_blank');
+  window.open(`https://wa.me/905516711052?text=${txt}`,'_blank');
 });
 </script>
 <script type="module" src="./assets/app.bundle.js"></script>

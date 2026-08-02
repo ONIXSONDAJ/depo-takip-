@@ -54,7 +54,7 @@ a{color:inherit;text-decoration:none}
   background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(2,6,10,.5) 100%)}
 
 /* ---------- splash ---------- */
-#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:radial-gradient(900px 600px at 50% 30%,#0e2140 0%,#050b16 70%);
+#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:radial-gradient(1300px 900px at 44% 36%,#26497f 0%,#17315c 75%);
   transition:opacity .9s ease,visibility .9s;animation:splash-auto 1ms linear 9s forwards}
 #splash.done{opacity:0;visibility:hidden;pointer-events:none}
 @keyframes splash-auto{to{opacity:0;visibility:hidden}}
@@ -66,12 +66,13 @@ a{color:inherit;text-decoration:none}
 .logo-slot.nofile img{display:none}
 .logo-slot.nofile svg{display:block}
 @keyframes logo-in{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
-.splash-tag{font-size:.74rem;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);animation:logo-in 1.1s .25s both}
-.splash-bar{width:min(300px,60vw);height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;animation:logo-in 1.1s .4s both}
+.splash-tag{font-size:1.02rem;letter-spacing:.02em;color:#c9d6ea;animation:logo-in 1.1s .25s both}
+.splash-tag b{color:#fff}
+.splash-bar{width:min(300px,60vw);height:3px;border-radius:3px;background:rgba(255,255,255,.22);overflow:hidden;animation:logo-in 1.1s .4s both}
 .splash-bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--teal),var(--teal-deep));border-radius:3px;transition:width .3s ease;
   animation:bar-auto 7.5s cubic-bezier(.2,.6,.3,1) forwards}
 @keyframes bar-auto{0%{width:0}60%{width:82%}100%{width:100%}}
-.splash-pct{font-family:'Sora',sans-serif;font-size:.85rem;color:var(--muted);animation:logo-in 1.1s .4s both}
+.splash-pct{font-family:'Sora',sans-serif;font-size:.85rem;color:#c9d6ea;animation:logo-in 1.1s .4s both}
 
 /* ---------- header ---------- */
 header{position:fixed;inset:0 0 auto 0;z-index:50;transition:.3s ease}
@@ -253,7 +254,7 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
 <div id="splash" role="status" aria-label="Yükleniyor">
   <div class="splash-in">
     <span class="logo-slot splash-logo" role="img" aria-label="Onix Drilling logosu"><img src="./assets/logo.png" alt="" onerror="this.parentNode.classList.add('nofile')"><svg viewBox="0 0 1170 680" aria-hidden="true"><use href="#onixLogo"/></svg></span>
-    <div class="splash-tag">SU, JEOTERMAL &amp; ENDÜSTRİYEL SONDAJ</div>
+    <div class="splash-tag">Profesyonel <b>Su Sondajı</b> ve <b>Jeotermal Enerji</b> Çözümleri</div>
     <div class="splash-bar"><i id="splashFill"></i></div>
     <div class="splash-pct"><span id="splashPct">0%</span> — sahne hazırlanıyor</div>
   </div>

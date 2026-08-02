@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ONIX Sondaj — Su Sondajı ve Jeotermal Enerji Çözümleri | Ankara</title>
+<title>ONIX Sondaj — Su, Jeotermal ve Endüstriyel Sondajda Mühendislik Çözümleri</title>
 <meta name="description" content="ONIX Sondaj; Ankara'da profesyonel su sondajı, jeotermal enerji çözümleri ve kuyu açma hizmetleri sunar. 20 yılı aşkın deneyim, modern ekipman, uzman ekip. Ücretsiz keşif ve teklif.">
 <meta name="theme-color" content="#061020">
-<meta property="og:title" content="ONIX Sondaj — Su Sondajı ve Jeotermal Enerji Çözümleri">
+<meta property="og:title" content="ONIX Sondaj — Su, Jeotermal ve Endüstriyel Sondajda Mühendislik Çözümleri">
 <meta property="og:description" content="Ankara'da su sondajı, jeotermal enerji ve kuyu açma hizmetleri. Ücretsiz keşif ve teklif alın.">
 <meta property="og:type" content="website">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230a1930%22/%3E%3Cg stroke=%22%23ffffff%22 stroke-width=%223%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M8 34 L22 16 L30 24 L36 12 L46 22 L56 34%22/%3E%3Cpath d=%22M37 12 L36 34 M42 16 L42 34%22/%3E%3Cpath d=%22M8 40 H56 M8 46 H56%22/%3E%3C/g%3E%3C/svg%3E">
@@ -20,8 +20,8 @@
   --ink:#eef4fb;
   --ink-2:#a7b6c4;
   --muted:#7e8fa0;
-  --teal:#4fb3ff;
-  --teal-deep:#1e6bff;
+  --teal:#ffc93c;
+  --teal-deep:#f0a72b;
   --amber:#f6b545;
   --line:rgba(255,255,255,.1);
   --line-2:rgba(255,255,255,.18);
@@ -40,12 +40,12 @@ a{color:inherit;text-decoration:none}
 .eyebrow::before{content:"";width:26px;height:2px;background:var(--teal)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:600;font-size:.98rem;
   padding:14px 26px;border-radius:999px;border:1px solid transparent;cursor:pointer;transition:.25s ease;white-space:nowrap}
-.btn-primary{background:linear-gradient(120deg,#4fb3ff,#1e6bff);color:#041022;box-shadow:0 14px 34px -12px rgba(79,179,255,.5)}
+.btn-primary{background:linear-gradient(120deg,#ffd45e,#f0a72b);color:#1c1200;box-shadow:0 14px 34px -12px rgba(240,167,43,.5)}
 .btn-primary:hover{transform:translateY(-2px)}
-.btn-ghost{background:var(--glass);border-color:var(--line-2);color:var(--ink);backdrop-filter:blur(10px)}
-.btn-ghost:hover{transform:translateY(-2px);background:rgba(255,255,255,.12)}
-.btn-wa{background:#25d366;color:#04140a}
-.btn-wa:hover{transform:translateY(-2px)}
+.btn-ghost{background:rgba(52,96,141,.5);border-color:rgba(255,255,255,.22);color:var(--ink);backdrop-filter:blur(10px)}
+.btn-ghost:hover{transform:translateY(-2px);background:rgba(62,112,163,.62)}
+.btn-wa{background:rgba(52,96,141,.5);border-color:rgba(255,255,255,.22);color:var(--ink);backdrop-filter:blur(10px)}
+.btn-wa:hover{transform:translateY(-2px);background:rgba(62,112,163,.62)}
 
 /* ---------- 3D canvas ---------- */
 #scene{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
@@ -126,7 +126,7 @@ section.stage{min-height:100vh;display:flex;align-items:center;position:relative
   linear-gradient(180deg,rgba(5,11,22,.72) 0%,rgba(5,11,22,.28) 26%,rgba(5,11,22,.3) 58%,#050b16 97%)}
 #hero:has(#heroPhoto) h1,#hero:has(#heroPhoto) .lead{text-shadow:0 2px 24px rgba(2,6,12,.65)}
 #hero h1{font-size:clamp(2.2rem,5.2vw,4rem);font-weight:800;max-width:900px;margin:14px auto 16px;text-wrap:balance}
-#hero h1 em{font-style:normal;background:linear-gradient(120deg,#4fb3ff,#1e6bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#hero h1 em{font-style:normal;background:linear-gradient(120deg,#ffd45e,#f0a72b);-webkit-background-clip:text;background-clip:text;color:transparent}
 #hero .lead{color:var(--ink-2);max-width:560px;margin:0 auto 26px;font-size:1.08rem}
 #hero .actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 .scroll-cue{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-2);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;font-weight:700}
@@ -144,7 +144,7 @@ section.stage{min-height:100vh;display:flex;align-items:center;position:relative
 .water-title p{color:#bcd8f5;margin-top:6px}
 .contact-lines{display:flex;flex-direction:column;gap:13px}
 .cline{display:flex;align-items:center;gap:14px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)}
-.cline .cic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(79,179,255,.1);border:1px solid var(--line);flex:0 0 auto}
+.cline .cic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(255,201,60,.1);border:1px solid var(--line);flex:0 0 auto}
 .cline .cic svg{width:21px;height:21px;color:var(--teal)}
 .cline small{color:var(--muted);display:block;font-size:.76rem}
 .cline b{font-family:'Sora',sans-serif;font-size:1rem;font-weight:700}
@@ -152,7 +152,7 @@ form.qf{display:flex;flex-direction:column;gap:13px;background:var(--glass);back
 form.qf label{font-size:.78rem;color:var(--muted);font-weight:600;margin-bottom:-7px}
 form.qf input,form.qf textarea,form.qf select{width:100%;background:#0a1424;border:1px solid var(--line-2);border-radius:12px;
   padding:12px 14px;color:var(--ink);font-family:inherit;font-size:.95rem;transition:.2s}
-form.qf input:focus,form.qf textarea:focus,form.qf select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(30,107,255,.18)}
+form.qf input:focus,form.qf textarea:focus,form.qf select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(240,167,43,.22)}
 form.qf textarea{resize:vertical;min-height:84px}
 
 /* footer */
@@ -253,7 +253,7 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
 <div id="splash" role="status" aria-label="Yükleniyor">
   <div class="splash-in">
     <span class="logo-slot splash-logo" role="img" aria-label="Onix Drilling logosu"><img src="./assets/logo.png" alt="" onerror="this.parentNode.classList.add('nofile')"><svg viewBox="0 0 1170 680" aria-hidden="true"><use href="#onixLogo"/></svg></span>
-    <div class="splash-tag">SU SONDAJI &amp; JEOTERMAL ENERJİ ÇÖZÜMLERİ</div>
+    <div class="splash-tag">SU, JEOTERMAL &amp; ENDÜSTRİYEL SONDAJ</div>
     <div class="splash-bar"><i id="splashFill"></i></div>
     <div class="splash-pct"><span id="splashPct">0%</span> — sahne hazırlanıyor</div>
   </div>
@@ -294,12 +294,12 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
       <div class="hp-fade"></div>
     </div>
     <div class="wrap inner">
-      <span class="eyebrow" style="justify-content:center">Su Sondajı ve Jeotermal Enerji Çözümleri</span>
+      <span class="eyebrow" style="justify-content:center">Su, Jeotermal ve Endüstriyel Sondaj</span>
       <h1>Derinlerdeki suya,<br><em>mühendislikle</em> ulaşıyoruz.</h1>
-      <p class="lead">ONIX Sondaj; Ankara'da profesyonel su sondajı, jeotermal enerji çözümleri ve kuyu açma hizmetlerinde 20 yılı aşkın deneyimi, modern ekipmanı ve uzman ekibiyle güvenilir ve kaliteli hizmet sunar. Aşağı kaydırın — matkabımız sizinle birlikte suya insin.</p>
+      <p class="lead">Uluslararası saha deneyimi, modern ekipman ve mühendislik disipliniyle projeye özel, güvenilir ve sürdürülebilir sondaj çözümleri sunuyoruz. Aşağı kaydırın — matkabımız sizinle birlikte suya insin.</p>
       <div class="actions">
-        <a href="https://wa.me/905322744041?text=Merhaba%2C%20su%20kuyusu%20i%C3%A7in%20teklif%20almak%20istiyorum." class="btn btn-wa" target="_blank" rel="noopener">WhatsApp'tan Yaz</a>
-        <a href="#iletisim" class="btn btn-ghost">Ücretsiz Keşif İste →</a>
+        <a href="https://wa.me/905322744041?text=Merhaba%2C%20su%20kuyusu%20i%C3%A7in%20teklif%20almak%20istiyorum." class="btn btn-wa" target="_blank" rel="noopener">WhatsApp'tan Danışın</a>
+        <a href="#iletisim" class="btn btn-ghost">Hemen Teklif Al</a>
       </div>
     </div>
     <div class="scroll-cue"><div class="wheel"></div>Sondaja Başla</div>
@@ -317,6 +317,7 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
         <li>Pompa montajı, dalgıç teçhiz, periyodik bakım</li>
         <li>Kuyu geliştirme, temizleme ve verim artırma</li>
         <li>Su kalitesi analizi — pH ve mineral içerik ölçümü</li>
+        <li>Endüstriyel ve maden sahası sondaj çözümleri</li>
         <li>DSİ ruhsat ve izin süreçlerinin takibi</li>
       </ul>
     </div></div>
@@ -466,6 +467,7 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
         <a href="#muhendislik">Jeolojik Etüt</a>
         <a href="#hizmetler">Pompa &amp; Teçhiz</a>
         <a href="#hizmetler">Su Kalitesi Analizi</a>
+        <a href="#hizmetler">Endüstriyel Sondaj</a>
       </div>
       <div class="foot-col">
         <h5>Kurumsal</h5>
@@ -478,7 +480,7 @@ footer{position:relative;z-index:10;padding:56px 0 32px;background:#040f1e;borde
     </div>
     <div class="foot-bottom">
       <span>© <span id="yil">2026</span> ONIX Sondaj San. Tic. Ltd. Şti. Tüm hakları saklıdır.</span>
-      <span>Su Sondajı • Jeotermal Sondaj • Kuyu Açma • Pompa Teçhiz</span>
+      <span>Su • Jeotermal • Endüstriyel Sondaj • Pompa Teçhiz</span>
     </div>
   </div>
 </footer>

@@ -57,11 +57,11 @@ function addNotification(title,body){ db.notifications.unshift({id:uid('n'),titl
 const CLOUD_URL='https://yxzctsssyngvevrwdwbg.supabase.co';
 const CLOUD_KEY='sb_publishable_3WZyKcRRYcLO-Kva_JMQ1g_9c1eluk5';
 const CLOUD_TABLES={products:'products',users:'app_users',movements:'movements'};
-let cloudOk=null, syncTimer=null, syncBusy=false;
+let cloudOk=null, syncTimer=null, syncBusy=false, cloudLastError='';
 const dirtyIds={products:new Set(),users:new Set(),movements:new Set()};
 function cloudHeaders(){ const h={'apikey':CLOUD_KEY,'Content-Type':'application/json'}; if(CLOUD_KEY.startsWith('eyJ')) h['Authorization']='Bearer '+CLOUD_KEY; return h; }
-async function cloudFetch(path,opts={}){ const r=await fetch(`${CLOUD_URL}/rest/v1/${path}`,{...opts,headers:{...cloudHeaders(),...(opts.headers||{})}}); if(!r.ok) throw new Error('HTTP '+r.status); const t=await r.text(); return t?JSON.parse(t):null; }
-function setCloudStatus(ok){ if(cloudOk===ok) return; cloudOk=ok; $$('.cloud-chip').forEach(el=>{ el.textContent=ok?'● Bulut bağlı':'● Çevrimdışı'; el.classList.toggle('on',!!ok); }); }
+async function cloudFetch(path,opts={}){ const r=await fetch(`${CLOUD_URL}/rest/v1/${path}`,{...opts,headers:{...cloudHeaders(),...(opts.headers||{})}}); if(!r.ok){ const body=await r.text().catch(()=>''); throw new Error(`HTTP ${r.status} ${body.slice(0,140)}`); } const t=await r.text(); return t?JSON.parse(t):null; }
+function setCloudStatus(ok){ if(ok) cloudLastError=''; if(cloudOk===ok) return; cloudOk=ok; $$('.cloud-chip').forEach(el=>{ el.textContent=ok?'● Bulut bağlı':'● Çevrimdışı'; el.classList.toggle('on',!!ok); }); }
 function markDirty(kind,id){ dirtyIds[kind].add(id); scheduleSync(200); }
 function markAllDirty(){ db.products.forEach(p=>dirtyIds.products.add(p.id)); db.users.forEach(u=>dirtyIds.users.add(u.id)); db.movements.forEach(m=>dirtyIds.movements.add(m.id)); scheduleSync(200); }
 function scheduleSync(delay){ clearTimeout(syncTimer); syncTimer=setTimeout(cloudSync,delay??12000); }
@@ -90,7 +90,7 @@ async function cloudSync(){
       if(currentUser){ if(isPanelUser()) renderAll(); else renderStaffLast(); }
     }
     setCloudStatus(true);
-  }catch(e){ setCloudStatus(false); }
+  }catch(e){ cloudLastError=String(e.message||e); setCloudStatus(false); }
   syncBusy=false;
   scheduleSync();
 }
@@ -629,6 +629,7 @@ bindEvents();
 refreshAuthView();
 const savedSessionUser=userById(localStorage.getItem(SESSION_KEY)||'');
 if(savedSessionUser&&savedSessionUser.active) enterApp(savedSessionUser);
+$$('.cloud-chip').forEach(el=>el.onclick=()=>toast(cloudOk?'Bulut bağlantısı sorunsuz çalışıyor.':(cloudLastError?`Bulut hatası: ${cloudLastError}`:'Buluta bağlanılıyor, birkaç saniye bekleyin...')));
 cloudSync();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') scheduleSync(400); });
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(console.error));

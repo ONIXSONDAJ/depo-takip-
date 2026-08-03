@@ -423,8 +423,10 @@ function showScanStep(step){
   $('#scanStage').classList.toggle('hidden',step!=='scan');
   $('#scanStatus').classList.toggle('hidden',step!=='scan');
   $('#scanBackBtn').classList.toggle('hidden',step!=='scan');
+  $('#manualPickBtn').classList.toggle('hidden',step!=='scan');
+  $('#scanPickStep').classList.toggle('hidden',step!=='pick');
   $('#scanResult').classList.toggle('hidden',step!=='result');
-  $('#scanModalDesc').textContent=step==='mode'?'Ne yapacaksınız?':step==='scan'?`${scanMode} için malzemenin QR etiketini kameraya gösterin.`:`${scanMode} bilgilerini doldurup kaydedin.`;
+  $('#scanModalDesc').textContent=step==='mode'?'Ne yapacaksınız?':step==='scan'?`${scanMode} için malzemenin QR etiketini kameraya gösterin.`:step==='pick'?`${scanMode} için ürünü listeden seçin.`:`${scanMode} bilgilerini doldurup kaydedin.`;
 }
 function chooseScanMode(mode){
   scanMode=mode;
@@ -528,6 +530,14 @@ function populateScanResult(product){
   $('#quickWarning').classList.add('hidden'); $('#quickQty').value=1;
   showScanStep('result');
 }
+
+function openManualPick(){ showScanStep('pick'); $('#pickSearch').value=''; renderPickList(); setTimeout(()=>$('#pickSearch').focus(),100); }
+function renderPickList(){
+  const q=normalizeText($('#pickSearch').value);
+  const rows=db.products.filter(p=>p.active&&!p._deleted).filter(p=>!q||normalizeText(`${p.name} ${p.code}`).includes(q)).slice(0,30);
+  $('#pickList').innerHTML=rows.length?rows.map(p=>`<button type="button" class="pick-item" data-pick="${p.id}">${productThumb(p,'thumb')}<span><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · Ostim ${formatQty(p.ostim)} · Yenikent ${formatQty(p.yenikent)}</small></span></button>`).join(''):'<div class="empty">Ürün bulunamadı.</div>';
+  $$('[data-pick]').forEach(b=>b.onclick=()=>{ const p=productById(b.dataset.pick); if(p) populateScanResult(p); });
+}
 function updateQuickCustomer(){
   const show=scanMode==='Çıkış'&&$('#quickTarget').value==='customer';
   $('#quickCustomerField').classList.toggle('hidden',!show);
@@ -612,6 +622,9 @@ function bindEvents(){
   $('#printQrBtn').onclick=()=>window.print(); $('#printAllQrBtn').onclick=printAllQr;
   $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış');
   $('#scanBackBtn').onclick=()=>{ pendingManual=null; showScanStep('mode'); };
+  $('#manualPickBtn').onclick=openManualPick;
+  $('#pickBackBtn').onclick=()=>startScanner();
+  $('#pickSearch').addEventListener('input',renderPickList);
   $('#torchBtn').onclick=toggleTorch;
   $('#quickForm').onsubmit=submitQuick; $('#quickTarget').onchange=updateQuickCustomer;
   $('#rescanBtn').onclick=()=>{ pendingManual=null; startScanner(); };

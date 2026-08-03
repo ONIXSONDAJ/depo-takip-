@@ -332,3 +332,12 @@ td code{background:#f2f3f5;border-radius:6px;padding:2px 7px;font-size:12px}
 /* ---- Bulut durumu ---- */
 .cloud-chip{font-size:11.5px;font-weight:700;color:#9a9da5;background:#f0f1f3;border-radius:999px;padding:6px 12px;white-space:nowrap}
 .cloud-chip.on{color:var(--ok-tx);background:var(--ok-bg)}
+
+/* ---- Manuel ürün seçimi ---- */
+.scan-pick{margin-top:6px;display:grid;gap:8px}
+.pick-list{display:grid;gap:7px;max-height:300px;overflow:auto}
+.pick-item{display:flex;align-items:center;gap:11px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;text-align:left;transition:.15s}
+.pick-item:hover{border-color:var(--accent);background:#f4f8ff}
+.pick-item span{display:grid;gap:2px;min-width:0}
+.pick-item b{font-size:14px}
+.pick-item small{color:var(--muted);font-size:11.5px}

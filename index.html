@@ -11,10 +11,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=20">
-  <script defer src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <script defer src="./app.js?v=20"></script>
+  <link rel="stylesheet" href="./app.css?v=21">
+  <script defer src="./qrcode.min.js?v=21"></script>
+  <script defer src="./jsqr.js?v=21"></script>
+  <script defer src="./app.js?v=21"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -215,7 +215,13 @@
       <button type="button" id="torchBtn" class="torch-btn" title="Fener">💡</button>
     </div>
     <div id="scanStatus" class="scan-status hidden">Kamera başlatılıyor…</div>
+    <button type="button" id="manualPickBtn" class="btn btn-outline btn-block hidden">Kod okunmuyor mu? Listeden seçin</button>
     <button type="button" id="scanBackBtn" class="scan-back hidden">‹ Giriş/Çıkış seçimine dön</button>
+    <div id="scanPickStep" class="scan-pick hidden">
+      <label class="search-box">⌕<input id="pickSearch" placeholder="Ürün adı veya kod yazın"></label>
+      <div id="pickList" class="pick-list"></div>
+      <button type="button" id="pickBackBtn" class="scan-back">‹ Kameraya dön</button>
+    </div>
     <div id="scanResult" class="scan-result hidden">
       <div class="scan-product"><div class="product-avatar" id="scanAvatar">Ü</div><div><b id="scanProductName"></b><small id="scanProductMeta"></small></div><span id="scanModeBadge" class="stock-pill pill-ok">GİRİŞ</span></div>
       <div class="scan-stocks"><span>Ostim: <b id="scanOstim">0</b></span><span>Yenikent: <b id="scanYenikent">0</b></span><span>Toplam: <b id="scanTotal">0</b></span></div>

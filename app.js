@@ -19,7 +19,7 @@ function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 function formatQty(n){ return Number(n).toLocaleString('tr-TR',{maximumFractionDigits:2}); }
 function formatNow(){ return new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
-function saveDb(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+function saveDb(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){ toast('Depolama alanı doldu. Bazı ürün görsellerini kaldırmayı deneyin.'); } }
 function isAdmin(){ return currentUser && ['super_admin','admin'].includes(currentUser.role); }
 function isPanelUser(){ return currentUser && ['super_admin','admin','accounting'].includes(currentUser.role); }
 function canBill(){ return isPanelUser(); }
@@ -142,7 +142,7 @@ function renderMovements(){
 function renderStocks(){
   const q=normalizeText($('#stockSearch').value);
   const rows=db.products.filter(p=>p.active).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
-  $('#stockRows').innerHTML=rows.map(p=>{const s=statusOf(p);return `<tr><td><b>${escapeHtml(p.name)}</b><small class="td-sub">${escapeHtml(p.category)} · ${escapeHtml(p.unit)}</small></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(p.ostim)}</td><td class="num">${formatQty(p.yenikent)}</td><td class="num"><b>${formatQty(Number(p.ostim)+Number(p.yenikent))}</b></td><td><span class="stock-pill ${s.className}">${s.label}</span></td><td><div class="row-actions"><button class="mini-btn" data-qr="${p.id}">Etiket</button><button class="mini-btn" data-quick="${p.id}">İşlem</button></div></td></tr>`}).join('');
+  $('#stockRows').innerHTML=rows.map(p=>{const s=statusOf(p);return `<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b><small class="td-sub">${escapeHtml(p.category)} · ${escapeHtml(p.unit)}</small></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(p.ostim)}</td><td class="num">${formatQty(p.yenikent)}</td><td class="num"><b>${formatQty(Number(p.ostim)+Number(p.yenikent))}</b></td><td><span class="stock-pill ${s.className}">${s.label}</span></td><td><div class="row-actions"><button class="mini-btn" data-qr="${p.id}">Etiket</button><button class="mini-btn" data-quick="${p.id}">İşlem</button></div></td></tr>`}).join('');
   $('#stockEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-qr]').forEach(b=>b.onclick=()=>openQr(b.dataset.qr));
   $$('[data-quick]').forEach(b=>b.onclick=()=>openQuickForProduct(b.dataset.quick));
@@ -150,7 +150,7 @@ function renderStocks(){
 function renderProducts(){
   const q=normalizeText($('#productAdminSearch').value);
   const rows=db.products.filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
-  $('#productRows').innerHTML=rows.map(p=>`<tr><td><b>${escapeHtml(p.name)}</b></td><td><code>${escapeHtml(p.code)}</code></td><td>${escapeHtml(p.category)}</td><td>${escapeHtml(p.unit)}</td><td class="num">${formatQty(p.min)}</td><td><span class="stock-pill ${p.active?'pill-ok':'pill-inactive'}">${p.active?'Aktif':'Pasif'}</span></td><td><div class="row-actions"><button class="mini-btn" data-edit-product="${p.id}">Düzenle</button><button class="mini-btn danger" data-delete-product="${p.id}">Sil</button></div></td></tr>`).join('');
+  $('#productRows').innerHTML=rows.map(p=>`<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td>${escapeHtml(p.category)}</td><td>${escapeHtml(p.unit)}</td><td class="num">${formatQty(p.min)}</td><td><span class="stock-pill ${p.active?'pill-ok':'pill-inactive'}">${p.active?'Aktif':'Pasif'}</span></td><td><div class="row-actions"><button class="mini-btn" data-edit-product="${p.id}">Düzenle</button><button class="mini-btn danger" data-delete-product="${p.id}">Sil</button></div></td></tr>`).join('');
   $('#productEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-edit-product]').forEach(b=>b.onclick=()=>openProductModal(b.dataset.editProduct));
   $$('[data-delete-product]').forEach(b=>b.onclick=()=>deleteProduct(b.dataset.deleteProduct));
@@ -245,13 +245,37 @@ function renderStaffLast(){
 }
 
 /* ---- Ürün / kullanıcı yönetimi ---- */
+let productImgData=null;
+function setProductImgPreview(){
+  const box=$('#productImgBox');
+  if(productImgData){ box.innerHTML=`<img src="${productImgData}" alt="">`; $('#removeImgBtn').classList.remove('hidden'); }
+  else{ box.textContent='📷'; $('#removeImgBtn').classList.add('hidden'); }
+}
+function handleProductImage(file){
+  const img=new Image();
+  img.onload=()=>{
+    const max=280; const scale=Math.min(1,max/Math.max(img.width,img.height));
+    const c=document.createElement('canvas'); c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    productImgData=c.toDataURL('image/jpeg',.72);
+    setProductImgPreview();
+    URL.revokeObjectURL(img.src);
+  };
+  img.onerror=()=>toast('Görsel okunamadı.');
+  img.src=URL.createObjectURL(file);
+}
+function productThumb(p,cls='thumb'){
+  return p.image?`<img class="${cls}" src="${p.image}" alt="">`:`<div class="${cls} thumb-letter">${escapeHtml((p.name||'Ü')[0].toLocaleUpperCase('tr-TR'))}</div>`;
+}
 function openProductModal(id=''){
-  const p=id?productById(id):null; $('#productModalTitle').textContent=p?'Ürünü Düzenle':'Yeni Ürün'; $('#productId').value=p?.id||''; $('#productName').value=p?.name||''; $('#productCode').value=p?.code||''; $('#productCategory').value=p?.category||''; $('#productUnit').value=p?.unit||'Adet'; $('#productOstim').value=p?.ostim??0; $('#productYenikent').value=p?.yenikent??0; $('#productMin').value=p?.min??0; $('#productActive').value=String(p?.active??true); openModal('productModal');
+  const p=id?productById(id):null; $('#productModalTitle').textContent=p?'Ürünü Düzenle':'Yeni Ürün'; $('#productId').value=p?.id||''; $('#productName').value=p?.name||''; $('#productCode').value=p?.code||''; $('#productCategory').value=p?.category||''; $('#productUnit').value=p?.unit||'Adet'; $('#productOstim').value=p?.ostim??0; $('#productYenikent').value=p?.yenikent??0; $('#productMin').value=p?.min??0; $('#productActive').value=String(p?.active??true);
+  productImgData=p?.image||null; setProductImgPreview();
+  openModal('productModal');
 }
 function saveProduct(e){
   e.preventDefault(); const id=$('#productId').value; const code=$('#productCode').value.trim();
   if(db.products.some(p=>normalizeText(p.code)===normalizeText(code)&&p.id!==id)) return toast('Bu ürün kodu zaten kullanılıyor.');
-  const data={name:$('#productName').value.trim(),code,category:$('#productCategory').value.trim()||'Genel',unit:$('#productUnit').value,ostim:Number($('#productOstim').value||0),yenikent:Number($('#productYenikent').value||0),min:Number($('#productMin').value||0),active:$('#productActive').value==='true'};
+  const data={name:$('#productName').value.trim(),code,category:$('#productCategory').value.trim()||'Genel',unit:$('#productUnit').value,ostim:Number($('#productOstim').value||0),yenikent:Number($('#productYenikent').value||0),min:Number($('#productMin').value||0),active:$('#productActive').value==='true',image:productImgData||undefined};
   if(id) Object.assign(productById(id),data);
   else db.products.push({id:uid('p'),...data});
   saveDb(); closeModal('productModal'); renderAll(); toast('Ürün kaydedildi.');
@@ -413,7 +437,7 @@ function handleScanResult(text){
 }
 function populateScanResult(product){
   scannedProduct=product;
-  $('#scanAvatar').textContent=product.name[0]||'Ü';
+  $('#scanAvatar').innerHTML=product.image?`<img src="${product.image}" alt="">`:escapeHtml((product.name||'Ü')[0]);
   $('#scanProductName').textContent=product.name;
   $('#scanProductMeta').textContent=`${product.code} · ${product.category} · ${product.unit}`;
   $('#scanOstim').textContent=formatQty(product.ostim); $('#scanYenikent').textContent=formatQty(product.yenikent); $('#scanTotal').textContent=formatQty(Number(product.ostim)+Number(product.yenikent));
@@ -498,6 +522,9 @@ function bindEvents(){
   $$('[data-close-modal]').forEach(b=>b.onclick=()=>closeModal(b.dataset.closeModal));
   $('#modalOverlay').onclick=()=>$$('.modal:not(.hidden)').forEach(m=>closeModal(m.id));
   $('#addProductBtn').onclick=()=>openProductModal(); $('#productForm').onsubmit=saveProduct;
+  $('#pickImgBtn').onclick=()=>$('#productImgInput').click();
+  $('#productImgInput').onchange=e=>{ const f=e.target.files[0]; if(f) handleProductImage(f); e.target.value=''; };
+  $('#removeImgBtn').onclick=()=>{ productImgData=null; setProductImgPreview(); };
   $('#addUserBtn').onclick=()=>openUserModal(); $('#userForm').onsubmit=saveUser;
   $('#printQrBtn').onclick=()=>window.print(); $('#printAllQrBtn').onclick=printAllQr;
   $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış');

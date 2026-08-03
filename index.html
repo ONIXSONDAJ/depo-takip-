@@ -11,10 +11,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=16">
+  <link rel="stylesheet" href="./app.css?v=17">
   <script defer src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <script defer src="./app.js?v=16"></script>
+  <script defer src="./app.js?v=17"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -179,7 +179,9 @@
     </div>
   </div>
 
-  <div id="productModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="productModalTitle">Yeni Ürün</h3></div><button class="icon-btn" data-close-modal="productModal">✕</button></div><form id="productForm"><input id="productId" type="hidden"><div class="form-grid">
+  <div id="productModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="productModalTitle">Yeni Ürün</h3></div><button class="icon-btn" data-close-modal="productModal">✕</button></div><form id="productForm"><input id="productId" type="hidden">
+  <div class="img-pick"><div id="productImgBox" class="img-box">📷</div><div class="img-btns"><button type="button" id="pickImgBtn" class="mini-btn">Fotoğraf Seç / Çek</button><button type="button" id="removeImgBtn" class="mini-btn danger hidden">Görseli Kaldır</button></div><input id="productImgInput" type="file" accept="image/*" class="hidden"></div>
+  <div class="form-grid">
     <label class="field"><span>Ürün adı</span><input id="productName" required></label><label class="field"><span>Ürün kodu</span><input id="productCode" required></label><label class="field"><span>Kategori</span><input id="productCategory" placeholder="Sondaj, hidrolik..."></label><label class="field"><span>Birim</span><select id="productUnit"><option>Adet</option><option>Metre</option><option>Litre</option><option>Kg</option><option>Takım</option><option>Kutu</option></select></label><label class="field"><span>Ostim stok</span><input id="productOstim" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Yenikent stok</span><input id="productYenikent" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Minimum stok uyarısı</span><input id="productMin" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Durum</span><select id="productActive"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
   </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="productModal">Vazgeç</button><button type="submit" class="btn btn-primary">Kaydet</button></div></form></div></div>
 

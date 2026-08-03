@@ -11,10 +11,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=17">
+  <link rel="stylesheet" href="./app.css?v=18">
   <script defer src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <script defer src="./app.js?v=17"></script>
+  <script defer src="./app.js?v=18"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -55,7 +55,7 @@
   <div id="staffView" class="staff-shell hidden">
     <header class="staff-bar">
       <div class="brand-lockup"><span class="brand-mark">DT</span><b>DEPO TAKİP</b></div>
-      <div class="staff-user"><span id="staffName"></span><button id="staffLogoutBtn" class="btn btn-outline">Çıkış</button></div>
+      <div class="staff-user"><span class="cloud-chip">●</span><span id="staffName"></span><button id="staffLogoutBtn" class="btn btn-outline">Çıkış</button></div>
     </header>
     <main class="staff-main">
       <h1 id="staffHello">Merhaba</h1>
@@ -89,6 +89,7 @@
       <header class="topbar">
         <div class="topbar-left"><button id="menuBtn" class="icon-btn mobile-only">☰</button><h2 id="pageTitle">Ana Sayfa</h2></div>
         <div class="topbar-actions">
+          <span class="cloud-chip">●</span>
           <button id="scanTopBtn" class="btn btn-primary">▣ QR Okut</button>
           <button id="notifBtn" class="icon-btn badge-btn" aria-label="Bildirimler">🔔<span id="notifCount" class="hidden">0</span></button>
         </div>

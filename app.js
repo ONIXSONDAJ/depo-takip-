@@ -52,6 +52,73 @@ function statusOf(p){
 }
 function movementClass(t){ return t==='Giriş'||t==='İade'?'pill-ok':t==='Satış'?'pill-low':'pill-critical'; }
 function addNotification(title,body){ db.notifications.unshift({id:uid('n'),title,body,date:formatNow(),read:false}); db.notifications=db.notifications.slice(0,60); saveDb(); }
+
+/* ---- Bulut senkronizasyonu (Supabase) ---- */
+const CLOUD_URL='https://yxzctsssyngvevrwdwbg.supabase.co';
+const CLOUD_KEY='sb_publishable_3WZyKcRRYcLO-Kva_JMQ1g_9c1eluk5';
+const CLOUD_TABLES={products:'products',users:'app_users',movements:'movements'};
+let cloudOk=null, syncTimer=null, syncBusy=false;
+const dirtyIds={products:new Set(),users:new Set(),movements:new Set()};
+function cloudHeaders(){ const h={'apikey':CLOUD_KEY,'Content-Type':'application/json'}; if(CLOUD_KEY.startsWith('eyJ')) h['Authorization']='Bearer '+CLOUD_KEY; return h; }
+async function cloudFetch(path,opts={}){ const r=await fetch(`${CLOUD_URL}/rest/v1/${path}`,{...opts,headers:{...cloudHeaders(),...(opts.headers||{})}}); if(!r.ok) throw new Error('HTTP '+r.status); const t=await r.text(); return t?JSON.parse(t):null; }
+function setCloudStatus(ok){ if(cloudOk===ok) return; cloudOk=ok; $$('.cloud-chip').forEach(el=>{ el.textContent=ok?'● Bulut bağlı':'● Çevrimdışı'; el.classList.toggle('on',!!ok); }); }
+function markDirty(kind,id){ dirtyIds[kind].add(id); scheduleSync(200); }
+function markAllDirty(){ db.products.forEach(p=>dirtyIds.products.add(p.id)); db.users.forEach(u=>dirtyIds.users.add(u.id)); db.movements.forEach(m=>dirtyIds.movements.add(m.id)); scheduleSync(200); }
+function scheduleSync(delay){ clearTimeout(syncTimer); syncTimer=setTimeout(cloudSync,delay??12000); }
+function localList(kind){ return kind==='users'?db.users:kind==='products'?db.products:db.movements; }
+async function cloudSync(){
+  if(syncBusy){ scheduleSync(3000); return; }
+  syncBusy=true;
+  try{
+    for(const kind of Object.keys(dirtyIds)){
+      const ids=[...dirtyIds[kind]]; if(!ids.length) continue;
+      const list=localList(kind);
+      const rows=ids.map(id=>list.find(x=>x.id===id)).filter(Boolean).map(o=>({id:o.id,data:o,updated_at:new Date().toISOString()}));
+      if(rows.length) await cloudFetch(CLOUD_TABLES[kind],{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(rows)});
+      ids.forEach(id=>dirtyIds[kind].delete(id));
+    }
+    const [cp,cu,cm]=await Promise.all([
+      cloudFetch(CLOUD_TABLES.products+'?select=id,data'),
+      cloudFetch(CLOUD_TABLES.users+'?select=id,data'),
+      cloudFetch(CLOUD_TABLES.movements+'?select=id,data')
+    ]);
+    let changed=0;
+    changed|=applyCloud('products',cp); changed|=applyCloud('users',cu); changed|=applyCloud('movements',cm);
+    if(changed){
+      db.movements.sort((a,b)=>(b.ts||0)-(a.ts||0));
+      saveDb();
+      if(currentUser){ if(isPanelUser()) renderAll(); else renderStaffLast(); }
+    }
+    setCloudStatus(true);
+  }catch(e){ setCloudStatus(false); }
+  syncBusy=false;
+  scheduleSync();
+}
+function applyCloud(kind,rows){
+  if(!Array.isArray(rows)) return 0;
+  const list=localList(kind);
+  const cloudMap=new Map(rows.map(r=>[r.id,r.data]));
+  const localMap=new Map(list.map(o=>[o.id,o]));
+  let changed=0;
+  list.forEach(o=>{ if(!cloudMap.has(o.id)&&!dirtyIds[kind].has(o.id)) dirtyIds[kind].add(o.id); });
+  const merged=[];
+  cloudMap.forEach((data,id)=>{
+    if(dirtyIds[kind].has(id)&&localMap.has(id)) merged.push(localMap.get(id));
+    else{ const cur=localMap.get(id); if(!cur||JSON.stringify(cur)!==JSON.stringify(data)) changed=1; merged.push(data); }
+  });
+  list.forEach(o=>{ if(!cloudMap.has(o.id)) merged.push(o); });
+  if(merged.length!==list.length) changed=1;
+  if(kind==='users'){
+    merged.sort((a,b)=>(b.protected?1:0)-(a.protected?1:0));
+    const seen=new Set(); db.users=merged.filter(u=>{ const k=normalizeText(u.username); if(seen.has(k)) return false; seen.add(k); return true; });
+  }
+  else if(kind==='products') db.products=merged;
+  else db.movements=merged;
+  return changed;
+}
+async function cloudWipe(){
+  for(const t of Object.values(CLOUD_TABLES)){ await cloudFetch(`${t}?id=neq.__void__`,{method:'DELETE'}); }
+}
 function splitDate(d){ const parts=String(d||'').split(' '); return {day:parts[0]||'',time:parts[1]||''}; }
 
 /* ---- Oturum ---- */
@@ -67,8 +134,8 @@ function completeSetup(e){
   if(!name||!username) return toast('Ad soyad ve kullanıcı adı gerekli.');
   if(pass.length<6) return toast('Şifre en az 6 karakter olmalı.');
   if(pass!==pass2) return toast('Şifreler eşleşmiyor.');
-  db.users.push({id:uid('u'),name,username,password:pass,role:'super_admin',job:'Sistem Yöneticisi',assignment:'Genel',active:true,protected:true});
-  saveDb(); $('#setupForm').reset(); refreshAuthView();
+  const suid=uid('u'); db.users.push({id:suid,name,username,password:pass,role:'super_admin',job:'Sistem Yöneticisi',assignment:'Genel',active:true,protected:true});
+  saveDb(); markDirty('users',suid); $('#setupForm').reset(); refreshAuthView();
   login(username,pass);
 }
 function enterApp(user){
@@ -88,7 +155,7 @@ function enterApp(user){
   }
 }
 function login(username,password){
-  const user=db.users.find(u=>normalizeText(u.username)===normalizeText(username));
+  const user=db.users.find(u=>!u._deleted&&normalizeText(u.username)===normalizeText(username));
   if(!user||user.password!==password){ toast('Kullanıcı adı veya şifre yanlış.'); return; }
   if(!user.active){ toast('Bu kullanıcı hesabı pasif durumda.'); return; }
   enterApp(user);
@@ -116,7 +183,7 @@ function goPage(page){
 function renderAll(){ if(!isPanelUser())return; renderDashboard(); renderMovements(); renderStocks(); renderProducts(); renderUsers(); renderBilling(); renderNotifications(); }
 
 function renderDashboard(){
-  const act=db.products.filter(p=>p.active);
+  const act=db.products.filter(p=>p.active&&!p._deleted);
   const ostim=act.reduce((s,p)=>s+Number(p.ostim),0);
   const yenikent=act.reduce((s,p)=>s+Number(p.yenikent),0);
   const critical=act.filter(p=>statusOf(p).key==='critical');
@@ -141,7 +208,7 @@ function renderMovements(){
 }
 function renderStocks(){
   const q=normalizeText($('#stockSearch').value);
-  const rows=db.products.filter(p=>p.active).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
+  const rows=db.products.filter(p=>p.active&&!p._deleted).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
   $('#stockRows').innerHTML=rows.map(p=>{const s=statusOf(p);return `<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b><small class="td-sub">${escapeHtml(p.category)} · ${escapeHtml(p.unit)}</small></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(p.ostim)}</td><td class="num">${formatQty(p.yenikent)}</td><td class="num"><b>${formatQty(Number(p.ostim)+Number(p.yenikent))}</b></td><td><span class="stock-pill ${s.className}">${s.label}</span></td><td><div class="row-actions"><button class="mini-btn" data-qr="${p.id}">Etiket</button><button class="mini-btn" data-quick="${p.id}">İşlem</button></div></td></tr>`}).join('');
   $('#stockEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-qr]').forEach(b=>b.onclick=()=>openQr(b.dataset.qr));
@@ -149,7 +216,7 @@ function renderStocks(){
 }
 function renderProducts(){
   const q=normalizeText($('#productAdminSearch').value);
-  const rows=db.products.filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
+  const rows=db.products.filter(p=>!p._deleted).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
   $('#productRows').innerHTML=rows.map(p=>`<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td>${escapeHtml(p.category)}</td><td>${escapeHtml(p.unit)}</td><td class="num">${formatQty(p.min)}</td><td><span class="stock-pill ${p.active?'pill-ok':'pill-inactive'}">${p.active?'Aktif':'Pasif'}</span></td><td><div class="row-actions"><button class="mini-btn" data-edit-product="${p.id}">Düzenle</button><button class="mini-btn danger" data-delete-product="${p.id}">Sil</button></div></td></tr>`).join('');
   $('#productEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-edit-product]').forEach(b=>b.onclick=()=>openProductModal(b.dataset.editProduct));
@@ -157,7 +224,7 @@ function renderProducts(){
 }
 function renderUsers(){
   const q=normalizeText($('#userSearch').value);
-  const rows=db.users.filter(u=>!q||normalizeText(`${u.name} ${u.username} ${u.job}`).includes(q));
+  const rows=db.users.filter(u=>!u._deleted).filter(u=>!q||normalizeText(`${u.name} ${u.username} ${u.job}`).includes(q));
   $('#userRows').innerHTML=rows.map(u=>`<tr><td><div class="cell-user"><div class="avatar sm">${initials(u.name)}</div><div><b>${escapeHtml(u.name)}</b><small class="td-sub">@${escapeHtml(u.username)}</small></div></div></td><td>${escapeHtml(u.job||'-')}</td><td><span class="stock-pill ${['super_admin','admin'].includes(u.role)?'pill-low':'pill-ok'}">${escapeHtml(roleNames[u.role]||u.role)}</span></td><td><span class="stock-pill ${u.active?'pill-ok':'pill-inactive'}">${u.active?'Aktif':'Pasif'}</span></td><td><div class="row-actions"><button class="mini-btn" data-edit-user="${u.id}">Düzenle</button><button class="mini-btn danger" data-delete-user="${u.id}" ${u.protected?'disabled':''}>Sil</button></div></td></tr>`).join('');
   $$('[data-edit-user]').forEach(b=>b.onclick=()=>openUserModal(b.dataset.editUser));
   $$('[data-delete-user]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.deleteUser));
@@ -230,7 +297,7 @@ function saveBilling(){
   const total=formatQty(price*m.qty);
   if(billPaid) addNotification(`₺ Tahsilat: ${m.product}`,`${total} ₺ — ${billInv?'faturalı':'faturasız/elden'}. (${currentUser.name})`);
   else addNotification(`⏳ Askıda: ${m.product}`,`${total} ₺ ödeme bekleniyor — ${m.target}. (${currentUser.name})`);
-  saveDb(); closeModal('billingModal'); renderAll();
+  saveDb(); markDirty('movements',m.id); closeModal('billingModal'); renderAll();
   toast(billPaid?'Kaydedildi: ödeme alındı olarak işaretlendi.':'Kaydedildi: ödeme askıya alındı.');
 }
 function downloadBillingCsv(){ csvDownload('muhasebe_kayitlari.csv',[['Tarih','Malzeme','İşlem','Miktar','Birim','Nereye','Personel','Birim Fiyat','Toplam','Fatura','Ödeme','Durum','Not'],...db.movements.filter(m=>m.billing).map(m=>{const b=m.billing;const s=billingStatus(b);return [m.date,m.product,m.type,m.qty,m.unit,m.target,m.user,b.unitPrice??'',b.unitPrice?b.unitPrice*m.qty:'',b.invoiced===true?'Kesildi':b.invoiced===false?'Kesilmedi':'',b.paid===true?'Alındı':b.paid===false?'Alınmadı':'',s==='done'?'Tamamlandı':s==='askida'?'Askıda':'Bekliyor',b.note||''];})]); toast('Muhasebe raporu indirildi.'); }
@@ -274,30 +341,32 @@ function openProductModal(id=''){
 }
 function saveProduct(e){
   e.preventDefault(); const id=$('#productId').value; const code=$('#productCode').value.trim();
-  if(db.products.some(p=>normalizeText(p.code)===normalizeText(code)&&p.id!==id)) return toast('Bu ürün kodu zaten kullanılıyor.');
+  if(db.products.some(p=>!p._deleted&&normalizeText(p.code)===normalizeText(code)&&p.id!==id)) return toast('Bu ürün kodu zaten kullanılıyor.');
   const data={name:$('#productName').value.trim(),code,category:$('#productCategory').value.trim()||'Genel',unit:$('#productUnit').value,ostim:Number($('#productOstim').value||0),yenikent:Number($('#productYenikent').value||0),min:Number($('#productMin').value||0),active:$('#productActive').value==='true',image:productImgData||undefined};
+  let pid=id;
   if(id) Object.assign(productById(id),data);
-  else db.products.push({id:uid('p'),...data});
-  saveDb(); closeModal('productModal'); renderAll(); toast('Ürün kaydedildi.');
+  else{ pid=uid('p'); db.products.push({id:pid,...data}); }
+  saveDb(); markDirty('products',pid); closeModal('productModal'); renderAll(); toast('Ürün kaydedildi.');
 }
-function deleteProduct(id){ const p=productById(id); if(!p)return; if(!confirm(`${p.name} ürününü silmek istiyor musunuz?`))return; db.products=db.products.filter(x=>x.id!==id); saveDb(); renderAll(); toast('Ürün silindi.'); }
+function deleteProduct(id){ const p=productById(id); if(!p)return; if(!confirm(`${p.name} ürününü silmek istiyor musunuz?`))return; p._deleted=true; p.active=false; saveDb(); markDirty('products',id); renderAll(); toast('Ürün silindi.'); }
 
 function openUserModal(id=''){
   const u=id?userById(id):null; $('#userModalTitle').textContent=u?'Kullanıcıyı Düzenle':'Yeni Kullanıcı'; $('#userId').value=u?.id||''; $('#userNameField').value=u?.name||''; $('#usernameField').value=u?.username||''; $('#passwordField').value=u?.password||''; $('#roleField').value=u&&['super_admin','admin'].includes(u.role)?'admin':'depot'; $('#jobField').value=u?.job||''; $('#userActiveField').value=String(u?.active??true); openModal('userModal');
 }
 function saveUser(e){
   e.preventDefault(); const id=$('#userId').value; const username=$('#usernameField').value.trim();
-  if(db.users.some(u=>normalizeText(u.username)===normalizeText(username)&&u.id!==id)) return toast('Bu kullanıcı adı zaten kullanılıyor.');
+  if(db.users.some(u=>!u._deleted&&normalizeText(u.username)===normalizeText(username)&&u.id!==id)) return toast('Bu kullanıcı adı zaten kullanılıyor.');
   const data={name:$('#userNameField').value.trim(),username,password:$('#passwordField').value,role:$('#roleField').value,job:$('#jobField').value.trim(),active:$('#userActiveField').value==='true'};
+  let uidv=id;
   if(id){ const ex=userById(id); if(ex.protected){ data.role='super_admin'; data.active=true; } Object.assign(ex,data); }
-  else db.users.push({id:uid('u'),...data,assignment:'Genel',protected:false});
-  saveDb(); closeModal('userModal'); renderAll(); toast('Kullanıcı kaydedildi.');
+  else{ uidv=uid('u'); db.users.push({id:uidv,...data,assignment:'Genel',protected:false}); }
+  saveDb(); markDirty('users',uidv); closeModal('userModal'); renderAll(); toast('Kullanıcı kaydedildi.');
 }
-function deleteUser(id){ const u=userById(id); if(!u||u.protected)return; if(currentUser.id===id)return toast('Kendi hesabınızı silemezsiniz.'); if(!confirm(`${u.name} kullanıcısını silmek istiyor musunuz?`))return; db.users=db.users.filter(x=>x.id!==id); saveDb(); renderAll(); toast('Kullanıcı silindi.'); }
+function deleteUser(id){ const u=userById(id); if(!u||u.protected)return; if(currentUser.id===id)return toast('Kendi hesabınızı silemezsiniz.'); if(!confirm(`${u.name} kullanıcısını silmek istiyor musunuz?`))return; u._deleted=true; u.active=false; saveDb(); markDirty('users',id); renderAll(); toast('Kullanıcı silindi.'); }
 
 /* ---- QR etiketler ---- */
 function printAllQr(){
-  const products=db.products.filter(p=>p.active);
+  const products=db.products.filter(p=>p.active&&!p._deleted);
   if(!products.length) return toast('Yazdırılacak ürün yok. Önce Ürünler bölümünden ürün ekleyin.');
   if(!window.QRCode) return toast('QR bileşeni yüklenemedi. İnternet bağlantısını kontrol edin.');
   let copies=Number(prompt('Her üründen kaç adet etiket basılsın? (44\'lü A4 etiket kağıdı)','1'));
@@ -422,7 +491,7 @@ function parseScanCode(text){
 }
 function handleScanResult(text){
   const code=parseScanCode(text);
-  const product=db.products.find(p=>p.active&&normalizeText(p.code)===normalizeText(code));
+  const product=db.products.find(p=>p.active&&!p._deleted&&normalizeText(p.code)===normalizeText(code));
   if(!product){
     if(text!==lastMissText||Date.now()-lastMissAt>2500){
       lastMissText=text; lastMissAt=Date.now();
@@ -475,6 +544,7 @@ function submitQuick(e){
   const mv={id:uid('m'),date:formatNow(),ts:Date.now(),type,productId:p.id,product:p.name,qty,unit:p.unit,source,target,user:currentUser.name,userId:currentUser.id,reference:'QR',note:''};
   if(OUT_TYPES.includes(type)) mv.billing={status:'pending',invoiced:null,paid:null,unitPrice:null,note:''};
   db.movements.unshift(mv);
+  markDirty('movements',mv.id); markDirty('products',p.id);
   addNotification(`${type}: ${p.name}`,`${currentUser.name}, ${formatQty(qty)} ${p.unit} ${p.name} — ${source} → ${target}`);
   if(scanMode!=='Giriş'&&statusOf(p).key==='critical') addNotification('⚠ Kritik stok uyarısı',`${p.name} minimum seviyenin altına düştü (kalan: ${formatQty(Number(p.ostim)+Number(p.yenikent))} ${p.unit}).`);
   saveDb();
@@ -496,9 +566,12 @@ function downloadStockCsv(){ csvDownload('depo_stoklari.csv',[['Ürün','Kod','K
 function downloadMovementCsv(){ csvDownload('depo_hareketleri.csv',[['Tarih','İşlem','Ürün','Miktar','Birim','Nereden','Nereye','Personel'],...db.movements.map(m=>[m.date,m.type,m.product,m.qty,m.unit,m.source,m.target,m.user])]); toast('Hareket raporu indirildi.'); }
 function downloadBackup(){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'})); a.download=`depo_takip_yedek_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); toast('Yedek indirildi.'); }
 function restoreBackup(file){
-  const reader=new FileReader(); reader.onload=()=>{ try{ const data=migrate(JSON.parse(reader.result)); if(!confirm('Seçilen yedek bu cihazdaki verilerin üzerine yazılacak. Devam edilsin mi?'))return; db=data; saveDb(); refreshAuthView(); if(currentUser&&isPanelUser()){ applyShellPerms(); renderAll(); goPage('dashboard'); } toast('Yedek yüklendi.'); }catch(e){toast('Yedek dosyası geçerli değil.');} }; reader.readAsText(file);
+  const reader=new FileReader(); reader.onload=()=>{ try{ const data=migrate(JSON.parse(reader.result)); if(!confirm('Seçilen yedek bu cihazdaki verilerin üzerine yazılacak. Devam edilsin mi?'))return; db=data; saveDb(); markAllDirty(); refreshAuthView(); if(currentUser&&isPanelUser()){ applyShellPerms(); renderAll(); goPage('dashboard'); } toast('Yedek yüklendi.'); }catch(e){toast('Yedek dosyası geçerli değil.');} }; reader.readAsText(file);
 }
-function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek. Emin misiniz?'))return; localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SESSION_KEY); db=deepClone(seed); currentUser=null; $('#appView').classList.add('hidden'); $('#staffView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yönetici hesabıyla giriş yapın.'); }
+async function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek. Emin misiniz?'))return;
+  if(cloudOk){ if(!confirm('Buluttaki ortak veriler de silinecek — bu, TÜM cihazları etkiler. Devam edilsin mi?'))return; try{ await cloudWipe(); }catch(e){ toast('Bulut temizlenemedi, tekrar deneyin.'); return; } }
+  Object.values(dirtyIds).forEach(s=>s.clear());
+  localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SESSION_KEY); db=deepClone(seed); currentUser=null; markAllDirty(); $('#appView').classList.add('hidden'); $('#staffView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yönetici hesabıyla giriş yapın.'); }
 
 function bindEvents(){
   $('#loginForm').addEventListener('submit',e=>{e.preventDefault();login($('#loginUser').value,$('#loginPass').value);});
@@ -556,4 +629,6 @@ bindEvents();
 refreshAuthView();
 const savedSessionUser=userById(localStorage.getItem(SESSION_KEY)||'');
 if(savedSessionUser&&savedSessionUser.active) enterApp(savedSessionUser);
+cloudSync();
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') scheduleSync(400); });
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(console.error));

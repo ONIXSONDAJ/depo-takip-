@@ -241,17 +241,27 @@ function printAllQr(){
   const products=db.products.filter(p=>p.active);
   if(!products.length) return toast('Yazdırılacak ürün yok. Önce Ürün Yönetimi\'nden ürün ekleyin.');
   if(!window.QRCode) return toast('QR bileşeni yüklenemedi. İnternet bağlantısını kontrol edin.');
+  let copies=Number(prompt('Her üründen kaç adet etiket basılsın? (44\'lü A4 etiket kağıdı)','1'));
+  if(!copies||copies<1) return;
+  copies=Math.min(Math.floor(copies),440);
+  const items=[]; products.forEach(p=>{ for(let i=0;i<copies;i++) items.push(p); });
   const sheet=$('#labelSheet'); sheet.innerHTML='';
-  products.forEach(p=>{
-    const card=document.createElement('div'); card.className='label-card';
-    const qr=document.createElement('div'); qr.className='label-qr';
-    const name=document.createElement('b'); name.textContent=p.name;
-    const code=document.createElement('code'); code.textContent=p.code;
-    card.append(qr,name,code); sheet.appendChild(card);
-    new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:150,height:150,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
-  });
+  for(let i=0;i<items.length;i+=44){
+    const pageEl=document.createElement('div'); pageEl.className='label-page';
+    items.slice(i,i+44).forEach(p=>{
+      const card=document.createElement('div'); card.className='label-card';
+      const qr=document.createElement('div'); qr.className='label-qr';
+      const txt=document.createElement('div'); txt.className='label-text';
+      const name=document.createElement('b'); name.textContent=p.name;
+      const code=document.createElement('code'); code.textContent=p.code;
+      txt.append(name,code); card.append(qr,txt); pageEl.appendChild(card);
+      new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+    });
+    sheet.appendChild(pageEl);
+  }
+  toast(`${items.length} etiket hazırlandı (${Math.ceil(items.length/44)} sayfa). Yazdırma ayarında kenar boşluğunu "Yok", ölçeği %100 yapın.`);
   document.body.classList.add('print-labels');
-  setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },250);
+  setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
 }
 function openQr(productId){
   const p=productById(productId); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrLabelName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';

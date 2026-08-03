@@ -273,7 +273,7 @@ function openModal(id){ $('#modalOverlay').classList.remove('hidden'); $(`#${id}
 function closeModal(id){ if(id==='scanModal') stopScanner(); $(`#${id}`).classList.add('hidden'); if(!$$('.modal:not(.hidden)').length) $('#modalOverlay').classList.add('hidden'); }
 
 // ---- QR tarama (kamera ile giriş/çıkış) ----
-let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0, scanMode='Çıkış';
+let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0, scanMode='Çıkış', scanStartAt=0, lastDecodeAt=0, torchOn=false, slowHintShown=false;
 
 function openScanner(){
   if(!has('stock_write')) return toast('Bu hesabın stok işlemi yetkisi yok.');
@@ -295,12 +295,21 @@ async function startScanner(){
   const status=$('#scanStatus'); status.textContent='Kamera başlatılıyor…';
   if(!navigator.mediaDevices?.getUserMedia){ status.textContent='Bu tarayıcı kamera erişimini desteklemiyor. Güncel Chrome veya Safari kullanın.'; return; }
   try{
-    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
     const video=$('#scanVideo'); video.srcObject=scanStream; await video.play();
     if(!scanDetector&&'BarcodeDetector' in window){ try{ scanDetector=new BarcodeDetector({formats:['qr_code']}); }catch(e){ scanDetector=null; } }
-    scanActive=true; status.textContent='QR kodu çerçeveye hizalayın…';
+    scanActive=true; scanStartAt=Date.now(); torchOn=false; slowHintShown=false; status.textContent='QR kodu çerçeveye hizalayın…';
     scanLoop();
   }catch(error){ status.textContent='Kameraya erişilemedi. Tarayıcı ayarlarından kamera iznini verin.'; }
+}
+async function toggleTorch(){
+  const track=scanStream?.getVideoTracks?.()[0]; if(!track) return;
+  try{
+    const caps=track.getCapabilities?.();
+    if(!caps||!caps.torch) return toast('Bu cihazda fener desteği yok.');
+    torchOn=!torchOn;
+    await track.applyConstraints({advanced:[{torch:torchOn}]});
+  }catch(e){ toast('Fener açılamadı.'); }
 }
 function stopScanner(){
   scanActive=false;
@@ -314,15 +323,20 @@ async function scanLoop(){
   if(video.readyState>=2&&video.videoWidth){
     if(scanDetector){
       try{ const codes=await scanDetector.detect(video); if(codes.length) text=codes[0].rawValue; }catch(e){ scanDetector=null; }
-    }else if(window.jsQR){
+    }else if(window.jsQR&&Date.now()-lastDecodeAt>120){
+      lastDecodeAt=Date.now();
       scanCanvas=scanCanvas||document.createElement('canvas');
-      const scale=Math.min(1,640/video.videoWidth);
+      const scale=Math.min(1,900/video.videoWidth);
       scanCanvas.width=video.videoWidth*scale; scanCanvas.height=video.videoHeight*scale;
       const ctx=scanCanvas.getContext('2d',{willReadFrequently:true});
       ctx.drawImage(video,0,0,scanCanvas.width,scanCanvas.height);
       const img=ctx.getImageData(0,0,scanCanvas.width,scanCanvas.height);
-      const found=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
-      if(found) text=found.data;
+      const found=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+      if(found&&found.data) text=found.data;
+    }
+    if(!text&&!slowHintShown&&Date.now()-scanStartAt>7000){
+      slowHintShown=true;
+      $('#scanStatus').textContent='Okunmuyorsa: telefonu etikete 10-15 cm yaklaştırın, sabit tutun. Karanlıksa 💡 ile feneri açın.';
     }
   }
   if(text&&handleScanResult(text)) return;
@@ -417,7 +431,7 @@ function bindEvents(){
   $$('[data-close-modal]').forEach(b=>b.onclick=()=>closeModal(b.dataset.closeModal)); $('#modalOverlay').onclick=()=>$$('.modal:not(.hidden)').forEach(m=>closeModal(m.id));
   $('#addProductBtn').onclick=()=>openProductModal(); $('#productForm').onsubmit=saveProduct; $('#addUserBtn').onclick=()=>openUserModal(); $('#userForm').onsubmit=saveUser; $('#printQrBtn').onclick=()=>window.print();
   $('#scanBtn').onclick=openScanner; $('#quickScanBtn').onclick=openScanner; $('#txnScanBtn').onclick=openScanner; $('#rescanBtn').onclick=startScanner;
-  $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış'); $('#scanBackBtn').onclick=()=>showScanStep('mode');
+  $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış'); $('#scanBackBtn').onclick=()=>showScanStep('mode'); $('#torchBtn').onclick=toggleTorch;
   $('#quickForm').onsubmit=submitQuick; $('#quickTarget').onchange=updateQuickCustomer;
   $('#printAllQrBtn').onclick=printAllQr;
   $('#transactionForm').onsubmit=submitTransaction; $('#txnType').onchange=()=>{updateTransactionLocations();updateTransactionSummary();}; $('#txnSource').onchange=()=>{updateTransferTarget();updateTransactionSummary();}; ['txnTarget','txnTargetText','txnProduct','txnQty'].forEach(id=>$(`#${id}`).addEventListener('input',updateTransactionSummary));

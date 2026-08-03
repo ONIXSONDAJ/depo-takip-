@@ -468,12 +468,22 @@ async function scanLoop(){
     }else if(window.jsQR&&Date.now()-lastDecodeAt>120){
       lastDecodeAt=Date.now();
       scanCanvas=scanCanvas||document.createElement('canvas');
-      const scale=Math.min(1,900/video.videoWidth);
-      scanCanvas.width=video.videoWidth*scale; scanCanvas.height=video.videoHeight*scale;
       const ctx=scanCanvas.getContext('2d',{willReadFrequently:true});
+      const vw=video.videoWidth, vh=video.videoHeight;
+      // 1. geçiş: tüm kare (küçültülmüş)
+      const scale=Math.min(1,900/vw);
+      scanCanvas.width=Math.round(vw*scale); scanCanvas.height=Math.round(vh*scale);
       ctx.drawImage(video,0,0,scanCanvas.width,scanCanvas.height);
-      const img=ctx.getImageData(0,0,scanCanvas.width,scanCanvas.height);
-      const found=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+      let img=ctx.getImageData(0,0,scanCanvas.width,scanCanvas.height);
+      let found=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+      // 2. geçiş: çerçevenin ortası, tam çözünürlük (çoklu/küçük QR için)
+      if(!found){
+        const cw=Math.round(Math.min(vw,vh)*0.62), sx=Math.round((vw-cw)/2), sy=Math.round((vh-cw)/2);
+        scanCanvas.width=cw; scanCanvas.height=cw;
+        ctx.drawImage(video,sx,sy,cw,cw,0,0,cw,cw);
+        img=ctx.getImageData(0,0,cw,cw);
+        found=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+      }
       if(found&&found.data) text=found.data;
     }
     if(!text&&!slowHintShown&&Date.now()-scanStartAt>7000){

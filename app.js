@@ -5,20 +5,8 @@ const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 const STORAGE_KEY = 'depoTakipProV4';
 const SESSION_KEY = 'depoTakipSession';
 
-const roleNames = {
-  super_admin: 'Yönetici', admin: 'Yönetici', depot: 'Depo Personeli',
-  machine: 'Makine Personeli', sales: 'Satış', accounting: 'Muhasebe', viewer: 'Görüntüleyici'
-};
-const permissions = {
-  super_admin: ['manage_users','manage_products','manage_settings','stock_write'],
-  admin: ['manage_users','manage_products','manage_settings','stock_write'],
-  depot: ['stock_write'],
-  machine: [],
-  sales: ['stock_write'],
-  accounting: [],
-  viewer: []
-};
-
+const roleNames = { super_admin:'Yönetici', admin:'Yönetici', depot:'Personel', machine:'Personel', sales:'Personel', accounting:'Muhasebe', viewer:'Personel' };
+const OUT_TYPES=['Makine Çıkışı','Vinç Çıkışı','Satış'];
 const seed = { version: 4, products: [], users: [
   {id:'u1',name:'Alper',username:'Alper',password:'00120200',role:'super_admin',job:'Sistem Yöneticisi',assignment:'Genel',active:true,protected:true}
 ], movements: [], notifications: [] };
@@ -26,52 +14,54 @@ const seed = { version: 4, products: [], users: [
 let db = loadDb();
 let currentUser = null;
 
-function deepClone(value){ return JSON.parse(JSON.stringify(value)); }
-function uid(prefix){ return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
+function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
+function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 function formatQty(n){ return Number(n).toLocaleString('tr-TR',{maximumFractionDigits:2}); }
 function formatNow(){ return new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function saveDb(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
-function has(permission){ return currentUser && permissions[currentUser.role]?.includes(permission); }
+function isAdmin(){ return currentUser && ['super_admin','admin'].includes(currentUser.role); }
+function isPanelUser(){ return currentUser && ['super_admin','admin','accounting'].includes(currentUser.role); }
+function canBill(){ return isPanelUser(); }
+function canWrite(){ return currentUser && ['super_admin','admin','depot','sales'].includes(currentUser.role); }
 function productById(id){ return db.products.find(p=>p.id===id); }
 function userById(id){ return db.users.find(u=>u.id===id); }
 function initials(name){ return String(name).split(/\s+/).map(x=>x[0]).filter(Boolean).slice(0,2).join('').toUpperCase(); }
 function escapeHtml(v){ return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c])); }
-function toast(message){ const el=$('#toast'); el.textContent=message; el.classList.remove('hidden'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>el.classList.add('hidden'),3200); }
+function toast(msg){ const el=$('#toast'); el.textContent=msg; el.classList.remove('hidden'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>el.classList.add('hidden'),3200); }
 
 function loadDb(){
-  try{
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if(stored) return migrate(JSON.parse(stored));
-  }catch(error){ console.error('Veri yüklenemedi', error); }
+  try{ const s=localStorage.getItem(STORAGE_KEY); if(s) return migrate(JSON.parse(s)); }
+  catch(e){ console.error('Veri yüklenemedi', e); }
   return deepClone(seed);
 }
 function migrate(data){
   return {
     version:4,
     products:Array.isArray(data.products)?data.products.map((p,i)=>({...p,id:String(p.id||`p${i}`),category:p.category||'Genel',active:p.active!==false})):[],
-    users:Array.isArray(data.users)&&data.users.length?data.users.map((u,i)=>({...u,id:String(u.id||`u${i}`),role:u.role||'viewer',job:u.job||'',assignment:u.assignment||'Genel',active:u.active!==false})):deepClone(seed).users,
-    movements:Array.isArray(data.movements)?data.movements.map((m,i)=>({...m,id:m.id||`m${i}`,ts:m.ts||Date.now()-i*60000,reference:m.reference||'',note:m.note||'',userId:m.userId||''})):[],
-    notifications:[]
+    users:Array.isArray(data.users)&&data.users.length?data.users.map((u,i)=>({...u,id:String(u.id||`u${i}`),role:u.role||'depot',job:u.job||'',assignment:u.assignment||'Genel',active:u.active!==false})):deepClone(seed).users,
+    movements:Array.isArray(data.movements)?data.movements.map((m,i)=>({...m,id:m.id||`m${i}`,ts:m.ts||Date.now()-i*60000,reference:m.reference||'',note:m.note||'',userId:m.userId||'',billing:OUT_TYPES.includes(m.type)?(m.billing||{status:'pending',invoiced:null,paid:null,unitPrice:null,note:''}):undefined})):[],
+    notifications:Array.isArray(data.notifications)?data.notifications:[]
   };
 }
-
-function statusOf(product){
-  const total=Number(product.ostim)+Number(product.yenikent);
-  if(total<=Number(product.min)) return {key:'critical',label:'Kritik',className:'pill-critical'};
-  if(total<=Number(product.min)*1.7) return {key:'low',label:'Azalıyor',className:'pill-low'};
+function statusOf(p){
+  const total=Number(p.ostim)+Number(p.yenikent);
+  if(total<=Number(p.min)) return {key:'critical',label:'Kritik',className:'pill-critical'};
+  if(total<=Number(p.min)*1.7) return {key:'low',label:'Azalıyor',className:'pill-low'};
   return {key:'ok',label:'Yeterli',className:'pill-ok'};
 }
-function movementClass(type){ return type==='Giriş'||type==='İade'?'pill-ok':type==='Satış'?'pill-low':'pill-critical'; }
+function movementClass(t){ return t==='Giriş'||t==='İade'?'pill-ok':t==='Satış'?'pill-low':'pill-critical'; }
+function addNotification(title,body){ db.notifications.unshift({id:uid('n'),title,body,date:formatNow(),read:false}); db.notifications=db.notifications.slice(0,60); saveDb(); }
+function splitDate(d){ const parts=String(d||'').split(' '); return {day:parts[0]||'',time:parts[1]||''}; }
 
-// ---- Oturum ----
+/* ---- Oturum ---- */
 function refreshAuthView(){
   const needsSetup=db.users.length===0;
   $('#loginForm').classList.toggle('hidden',needsSetup);
   $('#setupForm').classList.toggle('hidden',!needsSetup);
 }
-function completeSetup(event){
-  event.preventDefault();
+function completeSetup(e){
+  e.preventDefault();
   const name=$('#setupName').value.trim(); const username=$('#setupUser').value.trim();
   const pass=$('#setupPass').value; const pass2=$('#setupPass2').value;
   if(!name||!username) return toast('Ad soyad ve kullanıcı adı gerekli.');
@@ -84,9 +74,18 @@ function completeSetup(event){
 function enterApp(user){
   currentUser=user;
   localStorage.setItem(SESSION_KEY,user.id);
-  $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden');
-  $('#currentName').textContent=user.name; $('#currentRole').textContent=roleNames[user.role]||user.role;
-  applyPermissions(); goPage('home');
+  $('#loginView').classList.add('hidden');
+  if(isPanelUser()){
+    $('#staffView').classList.add('hidden'); $('#appView').classList.remove('hidden');
+    applyShellPerms();
+    $('#currentName').textContent=user.name; $('#currentRole').textContent=roleNames[user.role]; $('#avatar').textContent=initials(user.name);
+    renderAll(); goPage('dashboard');
+  }else{
+    $('#appView').classList.add('hidden'); $('#staffView').classList.remove('hidden');
+    $('#staffName').textContent=user.name;
+    $('#staffHello').textContent=`Merhaba, ${user.name.split(' ')[0]}`;
+    renderStaffLast();
+  }
 }
 function login(username,password){
   const user=db.users.find(u=>normalizeText(u.username)===normalizeText(username));
@@ -94,99 +93,185 @@ function login(username,password){
   if(!user.active){ toast('Bu kullanıcı hesabı pasif durumda.'); return; }
   enterApp(user);
 }
-function logout(){ localStorage.removeItem(SESSION_KEY); currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); $('#loginPass').value=''; refreshAuthView(); }
+function logout(){ localStorage.removeItem(SESSION_KEY); currentUser=null; $('#appView').classList.add('hidden'); $('#staffView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); $('#loginPass').value=''; refreshAuthView(); }
 
-function applyPermissions(){
-  $$('[data-permission]').forEach(el=>el.classList.toggle('hidden',!has(el.dataset.permission)));
-}
+/* ---- Yönetici sayfaları ---- */
+const pageTitles={dashboard:'Ana Sayfa',movements:'Hareketler',stocks:'Stok',muhasebe:'Muhasebe',products:'Ürünler',users:'Kullanıcılar',settings:'Ayarlar'};
+function applyShellPerms(){ const restricted=!isAdmin(); $$('[data-admin-only]').forEach(el=>el.classList.toggle('hidden',restricted)); $('#scanTopBtn').classList.toggle('hidden',!canWrite()); }
 function goPage(page){
-  const need={products:'manage_products',users:'manage_users',settings:'manage_settings'};
-  if(need[page]&&!has(need[page])) page='home';
+  if(!isPanelUser()) return;
+  if(!isAdmin()&&['products','users','settings'].includes(page)) page='dashboard';
   $$('.page').forEach(el=>el.classList.toggle('active',el.id===page));
+  $$('.side-nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+  $('#pageTitle').textContent=pageTitles[page]||'DEPO TAKİP';
+  $('#sidebar').classList.remove('open'); $('#sidebarOverlay').classList.add('hidden');
+  hideNotifPanel();
   window.scrollTo(0,0);
-  if(page==='stocks') renderStocks();
+  if(page==='dashboard') renderDashboard();
   if(page==='movements') renderMovements();
-  if(page==='products') renderProductAdmin();
+  if(page==='stocks') renderStocks();
+  if(page==='products') renderProducts();
   if(page==='users') renderUsers();
 }
+function renderAll(){ if(!isPanelUser())return; renderDashboard(); renderMovements(); renderStocks(); renderProducts(); renderUsers(); renderBilling(); renderNotifications(); }
 
-// ---- Listeler ----
+function renderDashboard(){
+  const act=db.products.filter(p=>p.active);
+  const ostim=act.reduce((s,p)=>s+Number(p.ostim),0);
+  const yenikent=act.reduce((s,p)=>s+Number(p.yenikent),0);
+  const critical=act.filter(p=>statusOf(p).key==='critical');
+  const midnight=new Date(); midnight.setHours(0,0,0,0);
+  const today=db.movements.filter(m=>Number(m.ts)>=midnight.getTime()).length;
+  $('#mOstim').textContent=formatQty(ostim); $('#mYenikent').textContent=formatQty(yenikent);
+  $('#mCritical').textContent=critical.length; $('#mToday').textContent=today;
+  const open=db.movements.filter(m=>m.billing&&billingStatus(m.billing)!=='done').length;
+  $('#mBilling').textContent=open;
+  const recent=db.movements.slice(0,8);
+  $('#dashMovements').innerHTML=recent.map(m=>{const d=splitDate(m.date);return `<tr><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.target)}</td></tr>`}).join('');
+  $('#dashMovementsEmpty').classList.toggle('hidden',recent.length>0);
+  $('#dashCritical').innerHTML=critical.length?critical.slice(0,6).map(p=>`<div class="critical-item"><div><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · Min. ${formatQty(p.min)} ${escapeHtml(p.unit)}</small></div><span class="stock-pill pill-critical">${formatQty(Number(p.ostim)+Number(p.yenikent))}</span></div>`).join(''):'<div class="empty">Kritik stok yok. 👍</div>';
+  const total=Math.max(ostim+yenikent,1);
+  $('#dashBars').innerHTML=`<div class="bar-row"><div class="bar-label"><b>Ostim</b><span>${formatQty(ostim)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${ostim/total*100}%"></div></div></div><div class="bar-row"><div class="bar-label"><b>Yenikent</b><span>${formatQty(yenikent)}</span></div><div class="bar-track"><div class="bar-fill alt" style="width:${yenikent/total*100}%"></div></div></div>`;
+}
+function renderMovements(){
+  const q=normalizeText($('#movementSearch').value); const type=$('#movementType').value;
+  const rows=db.movements.filter(m=>type==='all'||m.type===type).filter(m=>!q||normalizeText(`${m.product} ${m.user} ${m.source} ${m.target}`).includes(q)).slice(0,300);
+  $('#movementRows').innerHTML=rows.map(m=>{const d=splitDate(m.date);return `<tr><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.source)}</td><td>${escapeHtml(m.target)}</td></tr>`}).join('');
+  $('#movementEmpty').classList.toggle('hidden',rows.length>0);
+}
 function renderStocks(){
   const q=normalizeText($('#stockSearch').value);
   const rows=db.products.filter(p=>p.active).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
-  $('#stockList').innerHTML=rows.map(p=>{const s=statusOf(p);const total=Number(p.ostim)+Number(p.yenikent);return `
-    <article class="list-card">
-      <div class="list-main"><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · ${escapeHtml(p.unit)}</small></div>
-      <div class="list-qty"><span>Ostim <b>${formatQty(p.ostim)}</b></span><span>Yenikent <b>${formatQty(p.yenikent)}</b></span><span class="stock-pill ${s.className}">${formatQty(total)}</span></div>
-      <div class="list-actions"><button class="mini-btn" data-qr="${p.id}">Etiket</button>${has('stock_write')?`<button class="mini-btn" data-quick="${p.id}">İşlem</button>`:''}</div>
-    </article>`}).join('');
+  $('#stockRows').innerHTML=rows.map(p=>{const s=statusOf(p);return `<tr><td><b>${escapeHtml(p.name)}</b><small class="td-sub">${escapeHtml(p.category)} · ${escapeHtml(p.unit)}</small></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(p.ostim)}</td><td class="num">${formatQty(p.yenikent)}</td><td class="num"><b>${formatQty(Number(p.ostim)+Number(p.yenikent))}</b></td><td><span class="stock-pill ${s.className}">${s.label}</span></td><td><div class="row-actions"><button class="mini-btn" data-qr="${p.id}">Etiket</button><button class="mini-btn" data-quick="${p.id}">İşlem</button></div></td></tr>`}).join('');
   $('#stockEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-qr]').forEach(b=>b.onclick=()=>openQr(b.dataset.qr));
   $$('[data-quick]').forEach(b=>b.onclick=()=>openQuickForProduct(b.dataset.quick));
 }
-function renderMovements(){
-  const q=normalizeText($('#movementSearch').value);
-  const rows=db.movements.filter(m=>!q||normalizeText(`${m.product} ${m.user} ${m.source} ${m.target} ${m.type}`).includes(q)).slice(0,200);
-  $('#movementList').innerHTML=rows.map(m=>`
-    <article class="list-card">
-      <div class="list-main"><b>${escapeHtml(m.product)}</b><small>${escapeHtml(m.source)} → ${escapeHtml(m.target)} · ${escapeHtml(m.user)}</small><small>${escapeHtml(m.date)}</small></div>
-      <div class="list-qty"><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span><b class="qty-big">${formatQty(m.qty)} ${escapeHtml(m.unit)}</b></div>
-    </article>`).join('');
-  $('#movementEmpty').classList.toggle('hidden',rows.length>0);
-}
-function renderProductAdmin(){
+function renderProducts(){
   const q=normalizeText($('#productAdminSearch').value);
   const rows=db.products.filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
-  $('#productAdminList').innerHTML=rows.map(p=>`
-    <article class="list-card">
-      <div class="list-main"><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · ${escapeHtml(p.category)} · ${escapeHtml(p.unit)} ${p.active?'':'· <span class=\"inactive-tag\">PASİF</span>'}</small></div>
-      <div class="list-qty"><span>Ostim <b>${formatQty(p.ostim)}</b></span><span>Yenikent <b>${formatQty(p.yenikent)}</b></span></div>
-      <div class="list-actions"><button class="mini-btn" data-edit-product="${p.id}">Düzenle</button><button class="mini-btn danger" data-delete-product="${p.id}">Sil</button></div>
-    </article>`).join('');
-  $('#productAdminEmpty').classList.toggle('hidden',rows.length>0);
+  $('#productRows').innerHTML=rows.map(p=>`<tr><td><b>${escapeHtml(p.name)}</b></td><td><code>${escapeHtml(p.code)}</code></td><td>${escapeHtml(p.category)}</td><td>${escapeHtml(p.unit)}</td><td class="num">${formatQty(p.min)}</td><td><span class="stock-pill ${p.active?'pill-ok':'pill-inactive'}">${p.active?'Aktif':'Pasif'}</span></td><td><div class="row-actions"><button class="mini-btn" data-edit-product="${p.id}">Düzenle</button><button class="mini-btn danger" data-delete-product="${p.id}">Sil</button></div></td></tr>`).join('');
+  $('#productEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-edit-product]').forEach(b=>b.onclick=()=>openProductModal(b.dataset.editProduct));
   $$('[data-delete-product]').forEach(b=>b.onclick=()=>deleteProduct(b.dataset.deleteProduct));
 }
 function renderUsers(){
-  $('#userList').innerHTML=db.users.map(u=>`
-    <article class="list-card">
-      <div class="avatar">${initials(u.name)}</div>
-      <div class="list-main"><b>${escapeHtml(u.name)}</b><small>@${escapeHtml(u.username)} · ${escapeHtml(roleNames[u.role]||u.role)} ${u.active?'':'· <span class=\"inactive-tag\">PASİF</span>'}</small></div>
-      <div class="list-actions"><button class="mini-btn" data-edit-user="${u.id}">Düzenle</button><button class="mini-btn danger" data-delete-user="${u.id}" ${u.protected?'disabled':''}>Sil</button></div>
-    </article>`).join('');
+  const q=normalizeText($('#userSearch').value);
+  const rows=db.users.filter(u=>!q||normalizeText(`${u.name} ${u.username} ${u.job}`).includes(q));
+  $('#userRows').innerHTML=rows.map(u=>`<tr><td><div class="cell-user"><div class="avatar sm">${initials(u.name)}</div><div><b>${escapeHtml(u.name)}</b><small class="td-sub">@${escapeHtml(u.username)}</small></div></div></td><td>${escapeHtml(u.job||'-')}</td><td><span class="stock-pill ${['super_admin','admin'].includes(u.role)?'pill-low':'pill-ok'}">${escapeHtml(roleNames[u.role]||u.role)}</span></td><td><span class="stock-pill ${u.active?'pill-ok':'pill-inactive'}">${u.active?'Aktif':'Pasif'}</span></td><td><div class="row-actions"><button class="mini-btn" data-edit-user="${u.id}">Düzenle</button><button class="mini-btn danger" data-delete-user="${u.id}" ${u.protected?'disabled':''}>Sil</button></div></td></tr>`).join('');
   $$('[data-edit-user]').forEach(b=>b.onclick=()=>openUserModal(b.dataset.editUser));
   $$('[data-delete-user]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.deleteUser));
 }
+function renderNotifications(){
+  const unread=db.notifications.filter(n=>!n.read).length;
+  $('#notifCount').textContent=unread; $('#notifCount').classList.toggle('hidden',unread===0);
+  $('#notifList').innerHTML=db.notifications.length?db.notifications.slice(0,40).map(n=>`<article class="notif-item ${n.read?'':'unread'}"><b>${escapeHtml(n.title)}</b><p>${escapeHtml(n.body)}</p><time>${escapeHtml(n.date)}</time></article>`).join(''):'<div class="empty">Bildirim yok.</div>';
+}
+function toggleNotifPanel(){ const p=$('#notifPanel'); p.classList.toggle('hidden'); if(!p.classList.contains('hidden')) renderNotifications(); }
+function hideNotifPanel(){ $('#notifPanel').classList.add('hidden'); }
 
-// ---- Ürün yönetimi ----
+
+/* ---- Muhasebe ---- */
+let billingMovementId=null, billInv=null, billPaid=null;
+function billingStatus(b){ return b.paid===true?'done':b.paid===false?'askida':'pending'; }
+function billingPill(s){ return s==='done'?'<span class="stock-pill pill-ok">Tamamlandı</span>':s==='askida'?'<span class="stock-pill pill-low">Askıda</span>':'<span class="stock-pill pill-inactive">Bekliyor</span>'; }
+function yesNo(v,yes,no){ return v===true?`<span class="yn ok">✓ ${yes}</span>`:v===false?`<span class="yn no">✗ ${no}</span>`:'<span class="yn">—</span>'; }
+function billingRows(){
+  const q=normalizeText($('#billSearch').value); const f=$('#billFilter').value;
+  return db.movements.filter(m=>m.billing)
+    .filter(m=>f==='all'||billingStatus(m.billing)===f)
+    .filter(m=>!q||normalizeText(`${m.product} ${m.target} ${m.user}`).includes(q));
+}
+function renderBilling(){
+  const rows=billingRows();
+  $('#billRows').innerHTML=rows.map(m=>{const b=m.billing;const s=billingStatus(b);const d=splitDate(m.date);const total=b.unitPrice?b.unitPrice*m.qty:null;
+    return `<tr class="${s==='askida'?'row-askida':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td><b>${escapeHtml(m.product)}</b><small class="td-sub">${escapeHtml(m.type)}</small></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.target)}</td><td>${escapeHtml(m.user)}</td><td class="num">${b.unitPrice?formatQty(b.unitPrice):'—'}</td><td class="num"><b>${total?formatQty(total):'—'}</b></td><td>${yesNo(b.invoiced,'Kesildi','Kesilmedi')}</td><td>${yesNo(b.paid,'Alındı','Alınmadı')}</td><td>${billingPill(s)}</td><td>${canBill()?`<button class="mini-btn" data-bill="${m.id}">${s==='pending'?'İşle':'Düzenle'}</button>`:''}</td></tr>`;}).join('');
+  $('#billEmpty').classList.toggle('hidden',rows.length>0);
+  $$('[data-bill]').forEach(btn=>btn.onclick=()=>openBillingModal(btn.dataset.bill));
+  const all=db.movements.filter(m=>m.billing);
+  const pending=all.filter(m=>billingStatus(m.billing)==='pending').length;
+  const askida=all.filter(m=>billingStatus(m.billing)==='askida');
+  const done=all.filter(m=>billingStatus(m.billing)==='done');
+  const sum=list=>list.reduce((s,m)=>s+(m.billing.unitPrice?m.billing.unitPrice*m.qty:0),0);
+  $('#billSummary').innerHTML=`
+    <div class="bill-chip"><small>Bekleyen</small><b>${pending}</b></div>
+    <div class="bill-chip warn"><small>Askıda</small><b>${askida.length}</b><span>${formatQty(sum(askida))} ₺</span></div>
+    <div class="bill-chip ok"><small>Tahsil edilen</small><b>${done.length}</b><span>${formatQty(sum(done))} ₺</span></div>`;
+}
+function openBillingModal(id){
+  const m=db.movements.find(x=>x.id===id); if(!m||!m.billing) return;
+  billingMovementId=id; const b=m.billing;
+  billInv=b.invoiced; billPaid=b.paid;
+  $('#billProductInfo').textContent=`${m.product} · ${formatQty(m.qty)} ${m.unit}`;
+  $('#billMeta').innerHTML=`<span>${escapeHtml(m.date)}</span><span>${escapeHtml(m.type)} → ${escapeHtml(m.target)}</span><span>Personel: ${escapeHtml(m.user)}</span>`;
+  $('#billPrice').value=b.unitPrice??'';
+  $('#billNote').value=b.note||'';
+  updateBillSegs(); updateBillTotal();
+  openModal('billingModal');
+}
+function updateBillSegs(){
+  $('#segInvYes').classList.toggle('active',billInv===true);
+  $('#segInvNo').classList.toggle('active',billInv===false);
+  $('#segPaidYes').classList.toggle('active',billPaid===true);
+  $('#segPaidNo').classList.toggle('active',billPaid===false);
+}
+function updateBillTotal(){
+  const m=db.movements.find(x=>x.id===billingMovementId);
+  const price=Number($('#billPrice').value);
+  $('#billTotalTxt').textContent=m&&price>0?`${formatQty(price*m.qty)} ₺`:'—';
+}
+function saveBilling(){
+  const m=db.movements.find(x=>x.id===billingMovementId); if(!m||!m.billing) return;
+  const price=Number($('#billPrice').value);
+  if(!price||price<=0) return toast('Birim fiyat girin.');
+  if(billInv===null) return toast('Fatura durumunu seçin: Kesildi veya Kesilmedi.');
+  if(billPaid===null) return toast('Ödeme durumunu seçin: Alındı veya Alınmadı.');
+  m.billing={invoiced:billInv,paid:billPaid,unitPrice:price,note:$('#billNote').value.trim(),status:billPaid?'done':'askida',updatedBy:currentUser.name,updatedAt:formatNow()};
+  const total=formatQty(price*m.qty);
+  if(billPaid) addNotification(`₺ Tahsilat: ${m.product}`,`${total} ₺ — ${billInv?'faturalı':'faturasız/elden'}. (${currentUser.name})`);
+  else addNotification(`⏳ Askıda: ${m.product}`,`${total} ₺ ödeme bekleniyor — ${m.target}. (${currentUser.name})`);
+  saveDb(); closeModal('billingModal'); renderAll();
+  toast(billPaid?'Kaydedildi: ödeme alındı olarak işaretlendi.':'Kaydedildi: ödeme askıya alındı.');
+}
+function downloadBillingCsv(){ csvDownload('muhasebe_kayitlari.csv',[['Tarih','Malzeme','İşlem','Miktar','Birim','Nereye','Personel','Birim Fiyat','Toplam','Fatura','Ödeme','Durum','Not'],...db.movements.filter(m=>m.billing).map(m=>{const b=m.billing;const s=billingStatus(b);return [m.date,m.product,m.type,m.qty,m.unit,m.target,m.user,b.unitPrice??'',b.unitPrice?b.unitPrice*m.qty:'',b.invoiced===true?'Kesildi':b.invoiced===false?'Kesilmedi':'',b.paid===true?'Alındı':b.paid===false?'Alınmadı':'',s==='done'?'Tamamlandı':s==='askida'?'Askıda':'Bekliyor',b.note||''];})]); toast('Muhasebe raporu indirildi.'); }
+
+/* ---- Personel ekranı ---- */
+function renderStaffLast(){
+  const mine=db.movements.find(m=>m.userId===currentUser?.id);
+  const el=$('#staffLast');
+  if(!mine){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML=`<small>SON İŞLEMİNİZ</small><b>${escapeHtml(mine.type)} · ${formatQty(mine.qty)} ${escapeHtml(mine.unit)} ${escapeHtml(mine.product)}</b><span>${escapeHtml(mine.date)} · ${escapeHtml(mine.source)} → ${escapeHtml(mine.target)}</span>`;
+}
+
+/* ---- Ürün / kullanıcı yönetimi ---- */
 function openProductModal(id=''){
   const p=id?productById(id):null; $('#productModalTitle').textContent=p?'Ürünü Düzenle':'Yeni Ürün'; $('#productId').value=p?.id||''; $('#productName').value=p?.name||''; $('#productCode').value=p?.code||''; $('#productCategory').value=p?.category||''; $('#productUnit').value=p?.unit||'Adet'; $('#productOstim').value=p?.ostim??0; $('#productYenikent').value=p?.yenikent??0; $('#productMin').value=p?.min??0; $('#productActive').value=String(p?.active??true); openModal('productModal');
 }
-function saveProduct(event){
-  event.preventDefault(); const id=$('#productId').value; const code=$('#productCode').value.trim();
+function saveProduct(e){
+  e.preventDefault(); const id=$('#productId').value; const code=$('#productCode').value.trim();
   if(db.products.some(p=>normalizeText(p.code)===normalizeText(code)&&p.id!==id)) return toast('Bu ürün kodu zaten kullanılıyor.');
   const data={name:$('#productName').value.trim(),code,category:$('#productCategory').value.trim()||'Genel',unit:$('#productUnit').value,ostim:Number($('#productOstim').value||0),yenikent:Number($('#productYenikent').value||0),min:Number($('#productMin').value||0),active:$('#productActive').value==='true'};
   if(id) Object.assign(productById(id),data);
   else db.products.push({id:uid('p'),...data});
-  saveDb(); closeModal('productModal'); renderProductAdmin(); toast('Ürün kaydedildi.');
+  saveDb(); closeModal('productModal'); renderAll(); toast('Ürün kaydedildi.');
 }
-function deleteProduct(id){ const p=productById(id); if(!p)return; if(!confirm(`${p.name} ürününü silmek istiyor musunuz?`))return; db.products=db.products.filter(x=>x.id!==id); saveDb(); renderProductAdmin(); toast('Ürün silindi.'); }
+function deleteProduct(id){ const p=productById(id); if(!p)return; if(!confirm(`${p.name} ürününü silmek istiyor musunuz?`))return; db.products=db.products.filter(x=>x.id!==id); saveDb(); renderAll(); toast('Ürün silindi.'); }
 
-// ---- Kullanıcı yönetimi ----
 function openUserModal(id=''){
-  const u=id?userById(id):null; $('#userModalTitle').textContent=u?'Kullanıcıyı Düzenle':'Yeni Kullanıcı'; $('#userId').value=u?.id||''; $('#userNameField').value=u?.name||''; $('#usernameField').value=u?.username||''; $('#passwordField').value=u?.password||''; $('#roleField').value=u&&$('#roleField').querySelector(`option[value="${u.role}"]`)?u.role:'depot'; $('#jobField').value=u?.job||''; $('#userActiveField').value=String(u?.active??true); openModal('userModal');
+  const u=id?userById(id):null; $('#userModalTitle').textContent=u?'Kullanıcıyı Düzenle':'Yeni Kullanıcı'; $('#userId').value=u?.id||''; $('#userNameField').value=u?.name||''; $('#usernameField').value=u?.username||''; $('#passwordField').value=u?.password||''; $('#roleField').value=u&&['super_admin','admin'].includes(u.role)?'admin':'depot'; $('#jobField').value=u?.job||''; $('#userActiveField').value=String(u?.active??true); openModal('userModal');
 }
-function saveUser(event){
-  event.preventDefault(); const id=$('#userId').value; const username=$('#usernameField').value.trim();
+function saveUser(e){
+  e.preventDefault(); const id=$('#userId').value; const username=$('#usernameField').value.trim();
   if(db.users.some(u=>normalizeText(u.username)===normalizeText(username)&&u.id!==id)) return toast('Bu kullanıcı adı zaten kullanılıyor.');
   const data={name:$('#userNameField').value.trim(),username,password:$('#passwordField').value,role:$('#roleField').value,job:$('#jobField').value.trim(),active:$('#userActiveField').value==='true'};
-  if(id){ const existing=userById(id); if(existing.protected){ data.role='super_admin'; data.active=true; } Object.assign(existing,data); }
+  if(id){ const ex=userById(id); if(ex.protected){ data.role='super_admin'; data.active=true; } Object.assign(ex,data); }
   else db.users.push({id:uid('u'),...data,assignment:'Genel',protected:false});
-  saveDb(); closeModal('userModal'); renderUsers(); toast('Kullanıcı kaydedildi.');
+  saveDb(); closeModal('userModal'); renderAll(); toast('Kullanıcı kaydedildi.');
 }
-function deleteUser(id){ const u=userById(id); if(!u||u.protected)return; if(currentUser.id===id)return toast('Kendi hesabınızı silemezsiniz.'); if(!confirm(`${u.name} kullanıcısını silmek istiyor musunuz?`))return; db.users=db.users.filter(x=>x.id!==id); saveDb(); renderUsers(); toast('Kullanıcı silindi.'); }
+function deleteUser(id){ const u=userById(id); if(!u||u.protected)return; if(currentUser.id===id)return toast('Kendi hesabınızı silemezsiniz.'); if(!confirm(`${u.name} kullanıcısını silmek istiyor musunuz?`))return; db.users=db.users.filter(x=>x.id!==id); saveDb(); renderAll(); toast('Kullanıcı silindi.'); }
 
-// ---- QR etiketler ----
+/* ---- QR etiketler ---- */
 function printAllQr(){
   const products=db.products.filter(p=>p.active);
   if(!products.length) return toast('Yazdırılacak ürün yok. Önce Ürünler bölümünden ürün ekleyin.');
@@ -213,23 +298,28 @@ function printAllQr(){
   document.body.classList.add('print-labels');
   setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
 }
-function openQr(productId){
-  const p=productById(productId); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrLabelName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';
-  if(window.QRCode){ new QRCode($('#qrCode'),{text:`DEPO-TAKIP|${p.code}`,width:210,height:210,colorDark:'#0b1f3a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
+function openQr(id){
+  const p=productById(id); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrLabelName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';
+  if(window.QRCode){ new QRCode($('#qrCode'),{text:`DEPO-TAKIP|${p.code}`,width:210,height:210,colorDark:'#0d1526',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
   else $('#qrCode').textContent='QR bileşeni yüklenemedi.';
   openModal('qrModal');
 }
 
-// ---- QR tarama ve hızlı işlem ----
+/* ---- QR tarama ve hızlı işlem ---- */
 let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0, scanMode='Çıkış', scanStartAt=0, lastDecodeAt=0, torchOn=false, slowHintShown=false, pendingManual=null;
 
 function openScanner(){
-  if(!has('stock_write')) return toast('Bu hesabın stok işlemi yetkisi yok.');
+  if(!canWrite()) return toast('Bu hesabın stok işlemi yetkisi yok.');
   pendingManual=null;
   openModal('scanModal'); showScanStep('mode');
 }
+function openScannerWithMode(mode){
+  if(!canWrite()) return toast('Bu hesabın stok işlemi yetkisi yok.');
+  pendingManual=null;
+  openModal('scanModal'); scanMode=mode; startScanner();
+}
 function openQuickForProduct(id){
-  if(!has('stock_write')) return toast('Bu hesabın stok işlemi yetkisi yok.');
+  if(!canWrite()) return toast('Bu hesabın stok işlemi yetkisi yok.');
   const p=productById(id); if(!p) return;
   pendingManual=p;
   openModal('scanModal'); showScanStep('mode');
@@ -259,7 +349,7 @@ async function startScanner(){
     if(!scanDetector&&'BarcodeDetector' in window){ try{ scanDetector=new BarcodeDetector({formats:['qr_code']}); }catch(e){ scanDetector=null; } }
     scanActive=true; scanStartAt=Date.now(); torchOn=false; slowHintShown=false; status.textContent='QR kodu çerçeveye hizalayın…';
     scanLoop();
-  }catch(error){ status.textContent='Kameraya erişilemedi. Tarayıcı ayarlarından kamera iznini verin.'; }
+  }catch(e){ status.textContent='Kameraya erişilemedi. Tarayıcı ayarlarından kamera iznini verin.'; }
 }
 async function toggleTorch(){
   const track=scanStream?.getVideoTracks?.()[0]; if(!track) return;
@@ -339,9 +429,9 @@ function updateQuickCustomer(){
   const show=scanMode==='Çıkış'&&$('#quickTarget').value==='customer';
   $('#quickCustomerField').classList.toggle('hidden',!show);
 }
-function submitQuick(event){
-  event.preventDefault();
-  if(!scannedProduct||!has('stock_write')) return;
+function submitQuick(e){
+  e.preventDefault();
+  if(!scannedProduct||!canWrite()) return;
   const p=productById(scannedProduct.id); if(!p) return;
   const wasManual=!!pendingManual;
   const qty=Number($('#quickQty').value); const warning=$('#quickWarning'); warning.classList.add('hidden');
@@ -358,34 +448,38 @@ function submitQuick(event){
     if(Number(p[key])<qty){ warning.textContent=`Yetersiz stok: ${depot} deposunda ${formatQty(p[key])} ${p.unit} var.`; warning.classList.remove('hidden'); return; }
     p[key]=Number(p[key])-qty;
   }
-  db.movements.unshift({id:uid('m'),date:formatNow(),ts:Date.now(),type,productId:p.id,product:p.name,qty,unit:p.unit,source,target,user:currentUser.name,userId:currentUser.id,reference:'QR',note:''});
+  const mv={id:uid('m'),date:formatNow(),ts:Date.now(),type,productId:p.id,product:p.name,qty,unit:p.unit,source,target,user:currentUser.name,userId:currentUser.id,reference:'QR',note:''};
+  if(OUT_TYPES.includes(type)) mv.billing={status:'pending',invoiced:null,paid:null,unitPrice:null,note:''};
+  db.movements.unshift(mv);
+  addNotification(`${type}: ${p.name}`,`${currentUser.name}, ${formatQty(qty)} ${p.unit} ${p.name} — ${source} → ${target}`);
+  if(scanMode!=='Giriş'&&statusOf(p).key==='critical') addNotification('⚠ Kritik stok uyarısı',`${p.name} minimum seviyenin altına düştü (kalan: ${formatQty(Number(p.ostim)+Number(p.yenikent))} ${p.unit}).`);
   saveDb();
   toast(`Kaydedildi: ${formatQty(qty)} ${p.unit} ${p.name} · ${type}.`);
   $('#quickCustomer').value='';
-  if(wasManual){ pendingManual=null; closeModal('scanModal'); renderStocks(); }
+  if(isPanelUser()) renderAll(); else renderStaffLast();
+  if(wasManual){ pendingManual=null; closeModal('scanModal'); }
   else startScanner();
 }
 
-// ---- Modal / yardımcılar ----
+/* ---- Modal / araçlar ---- */
 function openModal(id){ $('#modalOverlay').classList.remove('hidden'); $(`#${id}`).classList.remove('hidden'); }
 function closeModal(id){ if(id==='scanModal'){ stopScanner(); pendingManual=null; } $(`#${id}`).classList.add('hidden'); if(!$$('.modal:not(.hidden)').length) $('#modalOverlay').classList.add('hidden'); }
 
 function csvDownload(filename,rows){
-  const csv='﻿'+rows.map(row=>row.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(';')).join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
+  const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(';')).join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
 }
 function downloadStockCsv(){ csvDownload('depo_stoklari.csv',[['Ürün','Kod','Kategori','Birim','Ostim','Yenikent','Toplam','Minimum','Durum'],...db.products.map(p=>[p.name,p.code,p.category,p.unit,p.ostim,p.yenikent,Number(p.ostim)+Number(p.yenikent),p.min,p.active?'Aktif':'Pasif'])]); toast('Stok raporu indirildi.'); }
-function downloadMovementCsv(){ csvDownload('depo_hareketleri.csv',[['Tarih','İşlem','Ürün','Miktar','Birim','Kaynak','Hedef','Kullanıcı','Referans'],...db.movements.map(m=>[m.date,m.type,m.product,m.qty,m.unit,m.source,m.target,m.user,m.reference])]); toast('Hareket raporu indirildi.'); }
+function downloadMovementCsv(){ csvDownload('depo_hareketleri.csv',[['Tarih','İşlem','Ürün','Miktar','Birim','Nereden','Nereye','Personel'],...db.movements.map(m=>[m.date,m.type,m.product,m.qty,m.unit,m.source,m.target,m.user])]); toast('Hareket raporu indirildi.'); }
 function downloadBackup(){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'})); a.download=`depo_takip_yedek_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); toast('Yedek indirildi.'); }
 function restoreBackup(file){
-  const reader=new FileReader(); reader.onload=()=>{ try{ const data=migrate(JSON.parse(reader.result)); if(!confirm('Seçilen yedek bu cihazdaki verilerin üzerine yazılacak. Devam edilsin mi?'))return; db=data; saveDb(); refreshAuthView(); if(currentUser) goPage('home'); toast('Yedek yüklendi.'); }catch(error){toast('Yedek dosyası geçerli değil.');} }; reader.readAsText(file);
+  const reader=new FileReader(); reader.onload=()=>{ try{ const data=migrate(JSON.parse(reader.result)); if(!confirm('Seçilen yedek bu cihazdaki verilerin üzerine yazılacak. Devam edilsin mi?'))return; db=data; saveDb(); refreshAuthView(); if(currentUser&&isPanelUser()){ applyShellPerms(); renderAll(); goPage('dashboard'); } toast('Yedek yüklendi.'); }catch(e){toast('Yedek dosyası geçerli değil.');} }; reader.readAsText(file);
 }
-function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek. Emin misiniz?'))return; localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SESSION_KEY); db=deepClone(seed); currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yönetici hesabıyla giriş yapın.'); }
+function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek. Emin misiniz?'))return; localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SESSION_KEY); db=deepClone(seed); currentUser=null; $('#appView').classList.add('hidden'); $('#staffView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yönetici hesabıyla giriş yapın.'); }
 
 function bindEvents(){
   $('#loginForm').addEventListener('submit',e=>{e.preventDefault();login($('#loginUser').value,$('#loginPass').value);});
   $('#setupForm').addEventListener('submit',completeSetup);
-  $('#logoutBtn').onclick=logout;
-  $('#homeBtn').onclick=()=>goPage('home');
+  $('#logoutBtn').onclick=logout; $('#staffLogoutBtn').onclick=logout;
   $('#loginResetBtn').onclick=()=>{
     if(!confirm('Şifre kurtarma olmadığı için tek çözüm bu cihazdaki TÜM depo verilerini silip yeniden kurulum yapmaktır. Devam edilsin mi?'))return;
     if(!confirm('Son onay: bu işlem geri alınamaz. Veriler kalıcı olarak silinsin mi?'))return;
@@ -394,21 +488,37 @@ function bindEvents(){
   $('#setupRestoreBtn').onclick=()=>$('#setupRestoreInput').click();
   $('#setupRestoreInput').onchange=e=>{ const f=e.target.files[0]; if(f) restoreBackup(f); e.target.value=''; };
   $$('[data-page]').forEach(b=>b.onclick=()=>goPage(b.dataset.page));
-  $('#homeScanBtn').onclick=openScanner;
-  $('#homePrintBtn').onclick=printAllQr;
+  $('#menuBtn').onclick=()=>{ $('#sidebar').classList.toggle('open'); $('#sidebarOverlay').classList.toggle('hidden'); };
+  $('#sidebarOverlay').onclick=()=>{ $('#sidebar').classList.remove('open'); $('#sidebarOverlay').classList.add('hidden'); };
+  $('#scanTopBtn').onclick=openScanner;
+  $('#notifBtn').onclick=toggleNotifPanel;
+  $('#markReadBtn').onclick=()=>{ db.notifications.forEach(n=>n.read=true); saveDb(); renderNotifications(); };
+  $('#staffScanIn').onclick=()=>openScannerWithMode('Giriş');
+  $('#staffScanOut').onclick=()=>openScannerWithMode('Çıkış');
   $$('[data-close-modal]').forEach(b=>b.onclick=()=>closeModal(b.dataset.closeModal));
   $('#modalOverlay').onclick=()=>$$('.modal:not(.hidden)').forEach(m=>closeModal(m.id));
   $('#addProductBtn').onclick=()=>openProductModal(); $('#productForm').onsubmit=saveProduct;
   $('#addUserBtn').onclick=()=>openUserModal(); $('#userForm').onsubmit=saveUser;
-  $('#printQrBtn').onclick=()=>window.print();
+  $('#printQrBtn').onclick=()=>window.print(); $('#printAllQrBtn').onclick=printAllQr;
   $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış');
   $('#scanBackBtn').onclick=()=>{ pendingManual=null; showScanStep('mode'); };
   $('#torchBtn').onclick=toggleTorch;
   $('#quickForm').onsubmit=submitQuick; $('#quickTarget').onchange=updateQuickCustomer;
   $('#rescanBtn').onclick=()=>{ pendingManual=null; startScanner(); };
   $('#stockSearch').addEventListener('input',renderStocks);
-  $('#movementSearch').addEventListener('input',renderMovements);
-  $('#productAdminSearch').addEventListener('input',renderProductAdmin);
+  $('#movementSearch').addEventListener('input',renderMovements); $('#movementType').addEventListener('input',renderMovements);
+  $('#productAdminSearch').addEventListener('input',renderProducts);
+  $('#userSearch').addEventListener('input',renderUsers);
+  $('#billSearch').addEventListener('input',renderBilling); $('#billFilter').addEventListener('input',renderBilling);
+  $('#billCsvBtn').onclick=downloadBillingCsv;
+  $('#billPrice').addEventListener('input',updateBillTotal);
+  $('#segInvYes').onclick=()=>{billInv=true;updateBillSegs();};
+  $('#segInvNo').onclick=()=>{billInv=false;updateBillSegs();};
+  $('#segPaidYes').onclick=()=>{billPaid=true;updateBillSegs();};
+  $('#segPaidNo').onclick=()=>{billPaid=false;updateBillSegs();};
+  $('#billSaveBtn').onclick=saveBilling;
+  $('#mBillingCard').onclick=()=>goPage('muhasebe');
+  $('#stockCsvBtn').onclick=downloadStockCsv; $('#movementCsvBtn').onclick=downloadMovementCsv;
   $('#settingsStockCsv').onclick=downloadStockCsv; $('#settingsMovementCsv').onclick=downloadMovementCsv;
   $('#backupBtn').onclick=downloadBackup; $('#restoreBtn').onclick=()=>$('#restoreInput').click();
   $('#restoreInput').onchange=e=>e.target.files[0]&&restoreBackup(e.target.files[0]);

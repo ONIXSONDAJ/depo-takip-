@@ -18,7 +18,9 @@ const permissions = {
   viewer: ['dashboard','stocks','movements']
 };
 
-const seed = { version: 4, products: [], users: [], movements: [], notifications: [] };
+const seed = { version: 4, products: [], users: [
+  {id:'u1',name:'Alper',username:'Alper',password:'00120200',role:'super_admin',job:'Sistem Yöneticisi',assignment:'Genel',active:true,protected:true}
+], movements: [], notifications: [] };
 
 let db = loadDb();
 let currentUser = null;
@@ -380,13 +382,15 @@ function downloadStockCsv(){ csvDownload('depo_stoklari.csv',[['Ürün','Kod','K
 function downloadMovementCsv(){ csvDownload('depo_hareketleri.csv',[['Tarih','İşlem','Ürün','Miktar','Birim','Kaynak','Hedef','Kullanıcı','Referans','Açıklama'],...db.movements.map(m=>[m.date,m.type,m.product,m.qty,m.unit,m.source,m.target,m.user,m.reference,m.note])]); toast('Hareket CSV raporu indirildi.'); }
 function downloadBackup(){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'})); a.download=`depo_takip_yedek_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); toast('Tam sistem yedeği indirildi.'); }
 function restoreBackup(file){
-  const reader=new FileReader(); reader.onload=()=>{ try{ const data=migrate(JSON.parse(reader.result)); if(!confirm('Seçilen yedek mevcut tarayıcı verilerinin üzerine yazılacak. Devam edilsin mi?'))return; db=data; saveDb(); renderAll(); toast('Yedek başarıyla geri yüklendi.'); }catch(error){toast('Yedek dosyası geçerli değil.');} }; reader.readAsText(file);
+  const reader=new FileReader(); reader.onload=()=>{ try{ const data=migrate(JSON.parse(reader.result)); if(!confirm('Seçilen yedek mevcut tarayıcı verilerinin üzerine yazılacak. Devam edilsin mi?'))return; db=data; saveDb(); renderAll(); refreshAuthView(); toast(currentUser?'Yedek başarıyla geri yüklendi.':'Yedek yüklendi. Kullanıcı adınız ve şifrenizle giriş yapabilirsiniz.'); }catch(error){toast('Yedek dosyası geçerli değil.');} }; reader.readAsText(file);
 }
-function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek ve sistem ilk kurulum ekranına dönecek. Emin misiniz?'))return; localStorage.removeItem(STORAGE_KEY); db=deepClone(seed); currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yeni yönetici hesabı oluşturun.'); }
+function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek. Emin misiniz?'))return; localStorage.removeItem(STORAGE_KEY); db=deepClone(seed); currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yönetici hesabıyla giriş yapın.'); }
 function escapeHtml(v){ return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c])); }
 
 function bindEvents(){
   $('#loginForm').addEventListener('submit',e=>{e.preventDefault();login($('#loginUser').value,$('#loginPass').value);}); $('#setupForm').addEventListener('submit',completeSetup); $('#logoutBtn').onclick=logout;
+  $('#setupRestoreBtn').onclick=()=>$('#setupRestoreInput').click();
+  $('#setupRestoreInput').onchange=e=>{ const f=e.target.files[0]; if(f) restoreBackup(f); e.target.value=''; };
   $('#loginResetBtn').onclick=()=>{
     if(!confirm('Şifre kurtarma olmadığı için tek çözüm bu cihazdaki TÜM depo verilerini (ürünler, kullanıcılar, hareketler) silip yeniden kurulum yapmaktır. Devam edilsin mi?'))return;
     if(!confirm('Son onay: bu işlem geri alınamaz. Veriler kalıcı olarak silinsin mi?'))return;

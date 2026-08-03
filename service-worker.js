@@ -1,5 +1,5 @@
-const CACHE='depo-takip-pro-v14';
-const ASSETS=['./','./index.html','./app.css?v=14','./app.js?v=14','./manifest.webmanifest','./icon.svg'];
+const CACHE='depo-takip-pro-v15';
+const ASSETS=['./','./index.html','./app.css?v=15','./app.js?v=15','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim();});
 self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;const bust=event.request.url.includes('app.js')||event.request.url.includes('app.css')||event.request.mode==='navigate';event.respondWith(fetch(event.request,bust?{cache:'no-cache'}:undefined).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response;}).catch(()=>caches.match(event.request).then(cached=>cached||(event.request.mode==='navigate'?caches.match('./index.html'):Response.error()))));});

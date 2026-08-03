@@ -3,6 +3,7 @@
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 const STORAGE_KEY = 'depoTakipProV4';
+const SESSION_KEY = 'depoTakipSession';
 
 const roleNames = {
   super_admin: 'Süper Yönetici', admin: 'Yönetici', depot: 'Depo Personeli',
@@ -82,16 +83,20 @@ function completeSetup(event){
   login(username,pass);
   toast('Yönetici hesabınız oluşturuldu, hoş geldiniz.');
 }
-function login(username,password){
-  const user=db.users.find(u=>normalizeText(u.username)===normalizeText(username));
-  if(!user||user.password!==password){ toast('Kullanıcı adı veya şifre yanlış.'); return; }
-  if(!user.active){ toast('Bu kullanıcı hesabı pasif durumda.'); return; }
+function enterApp(user){
   currentUser=user;
+  localStorage.setItem(SESSION_KEY,user.id);
   $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden');
   $('#currentName').textContent=user.name; $('#currentRole').textContent=roleNames[user.role]||user.role; $('#welcomeName').textContent=user.name.split(' ')[0]; $('#avatar').textContent=initials(user.name);
   applyPermissions(); renderAll(); goPage('dashboard');
 }
-function logout(){ currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); $('#loginPass').value=''; refreshAuthView(); }
+function login(username,password){
+  const user=db.users.find(u=>normalizeText(u.username)===normalizeText(username));
+  if(!user||user.password!==password){ toast('Kullanıcı adı veya şifre yanlış.'); return; }
+  if(!user.active){ toast('Bu kullanıcı hesabı pasif durumda.'); return; }
+  enterApp(user);
+}
+function logout(){ localStorage.removeItem(SESSION_KEY); currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); $('#loginPass').value=''; refreshAuthView(); }
 
 function applyPermissions(){
   $$('[data-permission]').forEach(el=>el.classList.toggle('hidden',!has(el.dataset.permission)));
@@ -384,7 +389,7 @@ function downloadBackup(){ const a=document.createElement('a'); a.href=URL.creat
 function restoreBackup(file){
   const reader=new FileReader(); reader.onload=()=>{ try{ const data=migrate(JSON.parse(reader.result)); if(!confirm('Seçilen yedek mevcut tarayıcı verilerinin üzerine yazılacak. Devam edilsin mi?'))return; db=data; saveDb(); renderAll(); refreshAuthView(); toast(currentUser?'Yedek başarıyla geri yüklendi.':'Yedek yüklendi. Kullanıcı adınız ve şifrenizle giriş yapabilirsiniz.'); }catch(error){toast('Yedek dosyası geçerli değil.');} }; reader.readAsText(file);
 }
-function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek. Emin misiniz?'))return; localStorage.removeItem(STORAGE_KEY); db=deepClone(seed); currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yönetici hesabıyla giriş yapın.'); }
+function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek. Emin misiniz?'))return; localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SESSION_KEY); db=deepClone(seed); currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yönetici hesabıyla giriş yapın.'); }
 function escapeHtml(v){ return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c])); }
 
 function bindEvents(){
@@ -394,7 +399,7 @@ function bindEvents(){
   $('#loginResetBtn').onclick=()=>{
     if(!confirm('Şifre kurtarma olmadığı için tek çözüm bu cihazdaki TÜM depo verilerini (ürünler, kullanıcılar, hareketler) silip yeniden kurulum yapmaktır. Devam edilsin mi?'))return;
     if(!confirm('Son onay: bu işlem geri alınamaz. Veriler kalıcı olarak silinsin mi?'))return;
-    localStorage.removeItem(STORAGE_KEY); db=deepClone(seed); $('#loginPass').value=''; refreshAuthView(); toast('Veriler silindi. Yeni yönetici hesabınızı oluşturun.');
+    localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SESSION_KEY); db=deepClone(seed); $('#loginPass').value=''; refreshAuthView(); toast('Veriler silindi. Yönetici hesabıyla giriş yapın.');
   };
   $$('[data-page]').forEach(b=>b.onclick=()=>goPage(b.dataset.page)); $$('[data-open]').forEach(b=>b.onclick=()=>goPage(b.dataset.open)); $$('[data-type]').forEach(b=>b.onclick=()=>{goPage('transaction');$('#txnType').value=b.dataset.type;updateTransactionLocations();updateTransactionSummary();});
   $('#mobileMenu').onclick=()=>$('.sidebar').classList.toggle('open');
@@ -413,4 +418,6 @@ function bindEvents(){
 
 bindEvents();
 refreshAuthView();
+const savedSessionUser=userById(localStorage.getItem(SESSION_KEY)||'');
+if(savedSessionUser&&savedSessionUser.active) enterApp(savedSessionUser);
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(console.error));

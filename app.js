@@ -338,6 +338,11 @@ function escapeHtml(v){ return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;'
 
 function bindEvents(){
   $('#loginForm').addEventListener('submit',e=>{e.preventDefault();login($('#loginUser').value,$('#loginPass').value);}); $('#setupForm').addEventListener('submit',completeSetup); $('#logoutBtn').onclick=logout;
+  $('#loginResetBtn').onclick=()=>{
+    if(!confirm('Şifre kurtarma olmadığı için tek çözüm bu cihazdaki TÜM depo verilerini (ürünler, kullanıcılar, hareketler) silip yeniden kurulum yapmaktır. Devam edilsin mi?'))return;
+    if(!confirm('Son onay: bu işlem geri alınamaz. Veriler kalıcı olarak silinsin mi?'))return;
+    localStorage.removeItem(STORAGE_KEY); db=deepClone(seed); $('#loginPass').value=''; refreshAuthView(); toast('Veriler silindi. Yeni yönetici hesabınızı oluşturun.');
+  };
   $$('[data-page]').forEach(b=>b.onclick=()=>goPage(b.dataset.page)); $$('[data-open]').forEach(b=>b.onclick=()=>goPage(b.dataset.open)); $$('[data-type]').forEach(b=>b.onclick=()=>{goPage('transaction');$('#txnType').value=b.dataset.type;updateTransactionLocations();updateTransactionSummary();});
   $('#mobileMenu').onclick=()=>$('.sidebar').classList.toggle('open');
   $('#notificationBtn').onclick=openDrawer; $$('[data-close-drawer]').forEach(b=>b.onclick=closeDrawer); $('#markAllReadBtn').onclick=()=>{db.notifications.forEach(n=>n.read=true);saveDb();renderNotifications();toast('Bildirimler okundu.');};

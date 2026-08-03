@@ -18,3 +18,5 @@
 .scan-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
 .scan-actions .btn{padding:11px 8px;font-size:13px}
 .quick-scan{border:1px dashed var(--brand)!important;background:#f2f7ff!important}
+.login-reset{margin-top:14px;width:100%;background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.login-reset:hover{color:var(--brand)}

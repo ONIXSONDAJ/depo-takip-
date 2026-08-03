@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DEPO TAKİP">
-  <title>DEPO TAKİP PRO</title>
+  <title>DEPO TAKİP</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
@@ -19,31 +19,27 @@
 <body>
   <section id="loginView" class="login-view">
     <div class="login-brand">
-      <div class="brand-lockup"><span class="brand-mark">DT</span><span>DEPO TAKİP PRO</span></div>
+      <div class="brand-lockup"><span class="brand-mark">DT</span><span>DEPO TAKİP</span></div>
       <div class="login-copy">
         <span class="eyebrow">ONIX OPERASYON SİSTEMİ</span>
-        <h1>Depo, saha ve satış hareketlerini tek ekrandan yönetin.</h1>
-        <p>Ostim Depo, Yenikent Depo, 3 sondaj makinesi, vinç ve müşteriler için hızlı, kontrollü ve kayıtlı stok yönetimi.</p>
-        <div class="feature-row">
-          <span>✓ Rol bazlı yetki</span><span>✓ QR okut: giriş/çıkış</span><span>✓ QR ürün etiketi</span><span>✓ Mobil PWA</span><span>✓ Denetim kaydı</span>
-        </div>
+        <h1>QR okut, giriş veya çıkış yap. Bu kadar basit.</h1>
+        <p>Ostim ve Yenikent depoları için sade stok takibi.</p>
       </div>
-      <small>Veriler bu cihazın tarayıcısında saklanır. Ortak merkezi veritabanı bağlantısı bir sonraki aşamadır.</small>
+      <small>Veriler bu cihazın tarayıcısında saklanır.</small>
     </div>
     <div class="login-panel">
       <form id="loginForm" class="login-card">
-        <div class="mobile-brand"><span class="brand-mark">DT</span><b>DEPO TAKİP PRO</b></div>
-        <h2>Güvenli giriş</h2>
-        <p class="muted">Kullanıcı adınız ve şifrenizle sisteme girin.</p>
+        <div class="mobile-brand"><span class="brand-mark">DT</span><b>DEPO TAKİP</b></div>
+        <h2>Giriş</h2>
         <label class="field"><span>Kullanıcı adı</span><input id="loginUser" autocomplete="username" required></label>
         <label class="field"><span>Şifre</span><input id="loginPass" type="password" autocomplete="current-password" required></label>
-        <button class="btn btn-primary btn-block" type="submit">Sisteme Giriş Yap</button>
+        <button class="btn btn-primary btn-block" type="submit">Giriş Yap</button>
         <button type="button" id="loginResetBtn" class="login-reset">Şifrenizi mi unuttunuz? Bu cihazdaki verileri sıfırlayıp yeniden kurun</button>
       </form>
       <form id="setupForm" class="login-card hidden">
-        <div class="mobile-brand"><span class="brand-mark">DT</span><b>DEPO TAKİP PRO</b></div>
+        <div class="mobile-brand"><span class="brand-mark">DT</span><b>DEPO TAKİP</b></div>
         <h2>İlk kurulum</h2>
-        <p class="muted">Sistemi kullanmaya başlamak için yönetici hesabınızı oluşturun.</p>
+        <p class="muted">Yönetici hesabınızı oluşturun.</p>
         <label class="field"><span>Ad soyad</span><input id="setupName" required></label>
         <label class="field"><span>Kullanıcı adı</span><input id="setupUser" autocomplete="username" required></label>
         <label class="field"><span>Şifre</span><input id="setupPass" type="password" autocomplete="new-password" minlength="6" required></label>
@@ -51,129 +47,76 @@
         <button class="btn btn-primary btn-block" type="submit">Yönetici Hesabını Oluştur</button>
         <button type="button" id="setupRestoreBtn" class="login-reset">Başka cihazda hesabınız var mı? Yedek dosyasından kurun</button>
         <input id="setupRestoreInput" type="file" accept="application/json" class="hidden">
-        <div class="login-help">Bu hesap tüm yetkilere sahip olur. Diğer kullanıcıları daha sonra Kullanıcı Yönetimi'nden ekleyebilirsiniz.</div>
       </form>
     </div>
   </section>
 
-  <div id="appView" class="app-shell hidden">
-    <aside class="sidebar">
-      <div class="sidebar-brand"><span class="brand-mark">DT</span><div><b>DEPO TAKİP</b><small>PRO YÖNETİM</small></div></div>
-      <nav id="sideNav" class="side-nav">
-        <button data-page="dashboard" class="active"><span>⌂</span>Ana Panel</button>
-        <button data-page="stocks"><span>▦</span>Stok Yönetimi</button>
-        <button data-page="transaction"><span>＋</span>Yeni İşlem</button>
-        <button data-page="movements"><span>⇄</span>Hareketler</button>
-        <button data-page="products" data-permission="manage_products"><span>◇</span>Ürün Yönetimi</button>
-        <button data-page="users" data-permission="manage_users"><span>♙</span>Kullanıcı Yönetimi</button>
-        <button data-page="settings" data-permission="manage_settings"><span>⚙</span>Sistem & Yedek</button>
-      </nav>
-      <div class="sidebar-footer"><div class="status-dot"></div><div><b>Canlı PWA</b><small>GitHub Pages</small></div></div>
-    </aside>
+  <div id="appView" class="simple-shell hidden">
+    <header class="simplebar">
+      <button id="homeBtn" class="simplebar-brand"><span class="brand-mark">DT</span><b>DEPO TAKİP</b></button>
+      <div class="simplebar-user"><div class="profile-text"><b id="currentName"></b><small id="currentRole"></small></div><button id="logoutBtn" class="btn btn-outline">Çıkış</button></div>
+    </header>
 
-    <main class="workspace">
-      <header class="topbar">
-        <div class="topbar-title"><button id="mobileMenu" class="icon-btn mobile-only">☰</button><div><small id="breadcrumb">DEPO TAKİP</small><h2 id="pageTitle">Ana Panel</h2></div></div>
-        <div class="top-actions">
-          <button id="installBtn" class="btn btn-soft hidden">Uygulamayı Kur</button>
-          <button id="scanBtn" class="icon-btn" data-permission="stock_write" aria-label="QR Kod Tara" title="QR Kod Tara">▣</button>
-          <button id="notificationBtn" class="icon-btn badge-btn" aria-label="Bildirimler">🔔<span id="notificationCount">0</span></button>
-          <div class="profile"><div id="avatar" class="avatar">AK</div><div class="profile-text"><b id="currentName">Alper Kadioğlu</b><small id="currentRole">Süper Yönetici</small></div></div>
-          <button id="logoutBtn" class="btn btn-outline">Çıkış</button>
+    <main class="simple-container">
+      <section id="home" class="page active">
+        <div class="home-grid">
+          <button class="home-btn home-primary" id="homeScanBtn" data-permission="stock_write"><span>▣</span><b>QR OKUT</b><small>Giriş / Çıkış işlemi yap</small></button>
+          <button class="home-btn" data-page="stocks"><span>▦</span><b>Stok</b><small>Ürünler ve miktarlar</small></button>
+          <button class="home-btn" data-page="movements"><span>⇄</span><b>Hareketler</b><small>Kim, ne zaman, ne yaptı</small></button>
+          <button class="home-btn" data-page="products" data-permission="manage_products"><span>＋</span><b>Ürünler</b><small>Ürün ekle ve düzenle</small></button>
+          <button class="home-btn" id="homePrintBtn" data-permission="manage_products"><span>🖨</span><b>Etiket Bas</b><small>44'lü QR etiket sayfası</small></button>
+          <button class="home-btn" data-page="users" data-permission="manage_users"><span>👤</span><b>Kullanıcılar</b><small>Personel hesapları</small></button>
+          <button class="home-btn" data-page="settings" data-permission="manage_settings"><span>⚙</span><b>Ayarlar</b><small>Yedek, rapor, sıfırlama</small></button>
         </div>
-      </header>
+      </section>
 
-      <div class="page-container">
-        <section id="dashboard" class="page active">
-          <div class="hero-card"><div><span class="eyebrow">OPERASYON ÖZETİ</span><h1>Günaydın, <span id="welcomeName">Alper</span></h1><p>Stok, kritik ürün ve son hareketleri tek bakışta kontrol edin.</p></div><div class="hero-actions"><button class="btn btn-white" data-open="transaction">＋ Yeni İşlem</button><button class="btn btn-glass" data-open="stocks">Stokları Gör</button></div></div>
-          <div class="metric-grid">
-            <article class="metric-card"><div class="metric-icon blue">O</div><div><small>Ostim Depo</small><strong id="ostimTotal">0</strong><span>Toplam miktar</span></div></article>
-            <article class="metric-card"><div class="metric-icon cyan">Y</div><div><small>Yenikent Depo</small><strong id="yenikentTotal">0</strong><span>Toplam miktar</span></div></article>
-            <article class="metric-card"><div class="metric-icon amber">!</div><div><small>Kritik Ürün</small><strong id="criticalTotal">0</strong><span>Kontrol gerekli</span></div></article>
-            <article class="metric-card"><div class="metric-icon green">K</div><div><small>Aktif Kullanıcı</small><strong id="userTotal">0</strong><span>Yetkili hesap</span></div></article>
-          </div>
-          <div class="dashboard-grid">
-            <article class="panel quick-panel"><div class="panel-head"><div><h3>Hızlı İşlemler</h3><p>Personel için kolay kullanım</p></div></div><div class="quick-grid simple">
-              <button id="quickScanBtn" data-permission="stock_write" class="quick-scan"><span class="quick-icon">▣</span><b>QR ile İşlem</b><small>Kodu okut → Giriş/Çıkış seç → miktarı gir</small></button>
-              <button data-open="transaction"><span class="quick-icon">＋</span><b>Manuel İşlem</b><small>Transfer, iade ve diğer işlemler form ile</small></button>
-            </div></article>
-            <article class="panel"><div class="panel-head"><div><h3>Son Hareketler</h3><p>En güncel 6 kayıt</p></div><button class="text-btn" data-open="movements">Tümünü gör</button></div><div id="recentActivity" class="activity-list"></div></article>
-          </div>
-          <div class="dashboard-grid bottom-grid">
-            <article class="panel"><div class="panel-head"><div><h3>Kritik Stoklar</h3><p>Minimum seviyeye yaklaşan ürünler</p></div></div><div id="criticalList" class="critical-list"></div></article>
-            <article class="panel"><div class="panel-head"><div><h3>Depo Dağılımı</h3><p>Toplam miktar karşılaştırması</p></div></div><div id="warehouseBars" class="bar-list"></div></article>
-          </div>
-        </section>
+      <section id="stocks" class="page">
+        <div class="simple-head"><button class="back-btn" data-page="home">‹ Ana Menü</button><h1>Stok</h1></div>
+        <label class="search-box">⌕<input id="stockSearch" placeholder="Ürün adı veya kod ara"></label>
+        <div id="stockList" class="list-stack"></div>
+        <div id="stockEmpty" class="empty hidden">Ürün bulunamadı.</div>
+      </section>
 
-        <section id="stocks" class="page">
-          <div class="page-head"><div><span class="eyebrow">ENVANTER</span><h1>Stok Yönetimi</h1><p>İki depodaki güncel stokları arayın ve yönetin.</p></div><div class="page-actions"><button class="btn btn-outline" id="printAllQrBtn" data-permission="manage_products">QR Etiketleri Yazdır</button><button class="btn btn-outline" id="stockCsvBtn">Stok CSV</button><button class="btn btn-primary" data-open="transaction">＋ İşlem Yap</button></div></div>
-          <div class="filter-bar"><label class="search-box">⌕<input id="stockSearch" placeholder="Ürün adı, kod veya kategori ara"></label><select id="stockStatusFilter"><option value="all">Tüm durumlar</option><option value="critical">Kritik</option><option value="low">Azalıyor</option><option value="ok">Yeterli</option></select><select id="stockWarehouseFilter"><option value="all">Tüm depolar</option><option value="ostim">Ostim stoklu</option><option value="yenikent">Yenikent stoklu</option></select></div>
-          <div class="table-card"><table><thead><tr><th>Malzeme</th><th>Kod</th><th>Kategori</th><th>Ostim</th><th>Yenikent</th><th>Toplam</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="stockRows"></tbody></table><div id="stockEmpty" class="empty hidden">Arama kriterine uygun ürün bulunamadı.</div></div>
-        </section>
+      <section id="movements" class="page">
+        <div class="simple-head"><button class="back-btn" data-page="home">‹ Ana Menü</button><h1>Hareketler</h1></div>
+        <label class="search-box">⌕<input id="movementSearch" placeholder="Ürün, kullanıcı veya hedef ara"></label>
+        <div id="movementList" class="list-stack"></div>
+        <div id="movementEmpty" class="empty hidden">Kayıt yok.</div>
+      </section>
 
-        <section id="transaction" class="page">
-          <div class="page-head"><div><span class="eyebrow">STOK HAREKETİ</span><h1>Yeni İşlem</h1><p>Giriş, çıkış, satış, transfer veya iade kaydedin.</p></div><div class="page-actions"><button id="txnScanBtn" class="btn btn-primary" data-permission="stock_write">▣ QR Kod Tara</button></div></div>
-          <div class="transaction-layout">
-            <form id="transactionForm" class="panel form-panel"><div class="form-grid">
-              <label class="field"><span>İşlem türü</span><select id="txnType"><option>Giriş</option><option>Makine Çıkışı</option><option>Vinç Çıkışı</option><option>Satış</option><option>Transfer</option><option>İade</option><option data-admin-only>Sayım Düzeltme</option></select></label>
-              <label class="field"><span>Malzeme</span><select id="txnProduct"></select></label>
-              <label class="field"><span>Kaynak</span><select id="txnSource"></select></label>
-              <label class="field"><span>Hedef</span><select id="txnTarget"></select><input id="txnTargetText" class="hidden" placeholder="Müşteri adı girin" autocomplete="off"></label>
-              <label class="field"><span>Miktar</span><input id="txnQty" type="number" min="1" step="0.01" value="1" required></label>
-              <label class="field"><span>Belge / Referans No</span><input id="txnReference" placeholder="İrsaliye, fiş veya iş emri"></label>
-              <label class="field field-full"><span>Açıklama</span><textarea id="txnNote" rows="3" placeholder="İşlem açıklaması veya teslim alan bilgisi"></textarea></label>
-            </div><div id="txnWarning" class="alert alert-warning hidden"></div><div class="form-actions"><button type="reset" class="btn btn-outline">Temizle</button><button type="submit" class="btn btn-primary">İşlemi Kaydet</button></div></form>
-            <aside class="panel transaction-summary"><h3>İşlem Kontrolü</h3><div id="txnSummary" class="summary-box"></div><div class="security-note"><b>Denetim kaydı</b><p>İşlemi yapan kullanıcı, tarih, saat, kaynak ve hedef otomatik kaydedilir.</p></div></aside>
-          </div>
-        </section>
+      <section id="products" class="page">
+        <div class="simple-head"><button class="back-btn" data-page="home">‹ Ana Menü</button><h1>Ürünler</h1><button id="addProductBtn" class="btn btn-primary">＋ Yeni Ürün</button></div>
+        <label class="search-box">⌕<input id="productAdminSearch" placeholder="Ürün ara"></label>
+        <div id="productAdminList" class="list-stack"></div>
+        <div id="productAdminEmpty" class="empty hidden">Henüz ürün yok. "＋ Yeni Ürün" ile başlayın.</div>
+      </section>
 
-        <section id="movements" class="page">
-          <div class="page-head"><div><span class="eyebrow">DENETİM KAYDI</span><h1>Stok Hareketleri</h1><p>Kimin, ne zaman, hangi işlemi yaptığını inceleyin.</p></div><div class="page-actions"><button id="movementCsvBtn" class="btn btn-outline">CSV İndir</button></div></div>
-          <div class="filter-bar"><label class="search-box">⌕<input id="movementSearch" placeholder="Malzeme, kullanıcı, hedef veya referans ara"></label><select id="movementTypeFilter"><option value="all">Tüm işlemler</option><option>Giriş</option><option>Makine Çıkışı</option><option>Vinç Çıkışı</option><option>Satış</option><option>Transfer</option><option>İade</option><option>Sayım Düzeltme</option></select></div>
-          <div class="table-card"><table><thead><tr><th>Tarih</th><th>İşlem</th><th>Malzeme</th><th>Miktar</th><th>Kaynak</th><th>Hedef</th><th>Kullanıcı</th><th>Referans</th></tr></thead><tbody id="movementRows"></tbody></table><div id="movementEmpty" class="empty hidden">Kayıt bulunamadı.</div></div>
-        </section>
+      <section id="users" class="page">
+        <div class="simple-head"><button class="back-btn" data-page="home">‹ Ana Menü</button><h1>Kullanıcılar</h1><button id="addUserBtn" class="btn btn-primary">＋ Yeni Kullanıcı</button></div>
+        <div id="userList" class="list-stack"></div>
+      </section>
 
-        <section id="products" class="page">
-          <div class="page-head"><div><span class="eyebrow">YÖNETİCİ MERKEZİ</span><h1>Ürün Yönetimi</h1><p>Ürün ekleyin, düzenleyin, pasife alın veya silin.</p></div><button id="addProductBtn" class="btn btn-primary">＋ Yeni Ürün</button></div>
-          <div class="filter-bar"><label class="search-box">⌕<input id="productAdminSearch" placeholder="Ürün adı, kod veya kategori ara"></label><select id="productAdminStatus"><option value="all">Tüm ürünler</option><option value="active">Aktif</option><option value="inactive">Pasif</option></select></div>
-          <div class="table-card"><table><thead><tr><th>Ürün</th><th>Kod</th><th>Kategori</th><th>Birim</th><th>Min. Stok</th><th>Toplam</th><th>Durum</th><th>Yönet</th></tr></thead><tbody id="productAdminRows"></tbody></table></div>
-        </section>
-
-        <section id="users" class="page">
-          <div class="page-head"><div><span class="eyebrow">YÖNETİCİ MERKEZİ</span><h1>Kullanıcı Yönetimi</h1><p>Kullanıcı ekleyin, rol verin, pasife alın veya silin.</p></div><button id="addUserBtn" class="btn btn-primary">＋ Yeni Kullanıcı</button></div>
-          <div class="user-summary-grid"><article><b id="allUserCount">0</b><span>Toplam kullanıcı</span></article><article><b id="activeUserCount">0</b><span>Aktif kullanıcı</span></article><article><b id="adminUserCount">0</b><span>Yönetici</span></article><article><b id="fieldUserCount">0</b><span>Saha personeli</span></article></div>
-          <div class="filter-bar"><label class="search-box">⌕<input id="userSearch" placeholder="Ad, kullanıcı adı veya görev ara"></label><select id="userRoleFilter"><option value="all">Tüm roller</option><option value="super_admin">Süper Yönetici</option><option value="admin">Yönetici</option><option value="depot">Depo Personeli</option><option value="machine">Makine Personeli</option><option value="sales">Satış</option><option value="accounting">Muhasebe</option><option value="viewer">Görüntüleyici</option></select></div>
-          <div class="table-card"><table><thead><tr><th>Kullanıcı</th><th>Görev</th><th>Rol</th><th>Atama</th><th>Durum</th><th>Yönet</th></tr></thead><tbody id="userRows"></tbody></table></div>
-        </section>
-
-        <section id="settings" class="page">
-          <div class="page-head"><div><span class="eyebrow">SİSTEM</span><h1>Yedekleme & Ayarlar</h1><p>Verileri dışa aktarın, içe alın veya sistemi yönetin.</p></div></div>
-          <div class="settings-grid">
-            <article class="panel setting-card"><div class="setting-icon">⇩</div><h3>Tam Yedek Al</h3><p>Ürün, kullanıcı, hareket ve bildirimleri JSON dosyası olarak indirin.</p><button id="backupBtn" class="btn btn-primary">Yedeği İndir</button></article>
-            <article class="panel setting-card"><div class="setting-icon">⇧</div><h3>Yedek Geri Yükle</h3><p>Daha önce alınmış DEPO TAKİP yedeğini sisteme geri yükleyin.</p><input id="restoreInput" type="file" accept="application/json" class="hidden"><button id="restoreBtn" class="btn btn-outline">Dosya Seç</button></article>
-            <article class="panel setting-card"><div class="setting-icon">▤</div><h3>CSV Raporları</h3><p>Stok ve hareket verilerini Excel ile açılabilen CSV formatında indirin.</p><div class="button-stack"><button id="settingsStockCsv" class="btn btn-outline">Stok CSV</button><button id="settingsMovementCsv" class="btn btn-outline">Hareket CSV</button></div></article>
-            <article class="panel setting-card danger-zone"><div class="setting-icon">!</div><h3>Sistemi Sıfırla</h3><p>Tüm ürün, kullanıcı ve hareket verilerini kalıcı olarak siler; sistem ilk kurulum ekranına döner.</p><button id="resetBtn" class="btn btn-danger">Sistemi Sıfırla</button></article>
-          </div>
-          <div class="alert alert-info"><b>Önemli:</b> Bu GitHub Pages sürümü verileri cihazın tarayıcısında saklar. 10 kullanıcının aynı stokları eş zamanlı görmesi için bulut veritabanı ve gerçek sunucu kimlik doğrulaması gerekir.</div>
-        </section>
-      </div>
+      <section id="settings" class="page">
+        <div class="simple-head"><button class="back-btn" data-page="home">‹ Ana Menü</button><h1>Ayarlar</h1></div>
+        <div class="settings-stack">
+          <article class="panel setting-row"><div><h3>Tam Yedek Al</h3><p>Tüm verileri dosya olarak indir. Başka cihaza taşımak için de kullanılır.</p></div><button id="backupBtn" class="btn btn-primary">İndir</button></article>
+          <article class="panel setting-row"><div><h3>Yedek Geri Yükle</h3><p>Yedek dosyasını bu cihaza yükle.</p></div><input id="restoreInput" type="file" accept="application/json" class="hidden"><button id="restoreBtn" class="btn btn-outline">Dosya Seç</button></article>
+          <article class="panel setting-row"><div><h3>Excel Raporları</h3><p>Stok ve hareket listesini CSV olarak indir.</p></div><div class="button-stack"><button id="settingsStockCsv" class="btn btn-outline">Stok</button><button id="settingsMovementCsv" class="btn btn-outline">Hareket</button></div></article>
+          <article class="panel setting-row danger-zone"><div><h3>Sistemi Sıfırla</h3><p>Bu cihazdaki tüm verileri kalıcı olarak siler.</p></div><button id="resetBtn" class="btn btn-danger">Sıfırla</button></article>
+        </div>
+      </section>
     </main>
-
-    <nav class="mobile-nav"><button data-page="dashboard" class="active"><span>⌂</span>Panel</button><button data-page="stocks"><span>▦</span>Stok</button><button data-page="transaction"><span>＋</span>İşlem</button><button data-page="movements"><span>⇄</span>Kayıt</button><button data-page="users" data-permission="manage_users"><span>♙</span>Yönetim</button></nav>
   </div>
 
-  <aside id="notificationDrawer" class="drawer hidden"><div class="drawer-head"><div><h3>Bildirim Merkezi</h3><p>Son sistem uyarıları</p></div><button class="icon-btn" data-close-drawer>✕</button></div><div id="notificationList" class="notification-list"></div><button id="markAllReadBtn" class="btn btn-outline btn-block">Tümünü Okundu İşaretle</button></aside>
-  <div id="drawerOverlay" class="overlay hidden" data-close-drawer></div>
+  <div id="productModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="productModalTitle">Yeni Ürün</h3></div><button class="icon-btn" data-close-modal="productModal">✕</button></div><form id="productForm"><input id="productId" type="hidden"><div class="form-grid">
+    <label class="field"><span>Ürün adı</span><input id="productName" required></label><label class="field"><span>Ürün kodu</span><input id="productCode" required></label><label class="field"><span>Kategori</span><input id="productCategory" placeholder="Sondaj, hidrolik..."></label><label class="field"><span>Birim</span><select id="productUnit"><option>Adet</option><option>Metre</option><option>Litre</option><option>Kg</option><option>Takım</option><option>Kutu</option></select></label><label class="field"><span>Ostim stok</span><input id="productOstim" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Yenikent stok</span><input id="productYenikent" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Minimum stok uyarısı</span><input id="productMin" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Durum</span><select id="productActive"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
+  </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="productModal">Vazgeç</button><button type="submit" class="btn btn-primary">Kaydet</button></div></form></div></div>
 
-  <div id="productModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="productModalTitle">Yeni Ürün</h3><p>Ürün ve başlangıç stok bilgilerini girin.</p></div><button class="icon-btn" data-close-modal="productModal">✕</button></div><form id="productForm"><input id="productId" type="hidden"><div class="form-grid">
-    <label class="field"><span>Ürün adı</span><input id="productName" required></label><label class="field"><span>Ürün kodu / QR kodu</span><input id="productCode" required></label><label class="field"><span>Kategori</span><input id="productCategory" placeholder="Sondaj, hidrolik, sarf..."></label><label class="field"><span>Birim</span><select id="productUnit"><option>Adet</option><option>Metre</option><option>Litre</option><option>Kg</option><option>Takım</option><option>Kutu</option></select></label><label class="field"><span>Ostim başlangıç stoku</span><input id="productOstim" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Yenikent başlangıç stoku</span><input id="productYenikent" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Minimum stok seviyesi</span><input id="productMin" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Durum</span><select id="productActive"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
-  </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="productModal">Vazgeç</button><button type="submit" class="btn btn-primary">Ürünü Kaydet</button></div></form></div></div>
+  <div id="userModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="userModalTitle">Yeni Kullanıcı</h3></div><button class="icon-btn" data-close-modal="userModal">✕</button></div><form id="userForm"><input id="userId" type="hidden"><div class="form-grid">
+    <label class="field"><span>Ad soyad</span><input id="userNameField" required></label><label class="field"><span>Kullanıcı adı</span><input id="usernameField" required autocomplete="off"></label><label class="field"><span>Şifre</span><input id="passwordField" required autocomplete="new-password"></label><label class="field"><span>Rol</span><select id="roleField"><option value="admin">Yönetici</option><option value="depot">Depo Personeli</option><option value="machine">Makine Personeli (sadece görür)</option><option value="sales">Satış</option><option value="viewer">Görüntüleyici</option></select></label><label class="field"><span>Görev</span><input id="jobField" placeholder="Ostim depo sorumlusu"></label><label class="field"><span>Durum</span><select id="userActiveField"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
+  </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="userModal">Vazgeç</button><button type="submit" class="btn btn-primary">Kaydet</button></div></form></div></div>
 
-  <div id="userModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="userModalTitle">Yeni Kullanıcı</h3><p>Kullanıcı hesabı, rolü ve görev atamasını belirleyin.</p></div><button class="icon-btn" data-close-modal="userModal">✕</button></div><form id="userForm"><input id="userId" type="hidden"><div class="form-grid">
-    <label class="field"><span>Ad soyad</span><input id="userNameField" required></label><label class="field"><span>Kullanıcı adı</span><input id="usernameField" required autocomplete="off"></label><label class="field"><span>Şifre</span><input id="passwordField" required autocomplete="new-password"></label><label class="field"><span>Rol</span><select id="roleField"><option value="super_admin">Süper Yönetici</option><option value="admin">Yönetici</option><option value="depot">Depo Personeli</option><option value="machine">Makine Personeli</option><option value="sales">Satış</option><option value="accounting">Muhasebe</option><option value="viewer">Görüntüleyici</option></select></label><label class="field"><span>Görev / Birim</span><input id="jobField" placeholder="Ostim depo sorumlusu"></label><label class="field"><span>Atama</span><select id="assignmentField"><option>Genel</option><option>Ostim Depo</option><option>Yenikent Depo</option><option>Sondaj Makinesi 1</option><option>Sondaj Makinesi 2</option><option>Sondaj Makinesi 3</option><option>Vinç 1</option><option>Satış</option><option>Muhasebe</option></select></label><label class="field"><span>Durum</span><select id="userActiveField"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
-  </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="userModal">Vazgeç</button><button type="submit" class="btn btn-primary">Kullanıcıyı Kaydet</button></div></form></div></div>
-
-  <div id="qrModal" class="modal hidden"><div class="modal-card qr-card"><div class="modal-head"><div><h3>QR Ürün Etiketi</h3><p id="qrProductName"></p></div><button class="icon-btn" data-close-modal="qrModal">✕</button></div><div id="qrCode"></div><b id="qrLabelName" class="qr-label-name"></b><code id="qrCodeText"></code><button id="printQrBtn" class="btn btn-primary btn-block">Etiketi Yazdır</button></div></div>
+  <div id="qrModal" class="modal hidden"><div class="modal-card qr-card"><div class="modal-head"><div><h3>QR Ürün Etiketi</h3><p id="qrProductName"></p></div><button class="icon-btn" data-close-modal="qrModal">✕</button></div><div id="qrCode"></div><b id="qrLabelName" class="qr-label-name"></b><code id="qrCodeText"></code><button id="printQrBtn" class="btn btn-primary btn-block">Bu Etiketi Yazdır</button></div></div>
 
   <div id="scanModal" class="modal hidden"><div class="modal-card scan-card">
     <div class="modal-head"><div><h3>QR ile İşlem</h3><p id="scanModalDesc">Ne yapacaksınız?</p></div><button class="icon-btn" data-close-modal="scanModal">✕</button></div>

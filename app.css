@@ -58,3 +58,41 @@
   body.print-labels .label-card{page-break-inside:avoid;break-inside:avoid}
 }
 .torch-btn{position:absolute;right:10px;bottom:10px;z-index:2;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);border-radius:12px;width:44px;height:44px;font-size:20px;display:grid;place-items:center}
+
+/* ---- Sade tasarım ---- */
+.simple-shell{min-height:100vh;background:var(--bg)}
+.simplebar{position:sticky;top:0;z-index:15;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:10px 16px}
+.simplebar-brand{display:flex;align-items:center;gap:10px;border:0;background:none;font-weight:900;font-size:15px}
+.simplebar-brand .brand-mark{width:36px;height:36px;border-radius:11px}
+.simplebar-user{display:flex;align-items:center;gap:12px}
+.simplebar-user .profile-text{text-align:right}
+.simple-container{max-width:760px;margin:0 auto;padding:18px 14px 40px}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.home-btn{border:1px solid var(--line);background:white;border-radius:20px;padding:22px 14px;display:grid;justify-items:center;gap:6px;box-shadow:var(--shadow);transition:.2s;text-align:center}
+.home-btn span{font-size:36px;line-height:1}
+.home-btn b{font-size:16px}
+.home-btn small{color:var(--muted);font-size:11px}
+.home-btn:hover{transform:translateY(-2px);border-color:#97bce9}
+.home-primary{grid-column:1/-1;background:linear-gradient(135deg,var(--brand),var(--brand2));color:white;border:0;padding:30px 14px}
+.home-primary small{color:#d7e8fb}
+.home-primary b{font-size:22px;letter-spacing:.02em}
+.home-primary span{font-size:44px}
+.simple-head{display:flex;align-items:center;gap:12px;margin:4px 0 14px;flex-wrap:wrap}
+.simple-head h1{margin:0;font-size:24px;flex:1}
+.back-btn{border:1px solid var(--line);background:white;border-radius:11px;padding:9px 13px;font-weight:800;font-size:13px}
+.simple-container .search-box{background:white;margin-bottom:12px;border-radius:12px}
+.list-stack{display:grid;gap:9px}
+.list-card{background:white;border:1px solid var(--line);border-radius:15px;padding:13px 14px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);flex-wrap:wrap}
+.list-main{flex:1;min-width:150px;display:grid;gap:2px}
+.list-main small{color:var(--muted);font-size:11px}
+.list-qty{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.list-qty>span{font-size:11px;color:var(--muted);display:grid;justify-items:center;gap:1px}
+.list-qty>span>b{font-size:14px;color:var(--text)}
+.qty-big{font-size:14px}
+.list-actions{display:flex;gap:6px}
+.inactive-tag{color:#b42323;font-weight:800}
+.settings-stack{display:grid;gap:10px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.setting-row h3{margin:0 0 4px}
+.setting-row p{margin:0;color:var(--muted);font-size:12px;max-width:420px}
+@media(max-width:470px){.home-grid{grid-template-columns:1fr 1fr}.home-btn{padding:18px 10px}.simplebar-user .profile-text small{display:none}}

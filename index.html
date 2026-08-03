@@ -28,17 +28,27 @@
           <span>✓ Rol bazlı yetki</span><span>✓ QR okut: giriş/çıkış</span><span>✓ QR ürün etiketi</span><span>✓ Mobil PWA</span><span>✓ Denetim kaydı</span>
         </div>
       </div>
-      <small>Bu sürüm canlı arayüz demosudur. Ortak veritabanı bağlantısı sonraki aşamadır.</small>
+      <small>Veriler bu cihazın tarayıcısında saklanır. Ortak merkezi veritabanı bağlantısı bir sonraki aşamadır.</small>
     </div>
     <div class="login-panel">
       <form id="loginForm" class="login-card">
         <div class="mobile-brand"><span class="brand-mark">DT</span><b>DEPO TAKİP PRO</b></div>
         <h2>Güvenli giriş</h2>
         <p class="muted">Kullanıcı adınız ve şifrenizle sisteme girin.</p>
-        <label class="field"><span>Kullanıcı adı</span><input id="loginUser" autocomplete="username" value="admin" required></label>
-        <label class="field"><span>Şifre</span><input id="loginPass" type="password" autocomplete="current-password" value="Admin123!" required></label>
+        <label class="field"><span>Kullanıcı adı</span><input id="loginUser" autocomplete="username" required></label>
+        <label class="field"><span>Şifre</span><input id="loginPass" type="password" autocomplete="current-password" required></label>
         <button class="btn btn-primary btn-block" type="submit">Sisteme Giriş Yap</button>
-        <div class="login-help"><b>Yönetici demo:</b> admin / Admin123!</div>
+      </form>
+      <form id="setupForm" class="login-card hidden">
+        <div class="mobile-brand"><span class="brand-mark">DT</span><b>DEPO TAKİP PRO</b></div>
+        <h2>İlk kurulum</h2>
+        <p class="muted">Sistemi kullanmaya başlamak için yönetici hesabınızı oluşturun.</p>
+        <label class="field"><span>Ad soyad</span><input id="setupName" required></label>
+        <label class="field"><span>Kullanıcı adı</span><input id="setupUser" autocomplete="username" required></label>
+        <label class="field"><span>Şifre</span><input id="setupPass" type="password" autocomplete="new-password" minlength="6" required></label>
+        <label class="field"><span>Şifre (tekrar)</span><input id="setupPass2" type="password" autocomplete="new-password" minlength="6" required></label>
+        <button class="btn btn-primary btn-block" type="submit">Yönetici Hesabını Oluştur</button>
+        <div class="login-help">Bu hesap tüm yetkilere sahip olur. Diğer kullanıcıları daha sonra Kullanıcı Yönetimi'nden ekleyebilirsiniz.</div>
       </form>
     </div>
   </section>
@@ -110,7 +120,7 @@
               <label class="field"><span>İşlem türü</span><select id="txnType"><option>Giriş</option><option>Makine Çıkışı</option><option>Vinç Çıkışı</option><option>Satış</option><option>Transfer</option><option>İade</option><option data-admin-only>Sayım Düzeltme</option></select></label>
               <label class="field"><span>Malzeme</span><select id="txnProduct"></select></label>
               <label class="field"><span>Kaynak</span><select id="txnSource"></select></label>
-              <label class="field"><span>Hedef</span><select id="txnTarget"></select></label>
+              <label class="field"><span>Hedef</span><select id="txnTarget"></select><input id="txnTargetText" class="hidden" placeholder="Müşteri adı girin" autocomplete="off"></label>
               <label class="field"><span>Miktar</span><input id="txnQty" type="number" min="1" step="0.01" value="1" required></label>
               <label class="field"><span>Belge / Referans No</span><input id="txnReference" placeholder="İrsaliye, fiş veya iş emri"></label>
               <label class="field field-full"><span>Açıklama</span><textarea id="txnNote" rows="3" placeholder="İşlem açıklaması veya teslim alan bilgisi"></textarea></label>
@@ -144,7 +154,7 @@
             <article class="panel setting-card"><div class="setting-icon">⇩</div><h3>Tam Yedek Al</h3><p>Ürün, kullanıcı, hareket ve bildirimleri JSON dosyası olarak indirin.</p><button id="backupBtn" class="btn btn-primary">Yedeği İndir</button></article>
             <article class="panel setting-card"><div class="setting-icon">⇧</div><h3>Yedek Geri Yükle</h3><p>Daha önce alınmış DEPO TAKİP yedeğini sisteme geri yükleyin.</p><input id="restoreInput" type="file" accept="application/json" class="hidden"><button id="restoreBtn" class="btn btn-outline">Dosya Seç</button></article>
             <article class="panel setting-card"><div class="setting-icon">▤</div><h3>CSV Raporları</h3><p>Stok ve hareket verilerini Excel ile açılabilen CSV formatında indirin.</p><div class="button-stack"><button id="settingsStockCsv" class="btn btn-outline">Stok CSV</button><button id="settingsMovementCsv" class="btn btn-outline">Hareket CSV</button></div></article>
-            <article class="panel setting-card danger-zone"><div class="setting-icon">!</div><h3>Demo Verisini Sıfırla</h3><p>Tarayıcıdaki tüm değişiklikleri siler ve ilk örnek verilere döner.</p><button id="resetBtn" class="btn btn-danger">Sistemi Sıfırla</button></article>
+            <article class="panel setting-card danger-zone"><div class="setting-icon">!</div><h3>Sistemi Sıfırla</h3><p>Tüm ürün, kullanıcı ve hareket verilerini kalıcı olarak siler; sistem ilk kurulum ekranına döner.</p><button id="resetBtn" class="btn btn-danger">Sistemi Sıfırla</button></article>
           </div>
           <div class="alert alert-info"><b>Önemli:</b> Bu GitHub Pages sürümü verileri cihazın tarayıcısında saklar. 10 kullanıcının aynı stokları eş zamanlı görmesi için bulut veritabanı ve gerçek sunucu kimlik doğrulaması gerekir.</div>
         </section>

@@ -2,8 +2,7 @@
 
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
-const STORAGE_KEY = 'depoTakipProV3';
-const LEGACY_KEY = 'depoTakipLive';
+const STORAGE_KEY = 'depoTakipProV4';
 
 const roleNames = {
   super_admin: 'Süper Yönetici', admin: 'Yönetici', depot: 'Depo Personeli',
@@ -19,38 +18,7 @@ const permissions = {
   viewer: ['dashboard','stocks','movements']
 };
 
-const seed = {
-  version: 3,
-  products: [
-    {id:'p1',name:'76 mm Sondaj Tiji',code:'TIJ-76',category:'Sondaj',unit:'Adet',ostim:84,yenikent:46,min:25,active:true},
-    {id:'p2',name:'110 mm Matkap Ucu',code:'MATKAP-110',category:'Sondaj',unit:'Adet',ostim:12,yenikent:5,min:10,active:true},
-    {id:'p3',name:'25 mm Hidrolik Hortum',code:'HORTUM-25',category:'Hidrolik',unit:'Metre',ostim:145,yenikent:90,min:40,active:true},
-    {id:'p4',name:'Hidrolik Yağ ISO 46',code:'YAG-HID-46',category:'Yağ & Kimyasal',unit:'Litre',ostim:220,yenikent:180,min:100,active:true},
-    {id:'p5',name:'16 mm Çelik Halat',code:'HALAT-16',category:'Vinç',unit:'Metre',ostim:70,yenikent:25,min:35,active:true},
-    {id:'p6',name:'EP2 Gres Yağı',code:'GRES-EP2',category:'Yağ & Kimyasal',unit:'Kg',ostim:48,yenikent:30,min:20,active:true}
-  ],
-  users: [
-    {id:'u1',name:'Alper Kadioğlu',username:'admin',password:'Admin123!',role:'super_admin',job:'Sistem Sahibi',assignment:'Genel',active:true,protected:true},
-    {id:'u2',name:'Mehmet Yılmaz',username:'ostim',password:'Depo123!',role:'depot',job:'Ostim Depo Sorumlusu',assignment:'Ostim Depo',active:true},
-    {id:'u3',name:'Ahmet Demir',username:'yenikent',password:'Depo123!',role:'depot',job:'Yenikent Depo Sorumlusu',assignment:'Yenikent Depo',active:true},
-    {id:'u4',name:'Serkan Usta',username:'sm1',password:'Makine123!',role:'machine',job:'Makine Operatörü',assignment:'Sondaj Makinesi 1',active:true},
-    {id:'u5',name:'Murat Kaya',username:'sm2',password:'Makine123!',role:'machine',job:'Makine Operatörü',assignment:'Sondaj Makinesi 2',active:true},
-    {id:'u6',name:'İbrahim Şen',username:'sm3',password:'Makine123!',role:'machine',job:'Makine Operatörü',assignment:'Sondaj Makinesi 3',active:true},
-    {id:'u7',name:'Cem Kaya',username:'vinc',password:'Vinc123!',role:'machine',job:'Vinç Operatörü',assignment:'Vinç 1',active:true},
-    {id:'u8',name:'Burak Arslan',username:'satis',password:'Satis123!',role:'sales',job:'Satış Personeli',assignment:'Satış',active:true},
-    {id:'u9',name:'Elif Yıldız',username:'muhasebe',password:'Muhasebe123!',role:'accounting',job:'Muhasebe',assignment:'Muhasebe',active:true},
-    {id:'u10',name:'Hakan Koç',username:'yonetici',password:'Yonetici123!',role:'admin',job:'Yedek Yönetici',assignment:'Genel',active:true}
-  ],
-  movements: [
-    {id:'m1',date:'29.07.2026 08:40',ts:Date.now()-1800000,type:'Makine Çıkışı',productId:'p1',product:'76 mm Sondaj Tiji',qty:8,unit:'Adet',source:'Ostim Depo',target:'Sondaj Makinesi 1',user:'Mehmet Yılmaz',userId:'u2',reference:'İŞ-2401',note:''},
-    {id:'m2',date:'28.07.2026 17:20',ts:Date.now()-65000000,type:'Satış',productId:'p6',product:'EP2 Gres Yağı',qty:6,unit:'Kg',source:'Yenikent Depo',target:'ABC Sondaj Ltd.',user:'Burak Arslan',userId:'u8',reference:'SAT-1042',note:''},
-    {id:'m3',date:'28.07.2026 15:10',ts:Date.now()-72000000,type:'Transfer',productId:'p4',product:'Hidrolik Yağ ISO 46',qty:40,unit:'Litre',source:'Ostim Depo',target:'Yenikent Depo',user:'Ahmet Demir',userId:'u3',reference:'TR-118',note:''}
-  ],
-  notifications: [
-    {id:'n1',title:'Kritik stok uyarısı',body:'110 mm Matkap Ucu minimum seviyeye yaklaştı.',date:'29.07.2026 08:45',read:false},
-    {id:'n2',title:'Yeni makine çıkışı',body:'Sondaj Makinesi 1 için 8 adet 76 mm tij çıkışı yapıldı.',date:'29.07.2026 08:40',read:false}
-  ]
-};
+const seed = { version: 4, products: [], users: [], movements: [], notifications: [] };
 
 let db = loadDb();
 let currentUser = null;
@@ -68,25 +36,16 @@ function loadDb(){
   try{
     const stored = localStorage.getItem(STORAGE_KEY);
     if(stored) return migrate(JSON.parse(stored));
-    const legacy = localStorage.getItem(LEGACY_KEY);
-    if(legacy){
-      const old = JSON.parse(legacy);
-      const migrated = deepClone(seed);
-      if(Array.isArray(old.products)) migrated.products = old.products.map((p,i)=>({...p,id:p.id?String(p.id):`legacy_p${i}`,category:p.category||'Genel',active:p.active!==false}));
-      if(Array.isArray(old.moves)) migrated.movements = old.moves.map((m,i)=>({...m,id:`legacy_m${i}`,productId:m.productId||'',ts:Date.now()-i*60000,reference:m.reference||'',note:m.note||'',userId:''}));
-      return migrated;
-    }
   }catch(error){ console.error('Veri yüklenemedi', error); }
   return deepClone(seed);
 }
 function migrate(data){
-  const base = deepClone(seed);
   return {
-    version:3,
-    products:Array.isArray(data.products)?data.products.map((p,i)=>({...p,id:String(p.id||`p${i}`),category:p.category||'Genel',active:p.active!==false})):base.products,
-    users:Array.isArray(data.users)?data.users.map((u,i)=>({...u,id:String(u.id||`u${i}`),role:u.role||'viewer',job:u.job||'',assignment:u.assignment||'Genel',active:u.active!==false})):base.users,
-    movements:Array.isArray(data.movements)?data.movements.map((m,i)=>({...m,id:m.id||`m${i}`,ts:m.ts||Date.now()-i*60000,reference:m.reference||'',note:m.note||'',userId:m.userId||''})):base.movements,
-    notifications:Array.isArray(data.notifications)?data.notifications:base.notifications
+    version:4,
+    products:Array.isArray(data.products)?data.products.map((p,i)=>({...p,id:String(p.id||`p${i}`),category:p.category||'Genel',active:p.active!==false})):[],
+    users:Array.isArray(data.users)?data.users.map((u,i)=>({...u,id:String(u.id||`u${i}`),role:u.role||'viewer',job:u.job||'',assignment:u.assignment||'Genel',active:u.active!==false})):[],
+    movements:Array.isArray(data.movements)?data.movements.map((m,i)=>({...m,id:m.id||`m${i}`,ts:m.ts||Date.now()-i*60000,reference:m.reference||'',note:m.note||'',userId:m.userId||''})):[],
+    notifications:Array.isArray(data.notifications)?data.notifications:[]
   };
 }
 
@@ -103,6 +62,24 @@ function productById(id){ return db.products.find(p=>p.id===id); }
 function userById(id){ return db.users.find(u=>u.id===id); }
 function addNotification(title, body){ db.notifications.unshift({id:uid('n'),title,body,date:formatNow(),read:false}); saveDb(); }
 
+function refreshAuthView(){
+  const needsSetup=db.users.length===0;
+  $('#loginForm').classList.toggle('hidden',needsSetup);
+  $('#setupForm').classList.toggle('hidden',!needsSetup);
+}
+function completeSetup(event){
+  event.preventDefault();
+  const name=$('#setupName').value.trim(); const username=$('#setupUser').value.trim();
+  const pass=$('#setupPass').value; const pass2=$('#setupPass2').value;
+  if(!name||!username) return toast('Ad soyad ve kullanıcı adı gerekli.');
+  if(pass.length<6) return toast('Şifre en az 6 karakter olmalı.');
+  if(pass!==pass2) return toast('Şifreler eşleşmiyor.');
+  db.users.push({id:uid('u'),name,username,password:pass,role:'super_admin',job:'Sistem Yöneticisi',assignment:'Genel',active:true,protected:true});
+  addNotification('Sistem kuruldu',`${name} için yönetici hesabı oluşturuldu.`);
+  saveDb(); $('#setupForm').reset(); refreshAuthView();
+  login(username,pass);
+  toast('Yönetici hesabınız oluşturuldu, hoş geldiniz.');
+}
 function login(username,password){
   const user=db.users.find(u=>normalizeText(u.username)===normalizeText(username));
   if(!user||user.password!==password){ toast('Kullanıcı adı veya şifre yanlış.'); return; }
@@ -112,7 +89,7 @@ function login(username,password){
   $('#currentName').textContent=user.name; $('#currentRole').textContent=roleNames[user.role]||user.role; $('#welcomeName').textContent=user.name.split(' ')[0]; $('#avatar').textContent=initials(user.name);
   applyPermissions(); renderAll(); goPage('dashboard');
 }
-function logout(){ currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); $('#loginPass').value=''; }
+function logout(){ currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); $('#loginPass').value=''; refreshAuthView(); }
 
 function applyPermissions(){
   $$('[data-permission]').forEach(el=>el.classList.toggle('hidden',!has(el.dataset.permission)));
@@ -194,23 +171,27 @@ function updateTransactionLocations(){
   if(type==='Giriş'){sources=['Tedarikçi'];targets=['Ostim Depo','Yenikent Depo'];}
   else if(type==='Makine Çıkışı'){targets=['Sondaj Makinesi 1','Sondaj Makinesi 2','Sondaj Makinesi 3'];}
   else if(type==='Vinç Çıkışı'){targets=['Vinç 1'];}
-  else if(type==='Satış'){targets=['ABC Sondaj Ltd.','Kuzey Sondaj A.Ş.','Yeni Müşteri'];}
+  else if(type==='Satış'){targets=[];}
   else if(type==='Transfer'){targets=['Yenikent Depo'];}
   else if(type==='İade'){sources=['Sondaj Makinesi 1','Sondaj Makinesi 2','Sondaj Makinesi 3','Vinç 1'];targets=['Ostim Depo','Yenikent Depo'];}
   else if(type==='Sayım Düzeltme'){targets=['Ostim Depo','Yenikent Depo'];sources=['Sayım'];}
+  const isSale=type==='Satış';
+  $('#txnTarget').classList.toggle('hidden',isSale); $('#txnTargetText').classList.toggle('hidden',!isSale);
   $('#txnSource').innerHTML=sources.map(v=>`<option>${v}</option>`).join(''); $('#txnTarget').innerHTML=targets.map(v=>`<option>${v}</option>`).join('');
   if(type==='Transfer') updateTransferTarget();
 }
+function txnTargetValue(){ return $('#txnType').value==='Satış'?$('#txnTargetText').value.trim():$('#txnTarget').value; }
 function updateTransferTarget(){ if($('#txnType').value==='Transfer') $('#txnTarget').innerHTML=`<option>${$('#txnSource').value==='Ostim Depo'?'Yenikent Depo':'Ostim Depo'}</option>`; }
 function updateTransactionSummary(){
-  const p=productById($('#txnProduct').value); const type=$('#txnType').value; const source=$('#txnSource').value; const target=$('#txnTarget').value; const qty=Number($('#txnQty').value||0);
+  const p=productById($('#txnProduct').value); const type=$('#txnType').value; const source=$('#txnSource').value; const target=txnTargetValue(); const qty=Number($('#txnQty').value||0);
   $('#txnSummary').innerHTML=`<div class="summary-line"><span>İşlem</span><b>${escapeHtml(type)}</b></div><div class="summary-line"><span>Ürün</span><b>${escapeHtml(p?.name||'-')}</b></div><div class="summary-line"><span>Miktar</span><b>${formatQty(qty)} ${escapeHtml(p?.unit||'')}</b></div><div class="summary-line"><span>Kaynak</span><b>${escapeHtml(source||'-')}</b></div><div class="summary-line"><span>Hedef</span><b>${escapeHtml(target||'-')}</b></div>`;
 }
 function submitTransaction(event){
   event.preventDefault(); if(!has('stock_write')) return toast('Bu hesabın stok işlemi yetkisi yok.');
-  const type=$('#txnType').value; const p=productById($('#txnProduct').value); const qty=Number($('#txnQty').value); let source=$('#txnSource').value; let target=$('#txnTarget').value; const ref=$('#txnReference').value.trim(); const note=$('#txnNote').value.trim();
+  const type=$('#txnType').value; const p=productById($('#txnProduct').value); const qty=Number($('#txnQty').value); let source=$('#txnSource').value; let target=txnTargetValue(); const ref=$('#txnReference').value.trim(); const note=$('#txnNote').value.trim();
   const warning=$('#txnWarning'); warning.classList.add('hidden');
   if(!p||!qty||qty<=0) return toast('Ürün ve miktar bilgilerini kontrol edin.');
+  if(type==='Satış'&&!target) return toast('Müşteri adını girin.');
   const sourceKey=source==='Ostim Depo'?'ostim':source==='Yenikent Depo'?'yenikent':null; const targetKey=target==='Ostim Depo'?'ostim':target==='Yenikent Depo'?'yenikent':null;
   if(['Makine Çıkışı','Vinç Çıkışı','Satış','Transfer'].includes(type)&&(!sourceKey||Number(p[sourceKey])<qty)){ warning.textContent=`Yetersiz stok: ${source} deposunda ${formatQty(sourceKey? p[sourceKey]:0)} ${p.unit} var.`; warning.classList.remove('hidden'); return; }
   if(type==='Giriş'||type==='İade') p[targetKey]+=qty;
@@ -352,11 +333,11 @@ function downloadBackup(){ const a=document.createElement('a'); a.href=URL.creat
 function restoreBackup(file){
   const reader=new FileReader(); reader.onload=()=>{ try{ const data=migrate(JSON.parse(reader.result)); if(!confirm('Seçilen yedek mevcut tarayıcı verilerinin üzerine yazılacak. Devam edilsin mi?'))return; db=data; saveDb(); renderAll(); toast('Yedek başarıyla geri yüklendi.'); }catch(error){toast('Yedek dosyası geçerli değil.');} }; reader.readAsText(file);
 }
-function resetDemo(){ if(!confirm('Tüm tarayıcı verileri silinecek ve demo verisine dönülecek. Emin misiniz?'))return; db=deepClone(seed); saveDb(); renderAll(); toast('Demo verisi sıfırlandı.'); }
+function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek ve sistem ilk kurulum ekranına dönecek. Emin misiniz?'))return; localStorage.removeItem(STORAGE_KEY); db=deepClone(seed); currentUser=null; $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yeni yönetici hesabı oluşturun.'); }
 function escapeHtml(v){ return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c])); }
 
 function bindEvents(){
-  $('#loginForm').addEventListener('submit',e=>{e.preventDefault();login($('#loginUser').value,$('#loginPass').value);}); $('#logoutBtn').onclick=logout;
+  $('#loginForm').addEventListener('submit',e=>{e.preventDefault();login($('#loginUser').value,$('#loginPass').value);}); $('#setupForm').addEventListener('submit',completeSetup); $('#logoutBtn').onclick=logout;
   $$('[data-page]').forEach(b=>b.onclick=()=>goPage(b.dataset.page)); $$('[data-open]').forEach(b=>b.onclick=()=>goPage(b.dataset.open)); $$('[data-type]').forEach(b=>b.onclick=()=>{goPage('transaction');$('#txnType').value=b.dataset.type;updateTransactionLocations();updateTransactionSummary();});
   $('#mobileMenu').onclick=()=>$('.sidebar').classList.toggle('open');
   $('#notificationBtn').onclick=openDrawer; $$('[data-close-drawer]').forEach(b=>b.onclick=closeDrawer); $('#markAllReadBtn').onclick=()=>{db.notifications.forEach(n=>n.read=true);saveDb();renderNotifications();toast('Bildirimler okundu.');};
@@ -364,11 +345,12 @@ function bindEvents(){
   $('#addProductBtn').onclick=()=>openProductModal(); $('#productForm').onsubmit=saveProduct; $('#addUserBtn').onclick=()=>openUserModal(); $('#userForm').onsubmit=saveUser; $('#printQrBtn').onclick=()=>window.print();
   $('#scanBtn').onclick=openScanner; $('#quickScanBtn').onclick=openScanner; $('#txnScanBtn').onclick=openScanner; $('#rescanBtn').onclick=startScanner;
   $$('[data-scan-type]').forEach(b=>b.onclick=()=>startScannedTransaction(b.dataset.scanType));
-  $('#transactionForm').onsubmit=submitTransaction; $('#txnType').onchange=()=>{updateTransactionLocations();updateTransactionSummary();}; $('#txnSource').onchange=()=>{updateTransferTarget();updateTransactionSummary();}; ['txnTarget','txnProduct','txnQty'].forEach(id=>$(`#${id}`).addEventListener('input',updateTransactionSummary));
+  $('#transactionForm').onsubmit=submitTransaction; $('#txnType').onchange=()=>{updateTransactionLocations();updateTransactionSummary();}; $('#txnSource').onchange=()=>{updateTransferTarget();updateTransactionSummary();}; ['txnTarget','txnTargetText','txnProduct','txnQty'].forEach(id=>$(`#${id}`).addEventListener('input',updateTransactionSummary));
   ['stockSearch','stockStatusFilter','stockWarehouseFilter'].forEach(id=>$(`#${id}`).addEventListener('input',renderStocks)); ['movementSearch','movementTypeFilter'].forEach(id=>$(`#${id}`).addEventListener('input',renderMovements)); ['productAdminSearch','productAdminStatus'].forEach(id=>$(`#${id}`).addEventListener('input',renderProductAdmin)); ['userSearch','userRoleFilter'].forEach(id=>$(`#${id}`).addEventListener('input',renderUsers));
-  $('#stockCsvBtn').onclick=downloadStockCsv; $('#movementCsvBtn').onclick=downloadMovementCsv; $('#settingsStockCsv').onclick=downloadStockCsv; $('#settingsMovementCsv').onclick=downloadMovementCsv; $('#backupBtn').onclick=downloadBackup; $('#restoreBtn').onclick=()=>$('#restoreInput').click(); $('#restoreInput').onchange=e=>e.target.files[0]&&restoreBackup(e.target.files[0]); $('#resetBtn').onclick=resetDemo;
+  $('#stockCsvBtn').onclick=downloadStockCsv; $('#movementCsvBtn').onclick=downloadMovementCsv; $('#settingsStockCsv').onclick=downloadStockCsv; $('#settingsMovementCsv').onclick=downloadMovementCsv; $('#backupBtn').onclick=downloadBackup; $('#restoreBtn').onclick=()=>$('#restoreInput').click(); $('#restoreInput').onchange=e=>e.target.files[0]&&restoreBackup(e.target.files[0]); $('#resetBtn').onclick=resetSystem;
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;$('#installBtn').classList.remove('hidden');}); $('#installBtn').onclick=async()=>{if(!deferredInstallPrompt){toast('iPhone için Safari → Paylaş → Ana Ekrana Ekle yolunu kullanın.');return;} deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt=null; $('#installBtn').classList.add('hidden');};
 }
 
 bindEvents();
+refreshAuthView();
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(console.error));

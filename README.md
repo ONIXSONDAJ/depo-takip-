@@ -13,10 +13,11 @@ Ostim ve Yenikent depoları için mobil uyumlu depo takip uygulaması.
 
 https://onixsondaj.github.io/depo-takip-/
 
-## Yönetici demo girişi
+## İlk kurulum
 
-- Kullanıcı adı: `admin`
-- Şifre: `Admin123!`
+Uygulama ilk açıldığında **yönetici hesabı oluşturma** ekranı gelir: ad soyad, kullanıcı adı ve şifrenizi belirleyin. Bu hesap tüm yetkilere sahiptir; diğer personel hesaplarını **Kullanıcı Yönetimi** sayfasından ekleyebilirsiniz.
+
+Sistem boş stokla başlar: ürünlerinizi **Ürün Yönetimi**'nden ekleyin, QR etiketlerini yazdırıp malzemelere yapıştırın.
 
 ## Telefona kurulum
 
@@ -28,4 +29,4 @@ Safari ile canlı adresi açın: **Paylaş → Ana Ekrana Ekle → Ekle**.
 
 Chrome ile canlı adresi açın: **Menü → Ana ekrana ekle / Uygulamayı yükle**.
 
-> Bu aşamadaki sürüm PWA ve arayüz demosudur. Veriler her cihazın kendi tarayıcısında saklanır. 10 kullanıcının ortak stok kullanması için sonraki aşamada merkezi veritabanı ve sunucu kimlik doğrulaması bağlanacaktır.
+> Veriler her cihazın kendi tarayıcısında saklanır. 10 kullanıcının ortak stok kullanması için sonraki aşamada merkezi veritabanı ve sunucu kimlik doğrulaması bağlanacaktır.

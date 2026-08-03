@@ -256,7 +256,90 @@ function openQr(productId){
   openModal('qrModal');
 }
 function openModal(id){ $('#modalOverlay').classList.remove('hidden'); $(`#${id}`).classList.remove('hidden'); }
-function closeModal(id){ $(`#${id}`).classList.add('hidden'); if(!$$('.modal:not(.hidden)').length) $('#modalOverlay').classList.add('hidden'); }
+function closeModal(id){ if(id==='scanModal') stopScanner(); $(`#${id}`).classList.add('hidden'); if(!$$('.modal:not(.hidden)').length) $('#modalOverlay').classList.add('hidden'); }
+
+// ---- QR tarama (kamera ile giriş/çıkış) ----
+let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0;
+
+function openScanner(){
+  if(!has('stock_write')) return toast('Bu hesabın stok işlemi yetkisi yok.');
+  openModal('scanModal'); startScanner();
+}
+async function startScanner(){
+  scannedProduct=null;
+  $('#scanResult').classList.add('hidden'); $('#scanStage').classList.remove('hidden');
+  const status=$('#scanStatus'); status.classList.remove('hidden'); status.textContent='Kamera başlatılıyor…';
+  if(!navigator.mediaDevices?.getUserMedia){ status.textContent='Bu tarayıcı kamera erişimini desteklemiyor. Güncel Chrome veya Safari kullanın.'; return; }
+  try{
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+    const video=$('#scanVideo'); video.srcObject=scanStream; await video.play();
+    if(!scanDetector&&'BarcodeDetector' in window){ try{ scanDetector=new BarcodeDetector({formats:['qr_code']}); }catch(e){ scanDetector=null; } }
+    scanActive=true; status.textContent='QR kodu çerçeveye hizalayın…';
+    scanLoop();
+  }catch(error){ status.textContent='Kameraya erişilemedi. Tarayıcı ayarlarından kamera iznini verin.'; }
+}
+function stopScanner(){
+  scanActive=false;
+  if(scanRafId){ cancelAnimationFrame(scanRafId); scanRafId=null; }
+  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  const video=$('#scanVideo'); if(video) video.srcObject=null;
+}
+async function scanLoop(){
+  if(!scanActive) return;
+  const video=$('#scanVideo'); let text=null;
+  if(video.readyState>=2&&video.videoWidth){
+    if(scanDetector){
+      try{ const codes=await scanDetector.detect(video); if(codes.length) text=codes[0].rawValue; }catch(e){ scanDetector=null; }
+    }else if(window.jsQR){
+      scanCanvas=scanCanvas||document.createElement('canvas');
+      const scale=Math.min(1,640/video.videoWidth);
+      scanCanvas.width=video.videoWidth*scale; scanCanvas.height=video.videoHeight*scale;
+      const ctx=scanCanvas.getContext('2d',{willReadFrequently:true});
+      ctx.drawImage(video,0,0,scanCanvas.width,scanCanvas.height);
+      const img=ctx.getImageData(0,0,scanCanvas.width,scanCanvas.height);
+      const found=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+      if(found) text=found.data;
+    }
+  }
+  if(text&&handleScanResult(text)) return;
+  scanRafId=requestAnimationFrame(scanLoop);
+}
+function parseScanCode(text){
+  const raw=String(text||'').trim();
+  if(raw.startsWith('DEPO-TAKIP|')) return raw.split('|')[1]?.trim()||'';
+  return raw;
+}
+function handleScanResult(text){
+  const code=parseScanCode(text);
+  const product=db.products.find(p=>p.active&&normalizeText(p.code)===normalizeText(code));
+  if(!product){
+    if(text!==lastMissText||Date.now()-lastMissAt>2500){
+      lastMissText=text; lastMissAt=Date.now();
+      $('#scanStatus').textContent=`Kayıtlı ürün bulunamadı: "${code||text}" — taramaya devam ediliyor…`;
+    }
+    return false;
+  }
+  stopScanner();
+  if(navigator.vibrate) navigator.vibrate(80);
+  scannedProduct=product;
+  $('#scanStage').classList.add('hidden'); $('#scanStatus').classList.add('hidden');
+  $('#scanAvatar').textContent=product.name[0]||'Ü';
+  $('#scanProductName').textContent=product.name;
+  $('#scanProductMeta').textContent=`${product.code} · ${product.category} · ${product.unit}`;
+  $('#scanOstim').textContent=formatQty(product.ostim); $('#scanYenikent').textContent=formatQty(product.yenikent); $('#scanTotal').textContent=formatQty(Number(product.ostim)+Number(product.yenikent));
+  $('#scanResult').classList.remove('hidden');
+  return true;
+}
+function startScannedTransaction(type){
+  if(!scannedProduct) return;
+  const product=scannedProduct;
+  closeModal('scanModal');
+  goPage('transaction');
+  $('#txnType').value=type; updateTransactionLocations();
+  $('#txnProduct').value=product.id; updateTransactionSummary();
+  toast(`${product.name} seçildi · ${type} için miktarı girin.`);
+  const qty=$('#txnQty'); qty.focus(); qty.select();
+}
 function openDrawer(){ $('#notificationDrawer').classList.remove('hidden'); $('#drawerOverlay').classList.remove('hidden'); }
 function closeDrawer(){ $('#notificationDrawer').classList.add('hidden'); $('#drawerOverlay').classList.add('hidden'); }
 
@@ -279,6 +362,8 @@ function bindEvents(){
   $('#notificationBtn').onclick=openDrawer; $$('[data-close-drawer]').forEach(b=>b.onclick=closeDrawer); $('#markAllReadBtn').onclick=()=>{db.notifications.forEach(n=>n.read=true);saveDb();renderNotifications();toast('Bildirimler okundu.');};
   $$('[data-close-modal]').forEach(b=>b.onclick=()=>closeModal(b.dataset.closeModal)); $('#modalOverlay').onclick=()=>$$('.modal:not(.hidden)').forEach(m=>closeModal(m.id));
   $('#addProductBtn').onclick=()=>openProductModal(); $('#productForm').onsubmit=saveProduct; $('#addUserBtn').onclick=()=>openUserModal(); $('#userForm').onsubmit=saveUser; $('#printQrBtn').onclick=()=>window.print();
+  $('#scanBtn').onclick=openScanner; $('#quickScanBtn').onclick=openScanner; $('#txnScanBtn').onclick=openScanner; $('#rescanBtn').onclick=startScanner;
+  $$('[data-scan-type]').forEach(b=>b.onclick=()=>startScannedTransaction(b.dataset.scanType));
   $('#transactionForm').onsubmit=submitTransaction; $('#txnType').onchange=()=>{updateTransactionLocations();updateTransactionSummary();}; $('#txnSource').onchange=()=>{updateTransferTarget();updateTransactionSummary();}; ['txnTarget','txnProduct','txnQty'].forEach(id=>$(`#${id}`).addEventListener('input',updateTransactionSummary));
   ['stockSearch','stockStatusFilter','stockWarehouseFilter'].forEach(id=>$(`#${id}`).addEventListener('input',renderStocks)); ['movementSearch','movementTypeFilter'].forEach(id=>$(`#${id}`).addEventListener('input',renderMovements)); ['productAdminSearch','productAdminStatus'].forEach(id=>$(`#${id}`).addEventListener('input',renderProductAdmin)); ['userSearch','userRoleFilter'].forEach(id=>$(`#${id}`).addEventListener('input',renderUsers));
   $('#stockCsvBtn').onclick=downloadStockCsv; $('#movementCsvBtn').onclick=downloadMovementCsv; $('#settingsStockCsv').onclick=downloadStockCsv; $('#settingsMovementCsv').onclick=downloadMovementCsv; $('#backupBtn').onclick=downloadBackup; $('#restoreBtn').onclick=()=>$('#restoreInput').click(); $('#restoreInput').onchange=e=>e.target.files[0]&&restoreBackup(e.target.files[0]); $('#resetBtn').onclick=resetDemo;

@@ -13,6 +13,7 @@
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./app.css">
   <script defer src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -24,7 +25,7 @@
         <h1>Depo, saha ve satış hareketlerini tek ekrandan yönetin.</h1>
         <p>Ostim Depo, Yenikent Depo, 3 sondaj makinesi, vinç ve müşteriler için hızlı, kontrollü ve kayıtlı stok yönetimi.</p>
         <div class="feature-row">
-          <span>✓ Rol bazlı yetki</span><span>✓ QR ürün etiketi</span><span>✓ Mobil PWA</span><span>✓ Denetim kaydı</span>
+          <span>✓ Rol bazlı yetki</span><span>✓ QR okut: giriş/çıkış</span><span>✓ QR ürün etiketi</span><span>✓ Mobil PWA</span><span>✓ Denetim kaydı</span>
         </div>
       </div>
       <small>Bu sürüm canlı arayüz demosudur. Ortak veritabanı bağlantısı sonraki aşamadır.</small>
@@ -62,6 +63,7 @@
         <div class="topbar-title"><button id="mobileMenu" class="icon-btn mobile-only">☰</button><div><small id="breadcrumb">DEPO TAKİP</small><h2 id="pageTitle">Ana Panel</h2></div></div>
         <div class="top-actions">
           <button id="installBtn" class="btn btn-soft hidden">Uygulamayı Kur</button>
+          <button id="scanBtn" class="icon-btn" data-permission="stock_write" aria-label="QR Kod Tara" title="QR Kod Tara">▣</button>
           <button id="notificationBtn" class="icon-btn badge-btn" aria-label="Bildirimler">🔔<span id="notificationCount">0</span></button>
           <div class="profile"><div id="avatar" class="avatar">AK</div><div class="profile-text"><b id="currentName">Alper Kadioğlu</b><small id="currentRole">Süper Yönetici</small></div></div>
           <button id="logoutBtn" class="btn btn-outline">Çıkış</button>
@@ -79,6 +81,7 @@
           </div>
           <div class="dashboard-grid">
             <article class="panel quick-panel"><div class="panel-head"><div><h3>Hızlı İşlemler</h3><p>En sık kullanılan hareketler</p></div></div><div class="quick-grid">
+              <button id="quickScanBtn" data-permission="stock_write" class="quick-scan"><span class="quick-icon">▣</span><b>QR ile İşlem</b><small>Kodu okut, giriş/çıkış yap</small></button>
               <button data-type="Giriş"><span class="quick-icon">↧</span><b>Depoya Giriş</b><small>Yeni stok ekle</small></button>
               <button data-type="Makine Çıkışı"><span class="quick-icon">⛏</span><b>Makineye Çıkış</b><small>3 sondaj makinesi</small></button>
               <button data-type="Vinç Çıkışı"><span class="quick-icon">⌁</span><b>Vince Çıkış</b><small>Vinç malzeme teslimi</small></button>
@@ -101,7 +104,7 @@
         </section>
 
         <section id="transaction" class="page">
-          <div class="page-head"><div><span class="eyebrow">STOK HAREKETİ</span><h1>Yeni İşlem</h1><p>Giriş, çıkış, satış, transfer veya iade kaydedin.</p></div></div>
+          <div class="page-head"><div><span class="eyebrow">STOK HAREKETİ</span><h1>Yeni İşlem</h1><p>Giriş, çıkış, satış, transfer veya iade kaydedin.</p></div><div class="page-actions"><button id="txnScanBtn" class="btn btn-primary" data-permission="stock_write">▣ QR Kod Tara</button></div></div>
           <div class="transaction-layout">
             <form id="transactionForm" class="panel form-panel"><div class="form-grid">
               <label class="field"><span>İşlem türü</span><select id="txnType"><option>Giriş</option><option>Makine Çıkışı</option><option>Vinç Çıkışı</option><option>Satış</option><option>Transfer</option><option>İade</option><option data-admin-only>Sayım Düzeltme</option></select></label>
@@ -163,6 +166,29 @@
   </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="userModal">Vazgeç</button><button type="submit" class="btn btn-primary">Kullanıcıyı Kaydet</button></div></form></div></div>
 
   <div id="qrModal" class="modal hidden"><div class="modal-card qr-card"><div class="modal-head"><div><h3>QR Ürün Etiketi</h3><p id="qrProductName"></p></div><button class="icon-btn" data-close-modal="qrModal">✕</button></div><div id="qrCode"></div><code id="qrCodeText"></code><button id="printQrBtn" class="btn btn-primary btn-block">Etiketi Yazdır</button></div></div>
+
+  <div id="scanModal" class="modal hidden"><div class="modal-card scan-card">
+    <div class="modal-head"><div><h3>QR Kod Tara</h3><p>Malzeme etiketini kameraya gösterin.</p></div><button class="icon-btn" data-close-modal="scanModal">✕</button></div>
+    <div id="scanStage" class="scan-stage">
+      <video id="scanVideo" playsinline muted></video>
+      <div class="scan-frame"><span></span></div>
+    </div>
+    <div id="scanStatus" class="scan-status">Kamera başlatılıyor…</div>
+    <div id="scanResult" class="scan-result hidden">
+      <div class="scan-product"><div class="product-avatar" id="scanAvatar">Ü</div><div><b id="scanProductName"></b><small id="scanProductMeta"></small></div></div>
+      <div class="scan-stocks"><span>Ostim: <b id="scanOstim">0</b></span><span>Yenikent: <b id="scanYenikent">0</b></span><span>Toplam: <b id="scanTotal">0</b></span></div>
+      <p class="scan-hint">İşlem türünü seçin, ürün otomatik seçili gelecek:</p>
+      <div class="scan-actions">
+        <button class="btn btn-primary" data-scan-type="Giriş">↧ Giriş</button>
+        <button class="btn btn-primary" data-scan-type="Makine Çıkışı">⛏ Makine Çıkışı</button>
+        <button class="btn btn-primary" data-scan-type="Vinç Çıkışı">⌁ Vinç Çıkışı</button>
+        <button class="btn btn-primary" data-scan-type="Satış">₺ Satış</button>
+        <button class="btn btn-outline" data-scan-type="Transfer">⇄ Transfer</button>
+        <button class="btn btn-outline" data-scan-type="İade">↩ İade</button>
+      </div>
+      <button id="rescanBtn" class="btn btn-outline btn-block">↻ Yeniden Tara</button>
+    </div>
+  </div></div>
   <div id="modalOverlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div>
 </body>
 </html>

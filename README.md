@@ -11,7 +11,7 @@ Ostim ve Yenikent depoları için mobil uyumlu depo takip uygulaması.
 
 ## Canlı uygulama
 
-https://raplay96-oss.github.io/depo-takip-/
+https://onixsondaj.github.io/depo-takip-/
 
 ## Yönetici demo girişi
 

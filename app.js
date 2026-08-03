@@ -241,14 +241,14 @@ function printAllQr(){
     const name=document.createElement('b'); name.textContent=p.name;
     const code=document.createElement('code'); code.textContent=p.code;
     card.append(qr,name,code); sheet.appendChild(card);
-    new QRCode(qr,{text:`DEPO-TAKIP|${p.code}|${p.name}`,width:150,height:150,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+    new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:150,height:150,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
   });
   document.body.classList.add('print-labels');
   setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },250);
 }
 function openQr(productId){
   const p=productById(productId); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrLabelName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';
-  if(window.QRCode){ new QRCode($('#qrCode'),{text:`DEPO-TAKIP|${p.code}|${p.name}`,width:210,height:210,colorDark:'#0b1f3a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
+  if(window.QRCode){ new QRCode($('#qrCode'),{text:`DEPO-TAKIP|${p.code}`,width:210,height:210,colorDark:'#0b1f3a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
   else $('#qrCode').textContent='QR bileşeni yüklenemedi.';
   openModal('qrModal');
 }

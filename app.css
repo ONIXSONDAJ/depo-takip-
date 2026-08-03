@@ -20,3 +20,34 @@
 .quick-scan{border:1px dashed var(--brand)!important;background:#f2f7ff!important}
 .login-reset{margin-top:14px;width:100%;background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;text-underline-offset:3px}
 .login-reset:hover{color:var(--brand)}
+
+/* ---- QR: mod seçimi + hızlı kayıt + etiket sayfası ---- */
+.scan-mode-step{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.scan-mode-btn{border:2px solid var(--line);border-radius:18px;padding:30px 12px;display:grid;justify-items:center;gap:7px;background:#fbfcfe;transition:.2s}
+.scan-mode-btn span{font-size:42px;line-height:1}
+.scan-mode-btn b{font-size:22px;letter-spacing:.03em}
+.scan-mode-btn small{color:var(--muted);font-size:12px}
+.scan-mode-btn.in span{color:#087a55}
+.scan-mode-btn.out span{color:#c92a2a}
+.scan-mode-btn.in:hover{border-color:#087a55;background:#e8f8f2;transform:translateY(-2px)}
+.scan-mode-btn.out:hover{border-color:#c92a2a;background:#fff0f0;transform:translateY(-2px)}
+.scan-back{margin-top:10px;width:100%;background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.scan-back:hover{color:var(--brand)}
+.scan-product{position:relative}
+.scan-product .stock-pill{margin-left:auto}
+#quickForm{display:grid;gap:2px;text-align:left}
+.qr-label-name{display:block;font-size:17px;margin-top:2px}
+.quick-grid.simple{grid-template-columns:1fr 1fr}
+.quick-grid.simple button{padding:20px 16px}
+.quick-grid.simple b{font-size:16px}
+.label-sheet{position:fixed;left:-12000px;top:0;background:white}
+.label-card{display:grid;justify-items:center;gap:8px;padding:16px;border:1px dashed #9aa4b1;border-radius:12px;text-align:center;background:white}
+.label-card b{font-size:15px;line-height:1.25}
+.label-card code{font-size:12px;color:#444}
+.label-qr img,.label-qr canvas{display:block}
+@media print{
+  body.print-labels .qr-card{display:none}
+  body.print-labels .label-sheet,body.print-labels .label-sheet *{visibility:visible}
+  body.print-labels .label-sheet{position:absolute;left:0;top:0;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8mm;padding:0}
+  body.print-labels .label-card{page-break-inside:avoid;break-inside:avoid}
+}

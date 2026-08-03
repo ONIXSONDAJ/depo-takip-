@@ -230,8 +230,24 @@ function saveUser(event){
 function toggleUser(id){ const u=userById(id); if(!u||u.protected)return; if(currentUser.id===id)return toast('Kendi hesabınızı pasife alamazsınız.'); u.active=!u.active; saveDb(); renderAll(); toast(u.active?'Kullanıcı aktifleştirildi.':'Kullanıcı pasife alındı.'); }
 function deleteUser(id){ const u=userById(id); if(!u||u.protected)return; if(currentUser.id===id)return toast('Kendi hesabınızı silemezsiniz.'); if(!confirm(`${u.name} kullanıcısını kalıcı olarak silmek istiyor musunuz?`))return; db.users=db.users.filter(x=>x.id!==id); saveDb(); renderAll(); toast('Kullanıcı silindi.'); }
 
+function printAllQr(){
+  const products=db.products.filter(p=>p.active);
+  if(!products.length) return toast('Yazdırılacak ürün yok. Önce Ürün Yönetimi\'nden ürün ekleyin.');
+  if(!window.QRCode) return toast('QR bileşeni yüklenemedi. İnternet bağlantısını kontrol edin.');
+  const sheet=$('#labelSheet'); sheet.innerHTML='';
+  products.forEach(p=>{
+    const card=document.createElement('div'); card.className='label-card';
+    const qr=document.createElement('div'); qr.className='label-qr';
+    const name=document.createElement('b'); name.textContent=p.name;
+    const code=document.createElement('code'); code.textContent=p.code;
+    card.append(qr,name,code); sheet.appendChild(card);
+    new QRCode(qr,{text:`DEPO-TAKIP|${p.code}|${p.name}`,width:150,height:150,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  });
+  document.body.classList.add('print-labels');
+  setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },250);
+}
 function openQr(productId){
-  const p=productById(productId); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';
+  const p=productById(productId); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrLabelName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';
   if(window.QRCode){ new QRCode($('#qrCode'),{text:`DEPO-TAKIP|${p.code}|${p.name}`,width:210,height:210,colorDark:'#0b1f3a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
   else $('#qrCode').textContent='QR bileşeni yüklenemedi.';
   openModal('qrModal');
@@ -240,16 +256,26 @@ function openModal(id){ $('#modalOverlay').classList.remove('hidden'); $(`#${id}
 function closeModal(id){ if(id==='scanModal') stopScanner(); $(`#${id}`).classList.add('hidden'); if(!$$('.modal:not(.hidden)').length) $('#modalOverlay').classList.add('hidden'); }
 
 // ---- QR tarama (kamera ile giriş/çıkış) ----
-let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0;
+let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0, scanMode='Çıkış';
 
 function openScanner(){
   if(!has('stock_write')) return toast('Bu hesabın stok işlemi yetkisi yok.');
-  openModal('scanModal'); startScanner();
+  openModal('scanModal'); showScanStep('mode');
 }
+function showScanStep(step){
+  if(step!=='scan') stopScanner();
+  $('#scanModeStep').classList.toggle('hidden',step!=='mode');
+  $('#scanStage').classList.toggle('hidden',step!=='scan');
+  $('#scanStatus').classList.toggle('hidden',step!=='scan');
+  $('#scanBackBtn').classList.toggle('hidden',step!=='scan');
+  $('#scanResult').classList.toggle('hidden',step!=='result');
+  $('#scanModalDesc').textContent=step==='mode'?'Ne yapacaksınız?':step==='scan'?`${scanMode} için malzemenin QR etiketini kameraya gösterin.`:`${scanMode} bilgilerini doldurup kaydedin.`;
+}
+function chooseScanMode(mode){ scanMode=mode; startScanner(); }
 async function startScanner(){
   scannedProduct=null;
-  $('#scanResult').classList.add('hidden'); $('#scanStage').classList.remove('hidden');
-  const status=$('#scanStatus'); status.classList.remove('hidden'); status.textContent='Kamera başlatılıyor…';
+  showScanStep('scan');
+  const status=$('#scanStatus'); status.textContent='Kamera başlatılıyor…';
   if(!navigator.mediaDevices?.getUserMedia){ status.textContent='Bu tarayıcı kamera erişimini desteklemiyor. Güncel Chrome veya Safari kullanın.'; return; }
   try{
     scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
@@ -300,26 +326,49 @@ function handleScanResult(text){
     }
     return false;
   }
-  stopScanner();
   if(navigator.vibrate) navigator.vibrate(80);
   scannedProduct=product;
-  $('#scanStage').classList.add('hidden'); $('#scanStatus').classList.add('hidden');
   $('#scanAvatar').textContent=product.name[0]||'Ü';
   $('#scanProductName').textContent=product.name;
   $('#scanProductMeta').textContent=`${product.code} · ${product.category} · ${product.unit}`;
   $('#scanOstim').textContent=formatQty(product.ostim); $('#scanYenikent').textContent=formatQty(product.yenikent); $('#scanTotal').textContent=formatQty(Number(product.ostim)+Number(product.yenikent));
-  $('#scanResult').classList.remove('hidden');
+  const isIn=scanMode==='Giriş';
+  const badge=$('#scanModeBadge'); badge.textContent=scanMode.toLocaleUpperCase('tr-TR'); badge.className=`stock-pill ${isIn?'pill-ok':'pill-critical'}`;
+  $('#quickDepotLabel').textContent=isIn?'Hangi depoya giriş yapılacak?':'Hangi depodan çıkılacak?';
+  $('#quickTargetField').classList.toggle('hidden',isIn);
+  updateQuickCustomer();
+  $('#quickWarning').classList.add('hidden'); $('#quickQty').value=1;
+  showScanStep('result');
   return true;
 }
-function startScannedTransaction(type){
-  if(!scannedProduct) return;
-  const product=scannedProduct;
-  closeModal('scanModal');
-  goPage('transaction');
-  $('#txnType').value=type; updateTransactionLocations();
-  $('#txnProduct').value=product.id; updateTransactionSummary();
-  toast(`${product.name} seçildi · ${type} için miktarı girin.`);
-  const qty=$('#txnQty'); qty.focus(); qty.select();
+function updateQuickCustomer(){
+  const show=scanMode==='Çıkış'&&$('#quickTarget').value==='customer';
+  $('#quickCustomerField').classList.toggle('hidden',!show);
+}
+function submitQuick(event){
+  event.preventDefault();
+  if(!scannedProduct||!has('stock_write')) return;
+  const p=productById(scannedProduct.id); if(!p) return;
+  const qty=Number($('#quickQty').value); const warning=$('#quickWarning'); warning.classList.add('hidden');
+  if(!qty||qty<=0) return toast('Geçerli bir miktar girin.');
+  const depot=$('#quickDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
+  let type,source,target;
+  if(scanMode==='Giriş'){ type='Giriş'; source='Tedarikçi'; target=depot; p[key]=Number(p[key])+qty; }
+  else{
+    const t=$('#quickTarget').value;
+    if(t==='customer'){ const cust=$('#quickCustomer').value.trim(); if(!cust) return toast('Müşteri adını girin.'); type='Satış'; target=cust; }
+    else if(t==='Vinç 1'){ type='Vinç Çıkışı'; target=t; }
+    else{ type='Makine Çıkışı'; target=t; }
+    source=depot;
+    if(Number(p[key])<qty){ warning.textContent=`Yetersiz stok: ${depot} deposunda ${formatQty(p[key])} ${p.unit} var.`; warning.classList.remove('hidden'); return; }
+    p[key]=Number(p[key])-qty;
+  }
+  db.movements.unshift({id:uid('m'),date:formatNow(),ts:Date.now(),type,productId:p.id,product:p.name,qty,unit:p.unit,source,target,user:currentUser.name,userId:currentUser.id,reference:'QR',note:''});
+  addNotification(`${type} kaydedildi`,`${currentUser.name}, ${p.name} için ${formatQty(qty)} ${p.unit} ${type.toLocaleLowerCase('tr-TR')} yaptı (QR).`);
+  saveDb(); renderAll();
+  toast(`Kaydedildi: ${formatQty(qty)} ${p.unit} ${p.name} · ${type}. Sıradaki ürünü okutabilirsiniz.`);
+  $('#quickCustomer').value='';
+  startScanner();
 }
 function openDrawer(){ $('#notificationDrawer').classList.remove('hidden'); $('#drawerOverlay').classList.remove('hidden'); }
 function closeDrawer(){ $('#notificationDrawer').classList.add('hidden'); $('#drawerOverlay').classList.add('hidden'); }
@@ -349,7 +398,9 @@ function bindEvents(){
   $$('[data-close-modal]').forEach(b=>b.onclick=()=>closeModal(b.dataset.closeModal)); $('#modalOverlay').onclick=()=>$$('.modal:not(.hidden)').forEach(m=>closeModal(m.id));
   $('#addProductBtn').onclick=()=>openProductModal(); $('#productForm').onsubmit=saveProduct; $('#addUserBtn').onclick=()=>openUserModal(); $('#userForm').onsubmit=saveUser; $('#printQrBtn').onclick=()=>window.print();
   $('#scanBtn').onclick=openScanner; $('#quickScanBtn').onclick=openScanner; $('#txnScanBtn').onclick=openScanner; $('#rescanBtn').onclick=startScanner;
-  $$('[data-scan-type]').forEach(b=>b.onclick=()=>startScannedTransaction(b.dataset.scanType));
+  $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış'); $('#scanBackBtn').onclick=()=>showScanStep('mode');
+  $('#quickForm').onsubmit=submitQuick; $('#quickTarget').onchange=updateQuickCustomer;
+  $('#printAllQrBtn').onclick=printAllQr;
   $('#transactionForm').onsubmit=submitTransaction; $('#txnType').onchange=()=>{updateTransactionLocations();updateTransactionSummary();}; $('#txnSource').onchange=()=>{updateTransferTarget();updateTransactionSummary();}; ['txnTarget','txnTargetText','txnProduct','txnQty'].forEach(id=>$(`#${id}`).addEventListener('input',updateTransactionSummary));
   ['stockSearch','stockStatusFilter','stockWarehouseFilter'].forEach(id=>$(`#${id}`).addEventListener('input',renderStocks)); ['movementSearch','movementTypeFilter'].forEach(id=>$(`#${id}`).addEventListener('input',renderMovements)); ['productAdminSearch','productAdminStatus'].forEach(id=>$(`#${id}`).addEventListener('input',renderProductAdmin)); ['userSearch','userRoleFilter'].forEach(id=>$(`#${id}`).addEventListener('input',renderUsers));
   $('#stockCsvBtn').onclick=downloadStockCsv; $('#movementCsvBtn').onclick=downloadMovementCsv; $('#settingsStockCsv').onclick=downloadStockCsv; $('#settingsMovementCsv').onclick=downloadMovementCsv; $('#backupBtn').onclick=downloadBackup; $('#restoreBtn').onclick=()=>$('#restoreInput').click(); $('#restoreInput').onchange=e=>e.target.files[0]&&restoreBackup(e.target.files[0]); $('#resetBtn').onclick=resetSystem;

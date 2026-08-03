@@ -91,14 +91,9 @@
             <article class="metric-card"><div class="metric-icon green">K</div><div><small>Aktif Kullanıcı</small><strong id="userTotal">0</strong><span>Yetkili hesap</span></div></article>
           </div>
           <div class="dashboard-grid">
-            <article class="panel quick-panel"><div class="panel-head"><div><h3>Hızlı İşlemler</h3><p>En sık kullanılan hareketler</p></div></div><div class="quick-grid">
-              <button id="quickScanBtn" data-permission="stock_write" class="quick-scan"><span class="quick-icon">▣</span><b>QR ile İşlem</b><small>Kodu okut, giriş/çıkış yap</small></button>
-              <button data-type="Giriş"><span class="quick-icon">↧</span><b>Depoya Giriş</b><small>Yeni stok ekle</small></button>
-              <button data-type="Makine Çıkışı"><span class="quick-icon">⛏</span><b>Makineye Çıkış</b><small>3 sondaj makinesi</small></button>
-              <button data-type="Vinç Çıkışı"><span class="quick-icon">⌁</span><b>Vince Çıkış</b><small>Vinç malzeme teslimi</small></button>
-              <button data-type="Satış"><span class="quick-icon">₺</span><b>Müşteriye Satış</b><small>Satış kaydı</small></button>
-              <button data-type="Transfer"><span class="quick-icon">⇄</span><b>Depo Transferi</b><small>Ostim ↔ Yenikent</small></button>
-              <button data-type="İade"><span class="quick-icon">↩</span><b>Sahadan İade</b><small>Makine/vinç iadesi</small></button>
+            <article class="panel quick-panel"><div class="panel-head"><div><h3>Hızlı İşlemler</h3><p>Personel için kolay kullanım</p></div></div><div class="quick-grid simple">
+              <button id="quickScanBtn" data-permission="stock_write" class="quick-scan"><span class="quick-icon">▣</span><b>QR ile İşlem</b><small>Kodu okut → Giriş/Çıkış seç → miktarı gir</small></button>
+              <button data-open="transaction"><span class="quick-icon">＋</span><b>Manuel İşlem</b><small>Transfer, iade ve diğer işlemler form ile</small></button>
             </div></article>
             <article class="panel"><div class="panel-head"><div><h3>Son Hareketler</h3><p>En güncel 6 kayıt</p></div><button class="text-btn" data-open="movements">Tümünü gör</button></div><div id="recentActivity" class="activity-list"></div></article>
           </div>
@@ -109,7 +104,7 @@
         </section>
 
         <section id="stocks" class="page">
-          <div class="page-head"><div><span class="eyebrow">ENVANTER</span><h1>Stok Yönetimi</h1><p>İki depodaki güncel stokları arayın ve yönetin.</p></div><div class="page-actions"><button class="btn btn-outline" id="stockCsvBtn">Stok CSV</button><button class="btn btn-primary" data-open="transaction">＋ İşlem Yap</button></div></div>
+          <div class="page-head"><div><span class="eyebrow">ENVANTER</span><h1>Stok Yönetimi</h1><p>İki depodaki güncel stokları arayın ve yönetin.</p></div><div class="page-actions"><button class="btn btn-outline" id="printAllQrBtn" data-permission="manage_products">QR Etiketleri Yazdır</button><button class="btn btn-outline" id="stockCsvBtn">Stok CSV</button><button class="btn btn-primary" data-open="transaction">＋ İşlem Yap</button></div></div>
           <div class="filter-bar"><label class="search-box">⌕<input id="stockSearch" placeholder="Ürün adı, kod veya kategori ara"></label><select id="stockStatusFilter"><option value="all">Tüm durumlar</option><option value="critical">Kritik</option><option value="low">Azalıyor</option><option value="ok">Yeterli</option></select><select id="stockWarehouseFilter"><option value="all">Tüm depolar</option><option value="ostim">Ostim stoklu</option><option value="yenikent">Yenikent stoklu</option></select></div>
           <div class="table-card"><table><thead><tr><th>Malzeme</th><th>Kod</th><th>Kategori</th><th>Ostim</th><th>Yenikent</th><th>Toplam</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="stockRows"></tbody></table><div id="stockEmpty" class="empty hidden">Arama kriterine uygun ürün bulunamadı.</div></div>
         </section>
@@ -176,30 +171,36 @@
     <label class="field"><span>Ad soyad</span><input id="userNameField" required></label><label class="field"><span>Kullanıcı adı</span><input id="usernameField" required autocomplete="off"></label><label class="field"><span>Şifre</span><input id="passwordField" required autocomplete="new-password"></label><label class="field"><span>Rol</span><select id="roleField"><option value="super_admin">Süper Yönetici</option><option value="admin">Yönetici</option><option value="depot">Depo Personeli</option><option value="machine">Makine Personeli</option><option value="sales">Satış</option><option value="accounting">Muhasebe</option><option value="viewer">Görüntüleyici</option></select></label><label class="field"><span>Görev / Birim</span><input id="jobField" placeholder="Ostim depo sorumlusu"></label><label class="field"><span>Atama</span><select id="assignmentField"><option>Genel</option><option>Ostim Depo</option><option>Yenikent Depo</option><option>Sondaj Makinesi 1</option><option>Sondaj Makinesi 2</option><option>Sondaj Makinesi 3</option><option>Vinç 1</option><option>Satış</option><option>Muhasebe</option></select></label><label class="field"><span>Durum</span><select id="userActiveField"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
   </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="userModal">Vazgeç</button><button type="submit" class="btn btn-primary">Kullanıcıyı Kaydet</button></div></form></div></div>
 
-  <div id="qrModal" class="modal hidden"><div class="modal-card qr-card"><div class="modal-head"><div><h3>QR Ürün Etiketi</h3><p id="qrProductName"></p></div><button class="icon-btn" data-close-modal="qrModal">✕</button></div><div id="qrCode"></div><code id="qrCodeText"></code><button id="printQrBtn" class="btn btn-primary btn-block">Etiketi Yazdır</button></div></div>
+  <div id="qrModal" class="modal hidden"><div class="modal-card qr-card"><div class="modal-head"><div><h3>QR Ürün Etiketi</h3><p id="qrProductName"></p></div><button class="icon-btn" data-close-modal="qrModal">✕</button></div><div id="qrCode"></div><b id="qrLabelName" class="qr-label-name"></b><code id="qrCodeText"></code><button id="printQrBtn" class="btn btn-primary btn-block">Etiketi Yazdır</button></div></div>
 
   <div id="scanModal" class="modal hidden"><div class="modal-card scan-card">
-    <div class="modal-head"><div><h3>QR Kod Tara</h3><p>Malzeme etiketini kameraya gösterin.</p></div><button class="icon-btn" data-close-modal="scanModal">✕</button></div>
-    <div id="scanStage" class="scan-stage">
+    <div class="modal-head"><div><h3>QR ile İşlem</h3><p id="scanModalDesc">Ne yapacaksınız?</p></div><button class="icon-btn" data-close-modal="scanModal">✕</button></div>
+    <div id="scanModeStep" class="scan-mode-step">
+      <button type="button" id="scanModeIn" class="scan-mode-btn in"><span>⬇</span><b>GİRİŞ</b><small>Depoya mal girişi</small></button>
+      <button type="button" id="scanModeOut" class="scan-mode-btn out"><span>⬆</span><b>ÇIKIŞ</b><small>Depodan mal çıkışı</small></button>
+    </div>
+    <div id="scanStage" class="scan-stage hidden">
       <video id="scanVideo" playsinline muted></video>
       <div class="scan-frame"><span></span></div>
     </div>
-    <div id="scanStatus" class="scan-status">Kamera başlatılıyor…</div>
+    <div id="scanStatus" class="scan-status hidden">Kamera başlatılıyor…</div>
+    <button type="button" id="scanBackBtn" class="scan-back hidden">‹ Giriş/Çıkış seçimine dön</button>
     <div id="scanResult" class="scan-result hidden">
-      <div class="scan-product"><div class="product-avatar" id="scanAvatar">Ü</div><div><b id="scanProductName"></b><small id="scanProductMeta"></small></div></div>
+      <div class="scan-product"><div class="product-avatar" id="scanAvatar">Ü</div><div><b id="scanProductName"></b><small id="scanProductMeta"></small></div><span id="scanModeBadge" class="stock-pill pill-ok">GİRİŞ</span></div>
       <div class="scan-stocks"><span>Ostim: <b id="scanOstim">0</b></span><span>Yenikent: <b id="scanYenikent">0</b></span><span>Toplam: <b id="scanTotal">0</b></span></div>
-      <p class="scan-hint">İşlem türünü seçin, ürün otomatik seçili gelecek:</p>
-      <div class="scan-actions">
-        <button class="btn btn-primary" data-scan-type="Giriş">↧ Giriş</button>
-        <button class="btn btn-primary" data-scan-type="Makine Çıkışı">⛏ Makine Çıkışı</button>
-        <button class="btn btn-primary" data-scan-type="Vinç Çıkışı">⌁ Vinç Çıkışı</button>
-        <button class="btn btn-primary" data-scan-type="Satış">₺ Satış</button>
-        <button class="btn btn-outline" data-scan-type="Transfer">⇄ Transfer</button>
-        <button class="btn btn-outline" data-scan-type="İade">↩ İade</button>
-      </div>
-      <button id="rescanBtn" class="btn btn-outline btn-block">↻ Yeniden Tara</button>
+      <form id="quickForm">
+        <label class="field"><span id="quickDepotLabel">Depo</span><select id="quickDepot"><option>Ostim Depo</option><option>Yenikent Depo</option></select></label>
+        <label class="field hidden" id="quickTargetField"><span>Nereye gidiyor?</span><select id="quickTarget"><option>Sondaj Makinesi 1</option><option>Sondaj Makinesi 2</option><option>Sondaj Makinesi 3</option><option>Vinç 1</option><option value="customer">Müşteriye Satış</option></select></label>
+        <label class="field hidden" id="quickCustomerField"><span>Müşteri adı</span><input id="quickCustomer" placeholder="Müşteri adı girin" autocomplete="off"></label>
+        <label class="field"><span>Miktar</span><input id="quickQty" type="number" min="0.01" step="0.01" value="1" required></label>
+        <div id="quickWarning" class="alert alert-warning hidden"></div>
+        <button type="submit" id="quickSubmit" class="btn btn-primary btn-block">Kaydet</button>
+      </form>
+      <button type="button" id="rescanBtn" class="btn btn-outline btn-block">↻ Başka Ürün Tara</button>
     </div>
   </div></div>
+
+  <div id="labelSheet" class="label-sheet" aria-hidden="true"></div>
   <div id="modalOverlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div>
 </body>
 </html>

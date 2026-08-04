@@ -7,7 +7,7 @@ const SESSION_KEY = 'depoTakipSession';
 
 const roleNames = { super_admin:'Yönetici', admin:'Yönetici', depot:'Personel', machine:'Personel', sales:'Personel', accounting:'Muhasebe', viewer:'Personel' };
 const OUT_TYPES=['Makine Çıkışı','Vinç Çıkışı','Satış'];
-const seed = { version: 4, products: [], users: [
+const seed = { version: 4, epochs: {}, products: [], users: [
   {id:'u1',name:'Alper',username:'Alper',password:'00120200',role:'super_admin',job:'Sistem Yöneticisi',assignment:'Genel',active:true,protected:true}
 ], movements: [], notifications: [] };
 
@@ -41,7 +41,8 @@ function migrate(data){
     products:Array.isArray(data.products)?data.products.map((p,i)=>({...p,id:String(p.id||`p${i}`),category:p.category||'Genel',active:p.active!==false})):[],
     users:Array.isArray(data.users)&&data.users.length?data.users.map((u,i)=>({...u,id:String(u.id||`u${i}`),role:u.role||'depot',job:u.job||'',assignment:u.assignment||'Genel',active:u.active!==false})):deepClone(seed).users,
     movements:Array.isArray(data.movements)?data.movements.map((m,i)=>({...m,id:m.id||`m${i}`,ts:m.ts||Date.now()-i*60000,reference:m.reference||'',note:m.note||'',userId:m.userId||'',billing:OUT_TYPES.includes(m.type)?(m.billing||{status:'pending',invoiced:null,paid:null,unitPrice:null,note:''}):undefined})):[],
-    notifications:Array.isArray(data.notifications)?data.notifications:[]
+    notifications:Array.isArray(data.notifications)?data.notifications:[],
+    epochs:(data.epochs&&typeof data.epochs==='object')?data.epochs:{}
   };
 }
 function statusOf(p){
@@ -77,13 +78,27 @@ async function cloudSync(){
       if(rows.length) await cloudFetch(CLOUD_TABLES[kind],{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(rows)});
       ids.forEach(id=>dirtyIds[kind].delete(id));
     }
-    const [cp,cu,cm]=await Promise.all([
+    const [cp,cuRaw,cm]=await Promise.all([
       cloudFetch(CLOUD_TABLES.products+'?select=id,data'),
       cloudFetch(CLOUD_TABLES.users+'?select=id,data'),
       cloudFetch(CLOUD_TABLES.movements+'?select=id,data')
     ]);
     let changed=0;
+    const metaRow=(cuRaw||[]).find(r=>r.id==='__meta__');
+    const cu=(cuRaw||[]).filter(r=>r.id!=='__meta__');
+    const cloudEpochs=metaRow?.data?.epochs||{};
+    db.epochs=db.epochs||{};
+    for(const kind of ['products','users','movements']){
+      if((cloudEpochs[kind]||0)>(db.epochs[kind]||0)){
+        dirtyIds[kind].clear();
+        if(kind==='users') db.users=db.users.filter(u=>u.protected);
+        else if(kind==='products') db.products=[];
+        else db.movements=[];
+        db.epochs[kind]=cloudEpochs[kind]; changed=1;
+      }
+    }
     changed|=applyCloud('products',cp); changed|=applyCloud('users',cu); changed|=applyCloud('movements',cm);
+    if(currentUser&&!userById(currentUser.id)){ toast('Sistem yönetici tarafından sıfırlandı, yeniden giriş yapın.'); logout(); }
     if(changed){
       db.movements.sort((a,b)=>(b.ts||0)-(a.ts||0));
       saveDb();
@@ -116,8 +131,22 @@ function applyCloud(kind,rows){
   else db.movements=merged;
   return changed;
 }
-async function cloudWipe(){
-  for(const t of Object.values(CLOUD_TABLES)){ await cloudFetch(`${t}?id=neq.__void__`,{method:'DELETE'}); }
+async function cloudWipeTable(t){ await cloudFetch(`${t}?id=neq.__meta__`,{method:'DELETE'}); }
+async function pushCloudMeta(){ await cloudFetch(CLOUD_TABLES.users,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify([{id:'__meta__',data:{_meta:true,epochs:db.epochs||{}},updated_at:new Date().toISOString()}])}); }
+async function resetMovementsFormat(){
+  if(currentUser?.role!=='super_admin') return;
+  if(!confirm('TÜM hareket ve muhasebe kayıtları, TÜM cihazlardan kalıcı olarak silinecek. Ürünler, stoklar ve kullanıcılar kalır. Devam edilsin mi?'))return;
+  if(!confirm('Son onay: bu işlem geri alınamaz. Önce yedek aldınız mı?'))return;
+  db.epochs=db.epochs||{}; db.epochs.movements=Date.now();
+  dirtyIds.movements.clear(); db.movements=[];
+  try{ if(cloudOk){ await cloudWipeTable(CLOUD_TABLES.movements); await pushCloudMeta(); } }catch(e){ toast('Bulut temizliği başarısız, tekrar deneyin: '+e.message); return; }
+  saveDb(); renderAll(); toast('Hareket ve muhasebe kayıtları sıfırlandı. Yeni dönem başladı.');
+}
+function resetStocksFormat(){
+  if(currentUser?.role!=='super_admin') return;
+  if(!confirm('TÜM ürünlerin stok miktarları 0 yapılacak (ürün kartları kalır). Devam edilsin mi?'))return;
+  db.products.forEach(p=>{ p.ostim=0; p.yenikent=0; markDirty('products',p.id); });
+  saveDb(); renderAll(); toast('Tüm stok miktarları sıfırlandı.');
 }
 function splitDate(d){ const parts=String(d||'').split(' '); return {day:parts[0]||'',time:parts[1]||''}; }
 
@@ -164,7 +193,7 @@ function logout(){ localStorage.removeItem(SESSION_KEY); currentUser=null; $('#a
 
 /* ---- Yönetici sayfaları ---- */
 const pageTitles={dashboard:'Ana Sayfa',movements:'Hareketler',stocks:'Stok',muhasebe:'Muhasebe',products:'Ürünler',users:'Kullanıcılar',settings:'Ayarlar'};
-function applyShellPerms(){ const restricted=!isAdmin(); $$('[data-admin-only]').forEach(el=>el.classList.toggle('hidden',restricted)); $('#scanTopBtn').classList.toggle('hidden',!canWrite()); }
+function applyShellPerms(){ const restricted=!isAdmin(); $$('[data-admin-only]').forEach(el=>el.classList.toggle('hidden',restricted)); $$('[data-super-only]').forEach(el=>el.classList.toggle('hidden',currentUser?.role!=='super_admin')); $('#scanTopBtn').classList.toggle('hidden',!canWrite()); }
 function goPage(page){
   if(!isPanelUser()) return;
   if(!isAdmin()&&['products','users','settings'].includes(page)) page='dashboard';
@@ -613,10 +642,20 @@ function downloadBackup(){ const a=document.createElement('a'); a.href=URL.creat
 function restoreBackup(file){
   const reader=new FileReader(); reader.onload=()=>{ try{ const data=migrate(JSON.parse(reader.result)); if(!confirm('Seçilen yedek bu cihazdaki verilerin üzerine yazılacak. Devam edilsin mi?'))return; db=data; saveDb(); markAllDirty(); refreshAuthView(); if(currentUser&&isPanelUser()){ applyShellPerms(); renderAll(); goPage('dashboard'); } toast('Yedek yüklendi.'); }catch(e){toast('Yedek dosyası geçerli değil.');} }; reader.readAsText(file);
 }
-async function resetSystem(){ if(!confirm('TÜM veriler (ürünler, kullanıcılar, hareketler) kalıcı olarak silinecek. Emin misiniz?'))return;
-  if(cloudOk){ if(!confirm('Buluttaki ortak veriler de silinecek — bu, TÜM cihazları etkiler. Devam edilsin mi?'))return; try{ await cloudWipe(); }catch(e){ toast('Bulut temizlenemedi, tekrar deneyin.'); return; } }
+async function resetSystem(){
+  if(currentUser&&currentUser.role!=='super_admin') return toast('Bu işlemi sadece Sistem Yöneticisi yapabilir.');
+  if(!confirm('FABRİKA FORMATI: ürünler, kullanıcılar, hareketler ve muhasebe — HER ŞEY, TÜM cihazlardan silinecek. Emin misiniz?'))return;
+  if(!confirm('Son onay: bu işlem geri alınamaz. Önce "Tam Yedek Al" yaptınız mı?'))return;
+  const now=Date.now();
   Object.values(dirtyIds).forEach(s=>s.clear());
-  localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SESSION_KEY); db=deepClone(seed); currentUser=null; markAllDirty(); $('#appView').classList.add('hidden'); $('#staffView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView(); toast('Sistem sıfırlandı. Yönetici hesabıyla giriş yapın.'); }
+  try{ if(cloudOk){ for(const t of Object.values(CLOUD_TABLES)) await cloudWipeTable(t); } }catch(e){ toast('Bulut temizliği başarısız: '+e.message); return; }
+  localStorage.removeItem(SESSION_KEY);
+  db=deepClone(seed); db.epochs={products:now,users:now,movements:now};
+  try{ if(cloudOk) await pushCloudMeta(); }catch(e){}
+  saveDb(); markAllDirty();
+  currentUser=null; $('#appView').classList.add('hidden'); $('#staffView').classList.add('hidden'); $('#loginView').classList.remove('hidden'); refreshAuthView();
+  toast('Sistem formatlandı. Yönetici hesabıyla giriş yapın.');
+}
 
 function bindEvents(){
   $('#loginForm').addEventListener('submit',e=>{e.preventDefault();login($('#loginUser').value,$('#loginPass').value);});
@@ -675,6 +714,8 @@ function bindEvents(){
   $('#offX').addEventListener('input',saveLabelOffsets); $('#offY').addEventListener('input',saveLabelOffsets);
   $('#testSheetBtn').onclick=printTestSheet;
   $('#resetBtn').onclick=resetSystem;
+  $('#resetMovementsBtn').onclick=resetMovementsFormat;
+  $('#resetStocksBtn').onclick=resetStocksFormat;
 }
 
 bindEvents();

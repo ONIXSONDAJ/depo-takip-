@@ -12,10 +12,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=25">
-  <script defer src="./qrcode.min.js?v=25"></script>
-  <script defer src="./jsqr.js?v=25"></script>
-  <script defer src="./app.js?v=25"></script>
+  <link rel="stylesheet" href="./app.css?v=26">
+  <script defer src="./qrcode.min.js?v=26"></script>
+  <script defer src="./jsqr.js?v=26"></script>
+  <script defer src="./app.js?v=26"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -175,7 +175,14 @@
             <article class="panel setting-row"><div><h3>Yedek Geri Yükle</h3><p>Yedek dosyasını bu cihaza yükle.</p></div><input id="restoreInput" type="file" accept="application/json" class="hidden"><button id="restoreBtn" class="btn btn-outline">Dosya Seç</button></article>
             <article class="panel setting-row"><div><h3>Excel Raporları</h3><p>Stok ve hareket listesini CSV olarak indir.</p></div><div class="button-stack"><button id="settingsStockCsv" class="btn btn-outline">Stok</button><button id="settingsMovementCsv" class="btn btn-outline">Hareket</button></div></article>
             <article class="panel setting-row"><div><h3>Etiket Hizalama (44'lü kağıt)</h3><p>Çıktı, etiket kağıdının bölmelerine tam oturmuyorsa mm cinsinden kaydırın (+ sağa/aşağı, − sola/yukarı). Önce "Test Sayfası" ile boş kağıda çerçeve basıp etiket kağıdının üzerine tutarak kontrol edin.</p></div><div class="align-stack"><label class="off-field">Yatay <input id="offX" type="number" step="0.5" value="0"><span>mm</span></label><label class="off-field">Dikey <input id="offY" type="number" step="0.5" value="0"><span>mm</span></label><button id="testSheetBtn" class="btn btn-outline">Test Sayfası Bas</button></div></article>
-            <article class="panel setting-row danger-zone"><div><h3>Sistemi Sıfırla</h3><p>Bu cihazdaki tüm verileri kalıcı olarak siler.</p></div><button id="resetBtn" class="btn btn-danger">Sıfırla</button></article>
+            <article class="panel danger-zone reset-panel" data-super-only>
+              <div class="panel-head"><div><h3>Sıfırlama Formatları (Sistem Yöneticisi)</h3><p>Bu işlemler TÜM cihazları etkiler ve geri alınamaz. Öncesinde "Tam Yedek Al" önerilir.</p></div></div>
+              <div class="reset-grid">
+                <div class="reset-row"><div><b>Hareket &amp; Muhasebe Sıfırla</b><small>Tüm hareket ve muhasebe kayıtları silinir. Ürünler, stok miktarları ve kullanıcılar aynen kalır — yeni döneme temiz başlangıç.</small></div><button id="resetMovementsBtn" class="btn btn-danger">Sıfırla</button></div>
+                <div class="reset-row"><div><b>Stok Miktarlarını Sıfırla</b><small>Ürün kartları ve etiketler kalır, tüm depo miktarları 0 yapılır. Sayım öncesi kullanışlıdır.</small></div><button id="resetStocksBtn" class="btn btn-danger">Sıfırla</button></div>
+                <div class="reset-row"><div><b>Fabrika Formatı</b><small>Her şey silinir: ürünler, kullanıcılar, hareketler, muhasebe. Sistem ilk güne döner, sadece yönetici hesabı kalır.</small></div><button id="resetBtn" class="btn btn-danger">Formatla</button></div>
+              </div>
+            </article>
           </div>
         </section>
       </main>

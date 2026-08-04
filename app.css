@@ -351,3 +351,11 @@ td code{background:#f2f3f5;border-radius:6px;padding:2px 7px;font-size:12px}
   .btn:hover,.home-btn:hover,.metric-card.link:hover,.pick-item:hover,.scan-mode-btn.in:hover,.scan-mode-btn.out:hover{transform:none}
   .btn{transition:background .15s}
 }
+.zoom-btn{right:62px;color:#fff;font-size:14px;font-weight:700}
+.bill-chip.inv{border-color:#bcd6f7;background:#f6faff}
+.bill-chip.inv b{color:#155db9}
+.bill-chip.noinv{border-color:#d9d2f0;background:#faf8ff}
+.bill-chip.noinv b{color:#5b41a9}
+.bill-chip.total{border:2px solid var(--accent);background:#f2f7ff}
+.bill-chip.total b{color:var(--accent);font-size:21px}
+.bill-chip.total small{color:var(--accent);font-weight:800;letter-spacing:.06em}

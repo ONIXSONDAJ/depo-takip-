@@ -177,6 +177,7 @@ function goPage(page){
   if(page==='dashboard') renderDashboard();
   if(page==='movements') renderMovements();
   if(page==='stocks') renderStocks();
+  if(page==='muhasebe') renderBilling();
   if(page==='products') renderProducts();
   if(page==='users') renderUsers();
 }
@@ -260,10 +261,17 @@ function renderBilling(){
   const askida=all.filter(m=>billingStatus(m.billing)==='askida');
   const done=all.filter(m=>billingStatus(m.billing)==='done');
   const sum=list=>list.reduce((s,m)=>s+(m.billing.unitPrice?m.billing.unitPrice*m.qty:0),0);
+  const priced=all.filter(m=>m.billing.unitPrice);
+  const inv=priced.filter(m=>m.billing.invoiced===true);
+  const noinv=priced.filter(m=>m.billing.invoiced===false);
+  const invSum=sum(inv), noinvSum=sum(noinv);
   $('#billSummary').innerHTML=`
     <div class="bill-chip"><small>Bekleyen</small><b>${pending}</b></div>
     <div class="bill-chip warn"><small>Askıda</small><b>${askida.length}</b><span>${formatQty(sum(askida))} ₺</span></div>
-    <div class="bill-chip ok"><small>Tahsil edilen</small><b>${done.length}</b><span>${formatQty(sum(done))} ₺</span></div>`;
+    <div class="bill-chip ok"><small>Tahsil edilen</small><b>${done.length}</b><span>${formatQty(sum(done))} ₺</span></div>
+    <div class="bill-chip inv"><small>Faturalı</small><b>${formatQty(invSum)} ₺</b><span>${inv.length} kayıt</span></div>
+    <div class="bill-chip noinv"><small>Faturasız</small><b>${formatQty(noinvSum)} ₺</b><span>${noinv.length} kayıt</span></div>
+    <div class="bill-chip total"><small>GENEL TOPLAM</small><b>${formatQty(invSum+noinvSum)} ₺</b><span>faturalı + faturasız</span></div>`;
 }
 function openBillingModal(id){
   const m=db.movements.find(x=>x.id===id); if(!m||!m.billing) return;
@@ -399,7 +407,7 @@ function openQr(id){
 }
 
 /* ---- QR tarama ve hızlı işlem ---- */
-let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0, scanMode='Çıkış', scanStartAt=0, lastDecodeAt=0, torchOn=false, slowHintShown=false, pendingManual=null;
+let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0, scanMode='Çıkış', scanStartAt=0, lastDecodeAt=0, torchOn=false, slowHintShown=false, pendingManual=null, scanPass=0, scanZoom=1;
 
 function openScanner(){
   if(!canWrite()) return toast('Bu hesabın stok işlemi yetkisi yok.');
@@ -439,12 +447,23 @@ async function startScanner(){
   const status=$('#scanStatus'); status.textContent='Kamera başlatılıyor…';
   if(!navigator.mediaDevices?.getUserMedia){ status.textContent='Bu tarayıcı kamera erişimini desteklemiyor. Güncel Chrome veya Safari kullanın.'; return; }
   try{
-    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]},audio:false});
     const video=$('#scanVideo'); video.srcObject=scanStream; await video.play();
     if(!scanDetector&&'BarcodeDetector' in window){ try{ scanDetector=new BarcodeDetector({formats:['qr_code']}); }catch(e){ scanDetector=null; } }
-    scanActive=true; scanStartAt=Date.now(); torchOn=false; slowHintShown=false; status.textContent='QR kodu çerçeveye hizalayın…';
+    const caps=scanStream.getVideoTracks()[0]?.getCapabilities?.()||{};
+    scanZoom=1; $('#zoomBtn').classList.toggle('hidden',!caps.zoom); $('#zoomBtn').textContent='1x';
+    scanActive=true; scanStartAt=Date.now(); torchOn=false; slowHintShown=false; scanPass=0; status.textContent='QR kodu çerçeveye hizalayın…';
     scanLoop();
   }catch(e){ status.textContent='Kameraya erişilemedi. Tarayıcı ayarlarından kamera iznini verin.'; }
+}
+async function applyZoom(z){
+  const track=scanStream?.getVideoTracks?.()[0]; if(!track) return;
+  try{
+    const caps=track.getCapabilities?.(); if(!caps||!caps.zoom) return;
+    const val=Math.min(caps.zoom.max||z,Math.max(caps.zoom.min||1,z));
+    await track.applyConstraints({advanced:[{zoom:val}]});
+    scanZoom=val; $('#zoomBtn').textContent=`${Math.round(val*10)/10}x`;
+  }catch(e){}
 }
 async function toggleTorch(){
   const track=scanStream?.getVideoTracks?.()[0]; if(!track) return;
@@ -467,30 +486,25 @@ async function scanLoop(){
   if(video.readyState>=2&&video.videoWidth){
     if(scanDetector){
       try{ const codes=await scanDetector.detect(video); if(codes.length) text=codes[0].rawValue; }catch(e){ scanDetector=null; }
-    }else if(window.jsQR&&Date.now()-lastDecodeAt>120){
+    }else if(window.jsQR&&Date.now()-lastDecodeAt>110){
       lastDecodeAt=Date.now();
       scanCanvas=scanCanvas||document.createElement('canvas');
       const ctx=scanCanvas.getContext('2d',{willReadFrequently:true});
       const vw=video.videoWidth, vh=video.videoHeight;
-      // 1. geçiş: tüm kare (küçültülmüş)
-      const scale=Math.min(1,900/vw);
-      scanCanvas.width=Math.round(vw*scale); scanCanvas.height=Math.round(vh*scale);
-      ctx.drawImage(video,0,0,scanCanvas.width,scanCanvas.height);
-      let img=ctx.getImageData(0,0,scanCanvas.width,scanCanvas.height);
-      let found=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-      // 2. geçiş: çerçevenin ortası, tam çözünürlük (çoklu/küçük QR için)
-      if(!found){
-        const cw=Math.round(Math.min(vw,vh)*0.62), sx=Math.round((vw-cw)/2), sy=Math.round((vh-cw)/2);
-        scanCanvas.width=cw; scanCanvas.height=cw;
-        ctx.drawImage(video,sx,sy,cw,cw,0,0,cw,cw);
-        img=ctx.getImageData(0,0,cw,cw);
-        found=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-      }
+      const pass=scanPass++%3;
+      let sx=0,sy=0,sw=vw,sh=vh,dw,dh;
+      if(pass===0){ const scale=Math.min(1,1024/vw); dw=Math.round(vw*scale); dh=Math.round(vh*scale); }
+      else if(pass===1){ const c=Math.round(Math.min(vw,vh)*0.62); sx=Math.round((vw-c)/2); sy=Math.round((vh-c)/2); sw=sh=c; dw=dh=c; }
+      else{ const c=Math.round(Math.min(vw,vh)*0.42); sx=Math.round((vw-c)/2); sy=Math.round((vh-c)/2); sw=sh=c; dw=dh=c; }
+      scanCanvas.width=dw; scanCanvas.height=dh;
+      ctx.drawImage(video,sx,sy,sw,sh,0,0,dw,dh);
+      const img=ctx.getImageData(0,0,dw,dh);
+      const found=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
       if(found&&found.data) text=found.data;
     }
     if(!text&&!slowHintShown&&Date.now()-scanStartAt>7000){
       slowHintShown=true;
-      $('#scanStatus').textContent='Okunmuyorsa: telefonu etikete 10-15 cm yaklaştırın, sabit tutun. Karanlıksa 💡 ile feneri açın.';
+      $('#scanStatus').textContent='Okunmuyorsa: telefonu etikete 10-15 cm yaklaştırın ve sabit tutun. Küçük etiket için sağ alttaki 1x butonuyla yakınlaştırın, karanlıkta 💡 feneri açın.';
     }
   }
   if(text&&handleScanResult(text)) return;
@@ -546,7 +560,6 @@ function submitQuick(e){
   e.preventDefault();
   if(!scannedProduct||!canWrite()) return;
   const p=productById(scannedProduct.id); if(!p) return;
-  const wasManual=!!pendingManual;
   const qty=Number($('#quickQty').value); const warning=$('#quickWarning'); warning.classList.add('hidden');
   if(!qty||qty<=0) return toast('Geçerli bir miktar girin.');
   const depot=$('#quickDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
@@ -571,8 +584,7 @@ function submitQuick(e){
   toast(`Kaydedildi: ${formatQty(qty)} ${p.unit} ${p.name} · ${type}.`);
   $('#quickCustomer').value='';
   if(isPanelUser()) renderAll(); else renderStaffLast();
-  if(wasManual){ pendingManual=null; closeModal('scanModal'); }
-  else startScanner();
+  pendingManual=null; closeModal('scanModal');
 }
 
 /* ---- Modal / araçlar ---- */
@@ -626,6 +638,7 @@ function bindEvents(){
   $('#pickBackBtn').onclick=()=>startScanner();
   $('#pickSearch').addEventListener('input',renderPickList);
   $('#torchBtn').onclick=toggleTorch;
+  $('#zoomBtn').onclick=()=>{ const next=scanZoom>=3?1:scanZoom>=2?3:2; applyZoom(next); };
   $('#quickForm').onsubmit=submitQuick; $('#quickTarget').onchange=updateQuickCustomer;
   $('#rescanBtn').onclick=()=>{ pendingManual=null; startScanner(); };
   $('#stockSearch').addEventListener('input',renderStocks);

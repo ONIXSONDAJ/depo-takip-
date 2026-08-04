@@ -359,3 +359,8 @@ td code{background:#f2f3f5;border-radius:6px;padding:2px 7px;font-size:12px}
 .bill-chip.total{border:2px solid var(--accent);background:#f2f7ff}
 .bill-chip.total b{color:var(--accent);font-size:21px}
 .bill-chip.total small{color:var(--accent);font-weight:800;letter-spacing:.06em}
+.align-stack{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.off-field{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#4a4c53}
+.off-field input{width:64px;border:1px solid var(--line);border-radius:9px;padding:8px;text-align:center}
+.off-field span{color:var(--muted)}
+.label-card.test-cell{border:0.35mm solid #000;border-radius:2mm;display:grid;place-items:center;font-size:8pt;color:#000}

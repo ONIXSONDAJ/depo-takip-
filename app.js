@@ -373,6 +373,19 @@ function saveUser(e){
 function deleteUser(id){ const u=userById(id); if(!u||u.protected)return; if(currentUser.id===id)return toast('Kendi hesabınızı silemezsiniz.'); if(!confirm(`${u.name} kullanıcısını silmek istiyor musunuz?`))return; u._deleted=true; u.active=false; saveDb(); markDirty('users',id); renderAll(); toast('Kullanıcı silindi.'); }
 
 /* ---- QR etiketler ---- */
+const OFFSET_KEY='depoTakipLabelOffset';
+function labelOffsets(){ try{ return JSON.parse(localStorage.getItem(OFFSET_KEY))||{x:0,y:0}; }catch(e){ return {x:0,y:0}; } }
+function saveLabelOffsets(){ localStorage.setItem(OFFSET_KEY,JSON.stringify({x:Number($('#offX').value)||0,y:Number($('#offY').value)||0})); }
+function applyLabelOffset(pageEl){ const o=labelOffsets(); pageEl.style.transform=`translate(${o.x}mm,${o.y}mm)`; }
+function printTestSheet(){
+  const sheet=$('#labelSheet'); sheet.innerHTML='';
+  const pageEl=document.createElement('div'); pageEl.className='label-page';
+  for(let i=0;i<44;i++){ const c=document.createElement('div'); c.className='label-card test-cell'; c.textContent=i+1; pageEl.appendChild(c); }
+  applyLabelOffset(pageEl); sheet.appendChild(pageEl);
+  toast('Test sayfası: boş kağıda basın, etiket kağıdının üzerine tutup hizayı kontrol edin. Ölçek %100, kenar boşluğu Yok olmalı.');
+  document.body.classList.add('print-labels');
+  setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
+}
 function printAllQr(){
   const products=db.products.filter(p=>p.active&&!p._deleted);
   if(!products.length) return toast('Yazdırılacak ürün yok. Önce Ürünler bölümünden ürün ekleyin.');
@@ -393,7 +406,7 @@ function printAllQr(){
       txt.append(name,code); card.append(qr,txt); pageEl.appendChild(card);
       new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
     });
-    sheet.appendChild(pageEl);
+    applyLabelOffset(pageEl); sheet.appendChild(pageEl);
   }
   toast(`${items.length} etiket hazırlandı (${Math.ceil(items.length/44)} sayfa). Yazdırma ayarında kenar boşluğu "Yok", ölçek %100 olmalı.`);
   document.body.classList.add('print-labels');
@@ -658,6 +671,9 @@ function bindEvents(){
   $('#settingsStockCsv').onclick=downloadStockCsv; $('#settingsMovementCsv').onclick=downloadMovementCsv;
   $('#backupBtn').onclick=downloadBackup; $('#restoreBtn').onclick=()=>$('#restoreInput').click();
   $('#restoreInput').onchange=e=>e.target.files[0]&&restoreBackup(e.target.files[0]);
+  const off=labelOffsets(); $('#offX').value=off.x; $('#offY').value=off.y;
+  $('#offX').addEventListener('input',saveLabelOffsets); $('#offY').addEventListener('input',saveLabelOffsets);
+  $('#testSheetBtn').onclick=printTestSheet;
   $('#resetBtn').onclick=resetSystem;
 }
 

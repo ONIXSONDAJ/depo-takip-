@@ -709,6 +709,7 @@ function populateScanResult(product){
   $('#quickDepotLabel').textContent=isIn?'Hangi depoya giriş yapılacak?':isTransfer?'Hangi depodan alınacak? (diğer depoya aktarılır)':'Hangi depodan çıkılacak?';
   $('#quickTargetField').classList.toggle('hidden',isIn||isTransfer);
   $('#quickNoteField').classList.toggle('hidden',isIn||isTransfer); $('#quickNote').value='';
+  $('#quickTarget').selectedIndex=0; // her zaman "Müşteriye Satış" ile başla
   updateQuickCustomer();
   negativeConfirmed=false;
   const qw=$('#quickWarning'); qw.classList.add('hidden'); qw.classList.remove('warning-big'); $('#quickQty').value=1;

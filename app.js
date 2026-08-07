@@ -237,6 +237,7 @@ function goPage(page){
   if(page==='reports') renderReports();
   $$('.page').forEach(el=>el.classList.toggle('active',el.id===page));
   $$('.side-nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+  $$('.mobile-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
   $('#pageTitle').textContent=pageTitles[page]||'DEPO TAKİP';
   $('#sidebar').classList.remove('open'); $('#sidebarOverlay').classList.add('hidden');
   hideNotifPanel();
@@ -960,6 +961,7 @@ function bindEvents(){
   $('#setupRestoreInput').onchange=e=>{ const f=e.target.files[0]; if(f) restoreBackup(f); e.target.value=''; };
   $$('[data-page]').forEach(b=>b.onclick=()=>goPage(b.dataset.page));
   $('#menuBtn').onclick=()=>{ $('#sidebar').classList.toggle('open'); $('#sidebarOverlay').classList.toggle('hidden'); };
+  $('#tabMenuBtn').onclick=()=>{ $('#sidebar').classList.add('open'); $('#sidebarOverlay').classList.remove('hidden'); };
   $('#sidebarOverlay').onclick=()=>{ $('#sidebar').classList.remove('open'); $('#sidebarOverlay').classList.add('hidden'); };
   $('#scanTopBtn').onclick=openScanner;
   $('#notifBtn').onclick=toggleNotifPanel;
@@ -1020,3 +1022,8 @@ $$('.cloud-chip').forEach(el=>el.onclick=()=>toast(cloudOk?'Bulut bağlantısı 
 cloudSync();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') scheduleSync(400); });
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(console.error));
+
+/* ---- Mobil: yakinlastirma (zoom) ve yatay kayma engelleme ---- */
+["gesturestart","gesturechange","gestureend"].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
+let __lastTouchEnd=0;
+document.addEventListener("touchend",e=>{ const now=Date.now(); if(now-__lastTouchEnd<300&&e.cancelable) e.preventDefault(); __lastTouchEnd=now; },{passive:false});

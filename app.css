@@ -492,3 +492,32 @@ tr.row-cancelled td b,tr.row-cancelled td .num{text-decoration:line-through}
   .mix-toolbar .mini-btn{flex:1;padding:11px}
   .mix-default{flex:1;justify-content:space-between}
 }
+
+/* ---- Zoom kilidi ve tek ekran personel gorunumu ---- */
+html,body{overflow-x:hidden;width:100%;max-width:100%}
+body{touch-action:pan-y}
+.table-wrap,.mix-list,.ekstre-wrap,.notif-list{touch-action:auto}
+@media(max-width:640px){
+  .staff-shell{height:100dvh;overflow:hidden}
+  .staff-main{padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));justify-content:center;overflow:hidden}
+  .staff-main h1{font-size:24px}
+  .staff-sub{margin-bottom:16px;font-size:13.5px}
+  .staff-actions{gap:10px}
+  .staff-btn{padding:clamp(18px,5.5vh,34px) 12px}
+  .staff-btn span{font-size:40px}
+  .staff-btn b{font-size:22px}
+  .staff-last{margin-top:14px;padding:10px 14px}
+}
+
+/* ---- Native uygulama hissi: alt sekme cubugu + kaydirma davranisi ---- */
+body{overscroll-behavior-y:none}
+.side-nav button,.mobile-tabs button,.staff-btn,.btn,.mini-btn{-webkit-user-select:none;user-select:none}
+.mobile-tabs{display:none}
+@media(max-width:900px){
+  .mobile-tabs{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));z-index:55}
+  .mobile-tabs button{border:0;background:none;display:grid;justify-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--muted);padding:6px 2px;border-radius:10px;cursor:pointer}
+  .mobile-tabs button span{font-size:21px;line-height:1}
+  .mobile-tabs button.active{color:var(--accent)}
+  .admin-content{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .mobile-only{display:none!important}
+}

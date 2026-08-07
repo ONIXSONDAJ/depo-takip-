@@ -12,10 +12,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=32">
-  <script defer src="./qrcode.min.js?v=32"></script>
-  <script defer src="./jsqr.js?v=32"></script>
-  <script defer src="./app.js?v=32"></script>
+  <link rel="stylesheet" href="./app.css?v=33">
+  <script defer src="./qrcode.min.js?v=33"></script>
+  <script defer src="./jsqr.js?v=33"></script>
+  <script defer src="./app.js?v=33"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -78,6 +78,7 @@
         <button data-page="movements"><span>⇄</span>Hareketler</button>
         <button data-page="stocks"><span>▦</span>Stok</button>
         <button data-page="muhasebe"><span>₺</span>Muhasebe</button>
+        <button data-page="reports" data-admin-only><span>▤</span>Raporlar</button>
         <button data-page="products" data-admin-only><span>◇</span>Ürünler</button>
         <button data-page="users" data-admin-only><span>♟</span>Kullanıcılar</button>
         <button data-page="settings" data-admin-only><span>⚙</span>Ayarlar</button>
@@ -130,9 +131,9 @@
         </section>
 
         <section id="movements" class="page">
-          <div class="filter-bar"><label class="search-box">⌕<input id="movementSearch" placeholder="Malzeme, personel veya hedef ara"></label><select id="movementType"><option value="all">Tüm işlemler</option><option>Giriş</option><option>Makine Çıkışı</option><option>Vinç Çıkışı</option><option>Satış</option><option>Transfer</option></select><button id="movementCsvBtn" class="btn btn-outline">CSV İndir</button></div>
+          <div class="filter-bar"><label class="search-box">⌕<input id="movementSearch" placeholder="Malzeme, personel veya hedef ara"></label><select id="movementType"><option value="all">Tüm işlemler</option><option>Giriş</option><option>Makine Çıkışı</option><option>Vinç Çıkışı</option><option>Satış</option><option>Transfer</option><option>İptal</option></select><button id="movementCsvBtn" class="btn btn-outline">CSV İndir</button></div>
           <article class="panel no-pad">
-            <div class="table-wrap"><table><thead><tr><th>Tarih · Saat</th><th>Personel</th><th>İşlem</th><th>Malzeme</th><th>Miktar</th><th>Nereden</th><th>Nereye</th></tr></thead><tbody id="movementRows"></tbody></table></div>
+            <div class="table-wrap"><table><thead><tr><th>Tarih · Saat</th><th>Personel</th><th>İşlem</th><th>Malzeme</th><th>Miktar</th><th>Nereden</th><th>Nereye</th><th></th></tr></thead><tbody id="movementRows"></tbody></table></div>
             <div id="movementEmpty" class="empty hidden">Kayıt bulunamadı.</div>
           </article>
         </section>
@@ -152,6 +153,15 @@
             <div class="table-wrap"><table><thead><tr><th>Tarih · Saat</th><th>Malzeme</th><th>Miktar</th><th>Nereye</th><th>Personel</th><th>Birim ₺</th><th>Toplam ₺</th><th>Fatura</th><th>Ödeme</th><th>Durum</th><th></th></tr></thead><tbody id="billRows"></tbody></table></div>
             <div id="billEmpty" class="empty hidden">Kayıt yok. Depodan çıkış yapılan ürünler burada listelenir.</div>
           </article>
+        </section>
+
+        <section id="reports" class="page">
+          <div class="filter-bar">
+            <select id="reportPeriod"><option value="today">Bugün</option><option value="week">Bu Hafta</option><option value="month" selected>Bu Ay</option><option value="all">Tüm Zamanlar</option></select>
+            <button id="reportCsvBtn" class="btn btn-outline">⬇ Excel (CSV)</button>
+            <button id="reportPdfBtn" class="btn btn-outline">🖨 PDF / Yazdır</button>
+          </div>
+          <div id="reportContent" class="report-grid"></div>
         </section>
 
         <section id="products" class="page">

@@ -415,3 +415,16 @@ tr.row-negative td:first-child{border-left:4px solid var(--bad-tx)}
 .depot-crit{font-size:11.5px;font-weight:700;color:var(--low-tx);background:var(--low-bg);padding:3px 9px;border-radius:999px}
 .depot-value{font-size:11.5px;font-weight:700;color:var(--ok-tx);background:var(--ok-bg);padding:3px 9px;border-radius:999px}
 .exception-note{color:var(--bad-tx)!important;font-weight:700}
+
+/* ---- Iptal edilen kayitlar ve raporlar ---- */
+tr.row-cancelled td{opacity:.55}
+tr.row-cancelled td b,tr.row-cancelled td .num{text-decoration:line-through}
+.report-grid{display:grid;gap:14px}
+.report-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+@media print{
+  .sidebar,.topbar,.filter-bar,.bottom-nav,.notif-panel,.overlay,#sidebarOverlay{display:none!important}
+  .admin-main{margin:0!important}
+  .page{display:none!important}
+  .page.active{display:block!important}
+  body:not(.print-labels) .label-sheet{display:none!important}
+}

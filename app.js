@@ -175,7 +175,7 @@ function enterApp(user){
     $('#staffView').classList.add('hidden'); $('#appView').classList.remove('hidden');
     applyShellPerms();
     $('#currentName').textContent=user.name; $('#currentRole').textContent=roleNames[user.role]; $('#avatar').textContent=initials(user.name);
-    renderAll(); goPage('dashboard');
+    renderAll(); goPage(localStorage.getItem('depoTakipLastPage')||'dashboard');
   }else{
     $('#appView').classList.add('hidden'); $('#staffView').classList.remove('hidden');
     $('#staffName').textContent=user.name;
@@ -197,6 +197,7 @@ function applyShellPerms(){ const restricted=!isAdmin(); $$('[data-admin-only]')
 function goPage(page){
   if(!isPanelUser()) return;
   if(!isAdmin()&&['products','users','settings'].includes(page)) page='dashboard';
+  localStorage.setItem('depoTakipLastPage',page);
   $$('.page').forEach(el=>el.classList.toggle('active',el.id===page));
   $$('.side-nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
   $('#pageTitle').textContent=pageTitles[page]||'DEPO TAKİP';

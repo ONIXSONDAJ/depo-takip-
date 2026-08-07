@@ -501,7 +501,7 @@ function printMixQr(){
   const items=[];
   Object.keys(mixSel).forEach(id=>{ const p=productById(id); if(p){ for(let i=0;i<mixSel[id];i++) items.push(p); } });
   if(!items.length) return toast('Önce ürün seçin.');
-  shuffleArray(items);
+  if($('#mixShuffle').checked) shuffleArray(items);
   const sheet=$('#labelSheet'); sheet.innerHTML='';
   for(let i=0;i<items.length;i+=44){
     const pageEl=document.createElement('div'); pageEl.className='label-page';

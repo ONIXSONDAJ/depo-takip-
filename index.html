@@ -214,12 +214,13 @@
     <div class="modal-head"><div><h3>🎲 Karışık Etiket Bas</h3><p>Ürünleri seçin, her biri için etiket adedini girin. Etiketler kağıda karışık sırayla dizilir.</p></div><button class="icon-btn" data-close-modal="mixQrModal">✕</button></div>
     <div class="mix-toolbar">
       <label class="search-box">⌕<input id="mixSearch" placeholder="Ürün ara"></label>
-      <label class="mix-default">Varsayılan adet <input id="mixDefaultQty" type="number" min="1" max="440" value="5"></label>
+      <label class="mix-default">Varsayılan adet <input id="mixDefaultQty" type="number" min="1" max="440" value="1"></label>
       <button type="button" id="mixSelectAll" class="mini-btn">Tümünü Seç</button>
     </div>
     <div id="mixList" class="mix-list"></div>
     <div class="form-actions mix-actions">
       <span id="mixSummary" class="mix-summary">0 ürün · 0 etiket</span>
+      <label class="mix-shuffle"><input id="mixShuffle" type="checkbox" checked> Karışık sırala</label>
       <button type="button" class="btn btn-outline" data-close-modal="mixQrModal">Vazgeç</button>
       <button type="button" id="mixPrintBtn" class="btn btn-primary">🖨 Karışık Yazdır</button>
     </div>

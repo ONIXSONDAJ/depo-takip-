@@ -951,12 +951,6 @@ function bindEvents(){
   $('#loginForm').addEventListener('submit',e=>{e.preventDefault();login($('#loginUser').value,$('#loginPass').value);});
   $('#setupForm').addEventListener('submit',completeSetup);
   $('#logoutBtn').onclick=logout; $('#staffLogoutBtn').onclick=logout;
-  $('#loginResetBtn').onclick=()=>{
-    if(!confirm('Şifre kurtarma olmadığı için tek çözüm bu cihazdaki TÜM depo verilerini silip yeniden kurulum yapmaktır. Devam edilsin mi?'))return;
-    if(!confirm('Son onay: bu işlem geri alınamaz. Veriler kalıcı olarak silinsin mi?'))return;
-    takeSafetySnapshot('Cihaz sıfırlama öncesi');
-    localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SESSION_KEY); db=deepClone(seed); $('#loginPass').value=''; refreshAuthView(); toast('Veriler silindi. Yönetici hesabıyla giriş yapın.');
-  };
   $('#setupRestoreBtn').onclick=()=>$('#setupRestoreInput').click();
   $('#setupRestoreInput').onchange=e=>{ const f=e.target.files[0]; if(f) restoreBackup(f); e.target.value=''; };
   $$('[data-page]').forEach(b=>b.onclick=()=>goPage(b.dataset.page));

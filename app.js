@@ -255,7 +255,16 @@ function renderDashboard(){
   const critical=act.filter(p=>statusOf(p).key==='critical');
   const midnight=new Date(); midnight.setHours(0,0,0,0);
   const today=db.movements.filter(m=>Number(m.ts)>=midnight.getTime()).length;
-  $('#mOstim').textContent=formatQty(ostim); $('#mYenikent').textContent=formatQty(yenikent);
+  const ostimVar=act.filter(p=>Number(p.ostim)>0).length;
+  const yenikentVar=act.filter(p=>Number(p.yenikent)>0).length;
+  const ostimCrit=act.filter(p=>Number(p.min)>0&&Number(p.ostim)<=Number(p.min)).length;
+  const yenikentCrit=act.filter(p=>Number(p.min)>0&&Number(p.yenikent)<=Number(p.min)).length;
+  const fmtTl=v=>'₺'+Math.round(v).toLocaleString('tr-TR');
+  const ostimVal=act.reduce((s,p)=>s+(Number(p.price)||0)*Number(p.ostim),0);
+  const yenikentVal=act.reduce((s,p)=>s+(Number(p.price)||0)*Number(p.yenikent),0);
+  $('#mOstim').textContent=ostimVar; $('#mYenikent').textContent=yenikentVar;
+  $('#mOstimCrit').textContent=`${ostimCrit} kritik`; $('#mYenikentCrit').textContent=`${yenikentCrit} kritik`;
+  $('#mOstimValue').textContent=fmtTl(ostimVal)+' stok değeri'; $('#mYenikentValue').textContent=fmtTl(yenikentVal)+' stok değeri';
   $('#mCritical').textContent=critical.length; $('#mToday').textContent=today;
   const open=db.movements.filter(m=>m.billing&&billingStatus(m.billing)!=='done').length;
   $('#mBilling').textContent=open;
@@ -263,13 +272,13 @@ function renderDashboard(){
   $('#dashMovements').innerHTML=recent.map(m=>{const d=splitDate(m.date);return `<tr><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}</td></tr>`}).join('');
   $('#dashMovementsEmpty').classList.toggle('hidden',recent.length>0);
   $('#dashCritical').innerHTML=critical.length?critical.slice(0,6).map(p=>`<div class="critical-item"><div><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · Min. ${formatQty(p.min)} ${escapeHtml(p.unit)}</small></div><span class="stock-pill pill-critical">${formatQty(Number(p.ostim)+Number(p.yenikent))}</span></div>`).join(''):'<div class="empty">Kritik stok yok. 👍</div>';
-  const total=Math.max(ostim+yenikent,1);
-  $('#dashBars').innerHTML=`<div class="bar-row"><div class="bar-label"><b>Ostim</b><span>${formatQty(ostim)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${ostim/total*100}%"></div></div></div><div class="bar-row"><div class="bar-label"><b>Yenikent</b><span>${formatQty(yenikent)}</span></div><div class="bar-track"><div class="bar-fill alt" style="width:${yenikent/total*100}%"></div></div></div>`;
+  const totalVar=Math.max(ostimVar+yenikentVar,1);
+  $('#dashBars').innerHTML=`<div class="bar-row"><div class="bar-label"><b>Ostim</b><span>${ostimVar} çeşit</span></div><div class="bar-track"><div class="bar-fill" style="width:${ostimVar/totalVar*100}%"></div></div></div><div class="bar-row"><div class="bar-label"><b>Yenikent</b><span>${yenikentVar} çeşit</span></div><div class="bar-track"><div class="bar-fill alt" style="width:${yenikentVar/totalVar*100}%"></div></div></div>`;
 }
 function renderMovements(){
   const q=normalizeText($('#movementSearch').value); const type=$('#movementType').value;
   const rows=db.movements.filter(m=>type==='all'||m.type===type).filter(m=>!q||normalizeText(`${m.product} ${m.user} ${m.source} ${m.target}`).includes(q)).slice(0,300);
-  $('#movementRows').innerHTML=rows.map(m=>{const d=splitDate(m.date);return `<tr class="${m.negativeStock?'row-negative':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.source)}</td><td>${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}</td></tr>`}).join('');
+  $('#movementRows').innerHTML=rows.map(m=>{const d=splitDate(m.date);return `<tr class="${m.negativeStock?'row-negative':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.source)}</td><td>${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}${m.exceptionReason?`<small class="td-sub exception-note">İstisnai çıkış: ${escapeHtml(m.exceptionReason)}</small>`:''}</td></tr>`}).join('');
   $('#movementEmpty').classList.toggle('hidden',rows.length>0);
 }
 function renderStocks(){
@@ -417,14 +426,14 @@ function productThumb(p,cls='thumb'){
   return p.image?`<img class="${cls}" src="${p.image}" alt="">`:`<div class="${cls} thumb-letter">${escapeHtml((p.name||'Ü')[0].toLocaleUpperCase('tr-TR'))}</div>`;
 }
 function openProductModal(id=''){
-  const p=id?productById(id):null; $('#productModalTitle').textContent=p?'Ürünü Düzenle':'Yeni Ürün'; $('#productId').value=p?.id||''; $('#productName').value=p?.name||''; $('#productCode').value=p?.code||''; $('#productCategory').value=p?.category||''; $('#productUnit').value=p?.unit||'Adet'; $('#productOstim').value=p?.ostim??0; $('#productYenikent').value=p?.yenikent??0; $('#productMin').value=p?.min??0; $('#productActive').value=String(p?.active??true);
+  const p=id?productById(id):null; $('#productModalTitle').textContent=p?'Ürünü Düzenle':'Yeni Ürün'; $('#productId').value=p?.id||''; $('#productName').value=p?.name||''; $('#productCode').value=p?.code||''; $('#productCategory').value=p?.category||''; $('#productUnit').value=p?.unit||'Adet'; $('#productOstim').value=p?.ostim??0; $('#productYenikent').value=p?.yenikent??0; $('#productMin').value=p?.min??0; $('#productPrice').value=p?.price??0; $('#productActive').value=String(p?.active??true);
   productImgData=p?.image||null; setProductImgPreview();
   openModal('productModal');
 }
 function saveProduct(e){
   e.preventDefault(); const id=$('#productId').value; const code=$('#productCode').value.trim();
   if(db.products.some(p=>!p._deleted&&normalizeText(p.code)===normalizeText(code)&&p.id!==id)) return toast('Bu ürün kodu zaten kullanılıyor.');
-  const data={name:$('#productName').value.trim(),code,category:$('#productCategory').value.trim()||'Genel',unit:$('#productUnit').value,ostim:Number($('#productOstim').value||0),yenikent:Number($('#productYenikent').value||0),min:Number($('#productMin').value||0),active:$('#productActive').value==='true',image:productImgData||undefined};
+  const data={name:$('#productName').value.trim(),code,category:$('#productCategory').value.trim()||'Genel',unit:$('#productUnit').value,ostim:Number($('#productOstim').value||0),yenikent:Number($('#productYenikent').value||0),min:Number($('#productMin').value||0),price:Number($('#productPrice').value||0),active:$('#productActive').value==='true',image:productImgData||undefined};
   let pid=id;
   if(id) Object.assign(productById(id),data);
   else{ pid=uid('p'); db.products.push({id:pid,...data}); }
@@ -473,7 +482,7 @@ function openEkstre(id){
     const d=splitDate(m.date);
     const inc=m.type==='Giriş'||m.type==='İade';
     const tr=m.type==='Transfer';
-    return `<tr class="${m.negativeStock?'row-negative':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td class="num"><b class="${tr?'':inc?'qty-in':'qty-out'}">${tr?'':inc?'+':'−'}${formatQty(m.qty)}</b> ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.source)} → ${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}</td><td>${escapeHtml(m.user)}</td></tr>`;
+    return `<tr class="${m.negativeStock?'row-negative':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td class="num"><b class="${tr?'':inc?'qty-in':'qty-out'}">${tr?'':inc?'+':'−'}${formatQty(m.qty)}</b> ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.source)} → ${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}${m.exceptionReason?`<small class="td-sub exception-note">İstisnai çıkış: ${escapeHtml(m.exceptionReason)}</small>`:''}</td><td>${escapeHtml(m.user)}</td></tr>`;
   }).join('');
   $('#ekstreEmpty').classList.toggle('hidden',rows.length>0);
   openModal('ekstreModal');
@@ -701,6 +710,7 @@ function populateScanResult(product){
   $('#quickDepotLabel').textContent=isIn?'Hangi depoya giriş yapılacak?':isTransfer?'Hangi depodan alınacak? (diğer depoya aktarılır)':'Hangi depodan çıkılacak?';
   $('#quickTargetField').classList.toggle('hidden',isIn||isTransfer);
   $('#quickNoteField').classList.toggle('hidden',isIn||isTransfer); $('#quickNote').value='';
+  $('#quickReasonField').classList.add('hidden'); $('#quickReason').value='';
   $('#quickTarget').selectedIndex=0; // her zaman "Müşteriye Satış" ile başla
   updateQuickCustomer();
   negativeConfirmed=false;
@@ -726,7 +736,7 @@ function submitQuick(e){
   const qty=Number($('#quickQty').value); const warning=$('#quickWarning'); warning.classList.add('hidden');
   if(!qty||qty<=0) return toast('Geçerli bir miktar girin.');
   const depot=$('#quickDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
-  let type,source,target,outNote='';
+  let type,source,target,outNote='',exceptionReason='';
   if(scanMode==='Giriş'){ type='Giriş'; source='Tedarikçi'; target=depot; p[key]=Number(p[key])+qty; }
   else if(scanMode==='Transfer'){
     const otherKey=key==='ostim'?'yenikent':'ostim';
@@ -743,16 +753,27 @@ function submitQuick(e){
     else if(t==='Vinç 1'){ type='Vinç Çıkışı'; target=t; }
     else{ type='Makine Çıkışı'; target=t; }
     source=depot;
-    if(Number(p[key])<qty&&!negativeConfirmed){
-      negativeConfirmed=true;
-      warning.innerHTML=`⚠ STOK YETERSİZ!<br>${depot} deposunda <b>${formatQty(p[key])} ${p.unit}</b> var, <b>${formatQty(qty)} ${p.unit}</b> çıkış yapmak istiyorsunuz.<br>Stok eksiye düşecek. Yine de devam etmek için tekrar <b>Kaydet</b>'e basın.`;
-      warning.classList.remove('hidden'); warning.classList.add('warning-big');
-      return;
+    if(Number(p[key])<qty){
+      if(!isAdmin()){
+        warning.innerHTML=`⛔ YETERSİZ STOK — İŞLEM YAPILAMAZ!<br>${depot} deposunda <b>${formatQty(p[key])} ${p.unit}</b> var. Stok eksiye düşemez.<br>İstisnai çıkış yetkisi yalnızca yöneticidedir.`;
+        warning.classList.remove('hidden'); warning.classList.add('warning-big');
+        return;
+      }
+      $('#quickReasonField').classList.remove('hidden');
+      exceptionReason=$('#quickReason').value.trim();
+      if(!negativeConfirmed){
+        negativeConfirmed=true;
+        warning.innerHTML=`⚠ STOK YETERSİZ — İSTİSNAİ ÇIKIŞ!<br>${depot} deposunda <b>${formatQty(p[key])} ${p.unit}</b> var, <b>${formatQty(qty)} ${p.unit}</b> çıkış yapıyorsunuz.<br>Devam etmek için <b>istisna nedenini</b> yazıp tekrar <b>Kaydet</b>'e basın.`;
+        warning.classList.remove('hidden'); warning.classList.add('warning-big');
+        return;
+      }
+      if(!exceptionReason){ toast('İstisna nedeni yazılmadan istisnai çıkış kaydedilemez.'); return; }
     }
     p[key]=Number(p[key])-qty;
   }
   const mv={id:uid('m'),date:formatNow(),ts:Date.now(),type,productId:p.id,product:p.name,qty,unit:p.unit,source,target,user:currentUser.name,userId:currentUser.id,reference:'QR',note:outNote};
   if(OUT_TYPES.includes(type)&&Number(p[key])<0) mv.negativeStock=true;
+  if(exceptionReason){ mv.negativeStock=true; mv.exceptionReason=exceptionReason; addNotification('⚠ İstisnai çıkış',`${currentUser.name}: ${formatQty(qty)} ${p.unit} ${p.name} — Neden: ${exceptionReason}`); }
   if(OUT_TYPES.includes(type)) mv.billing={status:'pending',invoiced:null,paid:null,unitPrice:null,note:''};
   db.movements.unshift(mv);
   markDirty('movements',mv.id); markDirty('products',p.id);

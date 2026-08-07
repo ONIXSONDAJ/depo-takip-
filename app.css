@@ -409,3 +409,9 @@ td code{background:#f2f3f5;border-radius:6px;padding:2px 7px;font-size:12px}
 @keyframes pulseRed{0%,100%{box-shadow:0 0 0 0 rgba(194,43,43,.35)}50%{box-shadow:0 0 0 10px rgba(194,43,43,0)}}
 tr.row-negative td{background:#fff2f2}
 tr.row-negative td:first-child{border-left:4px solid var(--bad-tx)}
+
+/* ---- Depo kartlari ve istisnai cikis ---- */
+.metric-card .depot-extra{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.depot-crit{font-size:11.5px;font-weight:700;color:var(--low-tx);background:var(--low-bg);padding:3px 9px;border-radius:999px}
+.depot-value{font-size:11.5px;font-weight:700;color:var(--ok-tx);background:var(--ok-bg);padding:3px 9px;border-radius:999px}
+.exception-note{color:var(--bad-tx)!important;font-weight:700}

@@ -12,10 +12,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=31">
-  <script defer src="./qrcode.min.js?v=31"></script>
-  <script defer src="./jsqr.js?v=31"></script>
-  <script defer src="./app.js?v=31"></script>
+  <link rel="stylesheet" href="./app.css?v=32">
+  <script defer src="./qrcode.min.js?v=32"></script>
+  <script defer src="./jsqr.js?v=32"></script>
+  <script defer src="./app.js?v=32"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -104,8 +104,8 @@
       <main class="admin-content">
         <section id="dashboard" class="page active">
           <div class="metric-grid">
-            <article class="metric-card"><small>Ostim Depo</small><strong id="mOstim">0</strong><span>toplam miktar</span></article>
-            <article class="metric-card"><small>Yenikent Depo</small><strong id="mYenikent">0</strong><span>toplam miktar</span></article>
+            <article class="metric-card"><small>Ostim Depo</small><strong id="mOstim">0</strong><span>ürün çeşidi</span><div class="depot-extra"><span class="depot-crit" id="mOstimCrit">0 kritik</span><span class="depot-value" id="mOstimValue" data-admin-only>₺0</span></div></article>
+            <article class="metric-card"><small>Yenikent Depo</small><strong id="mYenikent">0</strong><span>ürün çeşidi</span><div class="depot-extra"><span class="depot-crit" id="mYenikentCrit">0 kritik</span><span class="depot-value" id="mYenikentValue" data-admin-only>₺0</span></div></article>
             <article class="metric-card warn"><small>Kritik Ürün</small><strong id="mCritical">0</strong><span>minimum altında</span></article>
             <article class="metric-card"><small>Bugünkü İşlem</small><strong id="mToday">0</strong><span>giriş / çıkış</span></article>
             <article class="metric-card link" id="mBillingCard"><small>Muhasebe</small><strong id="mBilling">0</strong><span>bekleyen + askıda</span></article>
@@ -196,7 +196,7 @@
   <div id="productModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="productModalTitle">Yeni Ürün</h3></div><button class="icon-btn" data-close-modal="productModal">✕</button></div><form id="productForm"><input id="productId" type="hidden">
   <div class="img-pick"><div id="productImgBox" class="img-box">📷</div><div class="img-btns"><button type="button" id="pickImgBtn" class="mini-btn">Fotoğraf Seç / Çek</button><button type="button" id="removeImgBtn" class="mini-btn danger hidden">Görseli Kaldır</button></div><input id="productImgInput" type="file" accept="image/*" class="hidden"></div>
   <div class="form-grid">
-    <label class="field"><span>Ürün adı</span><input id="productName" required></label><label class="field"><span>Ürün kodu</span><input id="productCode" required></label><label class="field"><span>Kategori</span><input id="productCategory" placeholder="Sondaj, hidrolik..."></label><label class="field"><span>Birim</span><select id="productUnit"><option>Adet</option><option>Metre</option><option>Litre</option><option>Kg</option><option>Takım</option><option>Kutu</option></select></label><label class="field"><span>Ostim stok</span><input id="productOstim" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Yenikent stok</span><input id="productYenikent" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Minimum stok uyarısı</span><input id="productMin" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Durum</span><select id="productActive"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
+    <label class="field"><span>Ürün adı</span><input id="productName" required></label><label class="field"><span>Ürün kodu</span><input id="productCode" required></label><label class="field"><span>Kategori</span><input id="productCategory" placeholder="Sondaj, hidrolik..."></label><label class="field"><span>Birim</span><select id="productUnit"><option>Adet</option><option>Metre</option><option>Litre</option><option>Kg</option><option>Takım</option><option>Kutu</option></select></label><label class="field"><span>Ostim stok</span><input id="productOstim" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Yenikent stok</span><input id="productYenikent" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Minimum stok uyarısı</span><input id="productMin" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Birim fiyat (₺, stok değeri için)</span><input id="productPrice" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Durum</span><select id="productActive"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
   </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="productModal">Vazgeç</button><button type="submit" class="btn btn-primary">Kaydet</button></div></form></div></div>
 
   <div id="userModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="userModalTitle">Yeni Kullanıcı</h3></div><button class="icon-btn" data-close-modal="userModal">✕</button></div><form id="userForm"><input id="userId" type="hidden"><div class="form-grid">
@@ -268,6 +268,7 @@
         <label class="field hidden" id="quickTargetField"><span>Nereye gidiyor?</span><select id="quickTarget"><option value="customer">Müşteriye Satış</option><option>Sondaj Makinesi 1</option><option>Sondaj Makinesi 2</option><option>Sondaj Makinesi 3</option><option>Vinç 1</option></select></label>
         <label class="field hidden" id="quickCustomerField"><span>Müşteri adı</span><input id="quickCustomer" placeholder="Müşteri adı girin" autocomplete="off"></label>
         <label class="field hidden" id="quickNoteField"><span>Nereye gidiyor? / Açıklama <b style="color:#c22b2b">(zorunlu)</b></span><input id="quickNote" placeholder="Örn: Ankara şantiyesi, kule montajı için" autocomplete="off"></label>
+        <label class="field hidden" id="quickReasonField"><span>İstisnai çıkış nedeni <b style="color:#c22b2b">(zorunlu)</b></span><input id="quickReason" placeholder="Örn: Acil şantiye ihtiyacı, sayım farkı düzeltilecek" autocomplete="off"></label>
         <label class="field"><span>Miktar</span><input id="quickQty" type="number" min="0.01" step="0.01" value="1" required></label>
         <div id="quickWarning" class="alert alert-warning hidden"></div>
         <button type="submit" id="quickSubmit" class="btn btn-primary btn-block">Kaydet</button>

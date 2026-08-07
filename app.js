@@ -268,7 +268,7 @@ function renderDashboard(){
   const open=db.movements.filter(m=>m.billing&&billingStatus(m.billing)!=='done').length;
   $('#mBilling').textContent=open;
   const recent=db.movements.slice(0,8);
-  $('#dashMovements').innerHTML=recent.map(m=>{const d=splitDate(m.date);return `<tr><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.target)}</td></tr>`}).join('');
+  $('#dashMovements').innerHTML=recent.map(m=>{const d=splitDate(m.date);return `<tr><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}</td></tr>`}).join('');
   $('#dashMovementsEmpty').classList.toggle('hidden',recent.length>0);
   $('#dashCritical').innerHTML=critical.length?critical.slice(0,6).map(p=>`<div class="critical-item"><div><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · Min. ${formatQty(p.min)} ${escapeHtml(p.unit)}</small></div><span class="stock-pill pill-critical">${formatQty(Number(p.ostim)+Number(p.yenikent))}</span></div>`).join(''):'<div class="empty">Kritik stok yok. 👍</div>';
   const total=Math.max(ostim+yenikent,1);
@@ -335,7 +335,7 @@ function billingRows(){
 function renderBilling(){
   const rows=billingRows();
   $('#billRows').innerHTML=rows.map(m=>{const b=m.billing;const s=billingStatus(b);const d=splitDate(m.date);const total=b.unitPrice?b.unitPrice*m.qty:null;
-    return `<tr class="${s==='askida'?'row-askida':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td><b>${escapeHtml(m.product)}</b><small class="td-sub">${escapeHtml(m.type)}</small></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.target)}</td><td>${escapeHtml(m.user)}</td><td class="num">${b.unitPrice?formatQty(b.unitPrice):'—'}</td><td class="num"><b>${total?formatQty(total):'—'}</b></td><td>${yesNo(b.invoiced,'Kesildi','Kesilmedi')}</td><td>${yesNo(b.paid,'Alındı','Alınmadı')}</td><td>${billingPill(s)}</td><td>${canBill()?`<button class="mini-btn" data-bill="${m.id}">${s==='pending'?'İşle':'Düzenle'}</button>`:''}</td></tr>`;}).join('');
+    return `<tr class="${s==='askida'?'row-askida':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td><b>${escapeHtml(m.product)}</b><small class="td-sub">${escapeHtml(m.type)}</small></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}</td><td>${escapeHtml(m.user)}</td><td class="num">${b.unitPrice?formatQty(b.unitPrice):'—'}</td><td class="num"><b>${total?formatQty(total):'—'}</b></td><td>${yesNo(b.invoiced,'Kesildi','Kesilmedi')}</td><td>${yesNo(b.paid,'Alındı','Alınmadı')}</td><td>${billingPill(s)}</td><td>${canBill()?`<button class="mini-btn" data-bill="${m.id}">${s==='pending'?'İşle':'Düzenle'}</button>`:''}</td></tr>`;}).join('');
   $('#billEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-bill]').forEach(btn=>btn.onclick=()=>openBillingModal(btn.dataset.bill));
   const all=db.movements.filter(m=>m.billing);
@@ -398,7 +398,7 @@ function renderStaffLast(){
   const el=$('#staffLast');
   if(!mine){ el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  el.innerHTML=`<small>SON İŞLEMİNİZ</small><b>${escapeHtml(mine.type)} · ${formatQty(mine.qty)} ${escapeHtml(mine.unit)} ${escapeHtml(mine.product)}</b><span>${escapeHtml(mine.date)} · ${escapeHtml(mine.source)} → ${escapeHtml(mine.target)}</span>`;
+  el.innerHTML=`<small>SON İŞLEMİNİZ</small><b>${escapeHtml(mine.type)} · ${formatQty(mine.qty)} ${escapeHtml(mine.unit)} ${escapeHtml(mine.product)}</b><span>${escapeHtml(mine.date)} · ${escapeHtml(mine.source)} → ${escapeHtml(mine.target)}${mine.note?' · '+escapeHtml(mine.note):''}</span>`;
 }
 
 /* ---- Ürün / kullanıcı yönetimi ---- */

@@ -415,33 +415,7 @@ function printTestSheet(){
   document.body.classList.add('print-labels');
   setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
 }
-function printAllQr(){
-  const products=db.products.filter(p=>p.active&&!p._deleted);
-  if(!products.length) return toast('Yazdırılacak ürün yok. Önce Ürünler bölümünden ürün ekleyin.');
-  if(!window.QRCode) return toast('QR bileşeni yüklenemedi. İnternet bağlantısını kontrol edin.');
-  let copies=Number(prompt('Her üründen kaç adet etiket basılsın? (44\'lü A4 etiket kağıdı)','1'));
-  if(!copies||copies<1) return;
-  copies=Math.min(Math.floor(copies),440);
-  const items=[]; products.forEach(p=>{ for(let i=0;i<copies;i++) items.push(p); });
-  const sheet=$('#labelSheet'); sheet.innerHTML='';
-  for(let i=0;i<items.length;i+=44){
-    const pageEl=document.createElement('div'); pageEl.className='label-page';
-    items.slice(i,i+44).forEach(p=>{
-      const card=document.createElement('div'); card.className='label-card';
-      const qr=document.createElement('div'); qr.className='label-qr';
-      const txt=document.createElement('div'); txt.className='label-text';
-      const name=document.createElement('b'); name.textContent=p.name;
-      const code=document.createElement('code'); code.textContent=p.code;
-      txt.append(name,code); card.append(qr,txt); pageEl.appendChild(card);
-      new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
-    });
-    applyLabelOffset(pageEl); sheet.appendChild(pageEl);
-  }
-  toast(`${items.length} etiket hazırlandı (${Math.ceil(items.length/44)} sayfa). Yazdırma ayarında kenar boşluğu "Yok", ölçek %100 olmalı.`);
-  document.body.classList.add('print-labels');
-  setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
-}
-/* ---- Karışık etiket basma (seçili ürünler, karışık sırayla) ---- */
+/* ---- Etiket yazdırma (ürün seçimli, adet girmeli) ---- */
 let mixSel={}; // ürün id -> etiket adedi
 function mixProducts(){
   const q=normalizeText($('#mixSearch').value);
@@ -763,8 +737,8 @@ function bindEvents(){
   $('#productImgInput').onchange=e=>{ const f=e.target.files[0]; if(f) handleProductImage(f); e.target.value=''; };
   $('#removeImgBtn').onclick=()=>{ productImgData=null; setProductImgPreview(); };
   $('#addUserBtn').onclick=()=>openUserModal(); $('#userForm').onsubmit=saveUser;
-  $('#printQrBtn').onclick=()=>window.print(); $('#printAllQrBtn').onclick=printAllQr;
-  $('#mixQrBtn').onclick=openMixQrModal; $('#mixPrintBtn').onclick=printMixQr;
+  $('#printQrBtn').onclick=()=>window.print(); $('#printAllQrBtn').onclick=openMixQrModal;
+  $('#mixPrintBtn').onclick=printMixQr;
   $('#mixSearch').addEventListener('input',renderMixList); $('#mixSelectAll').onclick=mixSelectAllToggle;
   $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış');
   $('#scanBackBtn').onclick=()=>{ pendingManual=null; showScanStep('mode'); };

@@ -155,7 +155,7 @@
         </section>
 
         <section id="products" class="page">
-          <div class="filter-bar"><label class="search-box">⌕<input id="productAdminSearch" placeholder="Ürün ara"></label><button id="printAllQrBtn" class="btn btn-outline">🖨 44'lü Etiket Bas</button><button id="mixQrBtn" class="btn btn-outline">🎲 Karışık Etiket Bas</button><button id="addProductBtn" class="btn btn-primary">＋ Yeni Ürün</button></div>
+          <div class="filter-bar"><label class="search-box">⌕<input id="productAdminSearch" placeholder="Ürün ara"></label><button id="printAllQrBtn" class="btn btn-outline">🖨 44'lü Etiket Bas</button><button id="addProductBtn" class="btn btn-primary">＋ Yeni Ürün</button></div>
           <article class="panel no-pad">
             <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Kod</th><th>Kategori</th><th>Birim</th><th>Min.</th><th>Durum</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div>
             <div id="productEmpty" class="empty hidden">Henüz ürün yok. "＋ Yeni Ürün" ile başlayın.</div>
@@ -211,7 +211,7 @@
   </div></div>
 
   <div id="mixQrModal" class="modal hidden"><div class="modal-card modal-lg">
-    <div class="modal-head"><div><h3>🎲 Karışık Etiket Bas</h3><p>Ürünleri seçin, her biri için etiket adedini girin. Etiketler kağıda karışık sırayla dizilir.</p></div><button class="icon-btn" data-close-modal="mixQrModal">✕</button></div>
+    <div class="modal-head"><div><h3>Etiket Yazdırma</h3><p>Yazdırılacak ürünleri seçin, her biri için etiket adedini girin. 44'lü A4 etiket kağıdına göre dizilir.</p></div><button class="icon-btn" data-close-modal="mixQrModal">✕</button></div>
     <div class="mix-toolbar">
       <label class="search-box">⌕<input id="mixSearch" placeholder="Ürün ara"></label>
       <label class="mix-default">Varsayılan adet <input id="mixDefaultQty" type="number" min="1" max="440" value="1"></label>
@@ -220,9 +220,9 @@
     <div id="mixList" class="mix-list"></div>
     <div class="form-actions mix-actions">
       <span id="mixSummary" class="mix-summary">0 ürün · 0 etiket</span>
-      <label class="mix-shuffle"><input id="mixShuffle" type="checkbox" checked> Karışık sırala</label>
+      <label class="mix-shuffle"><input id="mixShuffle" type="checkbox" checked> Karışık sırada bas</label>
       <button type="button" class="btn btn-outline" data-close-modal="mixQrModal">Vazgeç</button>
-      <button type="button" id="mixPrintBtn" class="btn btn-primary">🖨 Karışık Yazdır</button>
+      <button type="button" id="mixPrintBtn" class="btn btn-primary">Yazdır</button>
     </div>
   </div></div>
 

@@ -535,3 +535,17 @@ body{overscroll-behavior-y:none}
   .staff-last{margin-top:12px;padding:10px 14px}
   .modal-card{max-height:88dvh}
 }
+
+/* ---- Genislik tasmasi kokten cozum: kartlar asla ekrandan genis olamaz ---- */
+html,body{overflow-x:clip} /* hidden yerine clip: yapiskan ust bari bozmaz */
+.admin-content{max-width:100vw;overflow-x:clip}
+.admin-main{min-width:0;max-width:100vw}
+.dash-grid>*,.dash-side,.dash-side>*,.panel,.metric-grid>*,.report-grid>*,.settings-stack>*{min-width:0;max-width:100%}
+.dash-grid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+@media(max-width:1180px){ .dash-grid{grid-template-columns:minmax(0,1fr)} }
+.table-wrap{max-width:100%}
+.page{min-width:0;max-width:100%}
+.bar-track{max-width:100%}
+.critical-item{max-width:100%}
+.filter-bar{max-width:100%}
+

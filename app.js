@@ -137,28 +137,20 @@ async function pushCloudMeta(){ await cloudFetch(CLOUD_TABLES.users,{method:'POS
 const SNAPSHOT_KEY='depoTakipGuvenlikYedekleri';
 function loadSnapshots(){ try{ return JSON.parse(localStorage.getItem(SNAPSHOT_KEY))||[]; }catch(e){ return []; } }
 function takeSafetySnapshot(label){
+  // Silinen veriler sistem içinde "Son Silinen" olarak saklanır; yeni bir sıfırlama yapılana kadar durur.
   try{
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));
-    a.download=`depo_takip_otomatik_yedek_${new Date().toISOString().replace(/[:T]/g,'-').slice(0,16)}.json`;
-    a.click(); URL.revokeObjectURL(a.href);
-  }catch(e){}
-  try{
-    const snaps=loadSnapshots();
-    snaps.unshift({date:formatNow(),label,data:deepClone(db)});
-    while(snaps.length>3) snaps.pop();
-    localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snaps));
+    localStorage.setItem(SNAPSHOT_KEY,JSON.stringify([{date:formatNow(),label:'Son silinen: '+label,data:deepClone(db)}]));
   }catch(e){
     try{
       const slim=deepClone(db); slim.products.forEach(p=>{ delete p.image; });
-      localStorage.setItem(SNAPSHOT_KEY,JSON.stringify([{date:formatNow(),label:label+' (görselsiz)',data:slim}]));
+      localStorage.setItem(SNAPSHOT_KEY,JSON.stringify([{date:formatNow(),label:'Son silinen: '+label+' (görselsiz)',data:slim}]));
     }catch(e2){}
   }
 }
 function renderSnapshots(){
   const el=$('#snapshotList'); if(!el) return;
   const snaps=loadSnapshots();
-  el.innerHTML=snaps.length?snaps.map((s,i)=>`<div class="snapshot-row"><div><b>${escapeHtml(s.label)}</b><small class="td-sub">${escapeHtml(s.date)} · ${s.data?.products?.length||0} ürün, ${s.data?.movements?.length||0} hareket</small></div><button class="mini-btn" data-snap-restore="${i}">Geri Yükle</button></div>`).join(''):'<div class="empty">Henüz otomatik yedek yok. Bir sıfırlama yapıldığında son veriler otomatik olarak buraya kaydedilir.</div>';
+  el.innerHTML=snaps.length?snaps.map((s,i)=>`<div class="snapshot-row"><div><b>${escapeHtml(s.label)}</b><small class="td-sub">${escapeHtml(s.date)} · ${s.data?.products?.length||0} ürün, ${s.data?.movements?.length||0} hareket</small></div><button class="mini-btn" data-snap-restore="${i}">Geri Yükle</button></div>`).join(''):'<div class="empty">Henüz silinen veri yok. Bir sıfırlama yapıldığında silinen veriler otomatik olarak buraya kaydedilir.</div>';
   $$('[data-snap-restore]').forEach(b=>b.onclick=()=>restoreSnapshot(Number(b.dataset.snapRestore)));
 }
 async function restoreSnapshot(i){
@@ -795,7 +787,6 @@ async function resetSystem(){
   Object.values(dirtyIds).forEach(s=>s.clear());
   try{ if(cloudOk){ for(const t of Object.values(CLOUD_TABLES)) await cloudWipeTable(t); } }catch(e){ toast('Bulut temizliği başarısız: '+e.message); return; }
   localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem(SNAPSHOT_KEY); // yedekler sadece fabrika formatında silinir
   db=deepClone(seed); db.epochs={products:now,users:now,movements:now};
   try{ if(cloudOk) await pushCloudMeta(); }catch(e){}
   saveDb(); markAllDirty();

@@ -428,3 +428,67 @@ tr.row-cancelled td b,tr.row-cancelled td .num{text-decoration:line-through}
   .page.active{display:block!important}
   body:not(.print-labels) .label-sheet{display:none!important}
 }
+
+/* ---- Telefon centik / durum cubugu (safe-area) uyumu ---- */
+.staff-bar{position:sticky;top:0;z-index:30;flex-wrap:wrap;gap:8px;padding-top:calc(12px + env(safe-area-inset-top,0px));padding-left:calc(18px + env(safe-area-inset-left,0px));padding-right:calc(18px + env(safe-area-inset-right,0px))}
+.staff-user{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.topbar{padding-top:calc(12px + env(safe-area-inset-top,0px));padding-left:calc(22px + env(safe-area-inset-left,0px));padding-right:calc(22px + env(safe-area-inset-right,0px))}
+.staff-main{padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+.admin-content{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
+.login-panel{padding-top:calc(32px + env(safe-area-inset-top,0px));padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
+.modal{padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(max-width:900px){
+  .topbar{padding-top:calc(10px + env(safe-area-inset-top,0px));padding-left:calc(14px + env(safe-area-inset-left,0px));padding-right:calc(14px + env(safe-area-inset-right,0px))}
+  .sidebar{padding-top:env(safe-area-inset-top,0px)}
+  .notif-panel{top:calc(58px + env(safe-area-inset-top,0px))}
+}
+@media(max-width:560px){
+  .staff-bar .brand-lockup{font-size:13px}
+  .staff-bar .brand-lockup .brand-mark{width:32px;height:32px;border-radius:9px;font-size:12px}
+  .staff-user .btn{padding:8px 12px;font-size:13px}
+}
+
+/* ---- Kapsamli mobil uyumluluk ---- */
+.table-wrap{-webkit-overflow-scrolling:touch}
+@media(max-width:640px){
+  /* Modallar: telefonda alttan acilan tam genislik sayfa */
+  .modal{padding:0;place-items:end center}
+  .modal-card{width:100%;max-width:100%;max-height:94dvh;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+  .form-actions{position:sticky;bottom:0;background:#fff;padding-top:10px;margin-top:12px;z-index:5}
+  .form-actions .btn{flex:1}
+  .modal-buttons .btn{flex:1}
+  /* Filtre barlari: arama en uste, butonlar tam genislik paylasir */
+  .filter-bar{gap:8px}
+  .filter-bar .search-box{min-width:100%;order:-1}
+  .filter-bar select,.filter-bar .btn{flex:1;min-width:0;white-space:nowrap}
+  /* Tablolar: sikismak yerine parmakla yatay kaydirma */
+  .table-wrap table{min-width:620px}
+  .ekstre-wrap table{min-width:540px}
+  /* Dokunma hedefleri */
+  .mini-btn{padding:9px 13px;font-size:13px}
+  .row-actions{flex-wrap:wrap;gap:6px}
+  .text-btn{padding:8px}
+  /* Ust bar sikismasin */
+  .topbar-actions{gap:6px}
+  #scanTopBtn{padding:9px 11px;font-size:13px}
+  .cloud-chip{font-size:11px;white-space:nowrap}
+  /* Kartlar */
+  .metric-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .metric-card{padding:12px}
+  .metric-card strong{font-size:22px}
+  .panel{padding:14px 12px}
+  .panel-head h3{font-size:15.5px}
+  .report-summary .bill-chip{flex:1;min-width:130px}
+  .bill-summary .bill-chip{flex:1;min-width:130px}
+  /* Ayarlar satirlari alt alta */
+  .setting-row{flex-direction:column;align-items:stretch;gap:12px}
+  .setting-row .btn{width:100%}
+  .reset-row{flex-direction:column;align-items:stretch}
+  .align-stack{justify-content:space-between}
+  .snapshot-row{flex-direction:column;align-items:stretch}
+  .snapshot-row .mini-btn{width:100%;padding:11px}
+  /* Etiket secim penceresi */
+  .mix-list{max-height:52dvh}
+  .mix-toolbar .mini-btn{flex:1;padding:11px}
+  .mix-default{flex:1;justify-content:space-between}
+}

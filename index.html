@@ -12,10 +12,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=27">
-  <script defer src="./qrcode.min.js?v=27"></script>
-  <script defer src="./jsqr.js?v=27"></script>
-  <script defer src="./app.js?v=27"></script>
+  <link rel="stylesheet" href="./app.css?v=28">
+  <script defer src="./qrcode.min.js?v=28"></script>
+  <script defer src="./jsqr.js?v=28"></script>
+  <script defer src="./app.js?v=28"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -130,7 +130,7 @@
         </section>
 
         <section id="movements" class="page">
-          <div class="filter-bar"><label class="search-box">⌕<input id="movementSearch" placeholder="Malzeme, personel veya hedef ara"></label><select id="movementType"><option value="all">Tüm işlemler</option><option>Giriş</option><option>Makine Çıkışı</option><option>Vinç Çıkışı</option><option>Satış</option></select><button id="movementCsvBtn" class="btn btn-outline">CSV İndir</button></div>
+          <div class="filter-bar"><label class="search-box">⌕<input id="movementSearch" placeholder="Malzeme, personel veya hedef ara"></label><select id="movementType"><option value="all">Tüm işlemler</option><option>Giriş</option><option>Makine Çıkışı</option><option>Vinç Çıkışı</option><option>Satış</option><option>Transfer</option></select><button id="movementCsvBtn" class="btn btn-outline">CSV İndir</button></div>
           <article class="panel no-pad">
             <div class="table-wrap"><table><thead><tr><th>Tarih · Saat</th><th>Personel</th><th>İşlem</th><th>Malzeme</th><th>Miktar</th><th>Nereden</th><th>Nereye</th></tr></thead><tbody id="movementRows"></tbody></table></div>
             <div id="movementEmpty" class="empty hidden">Kayıt bulunamadı.</div>
@@ -175,6 +175,10 @@
             <article class="panel setting-row"><div><h3>Yedek Geri Yükle</h3><p>Yedek dosyasını bu cihaza yükle.</p></div><input id="restoreInput" type="file" accept="application/json" class="hidden"><button id="restoreBtn" class="btn btn-outline">Dosya Seç</button></article>
             <article class="panel setting-row"><div><h3>Excel Raporları</h3><p>Stok ve hareket listesini CSV olarak indir.</p></div><div class="button-stack"><button id="settingsStockCsv" class="btn btn-outline">Stok</button><button id="settingsMovementCsv" class="btn btn-outline">Hareket</button></div></article>
             <article class="panel setting-row"><div><h3>Etiket Hizalama (44'lü kağıt)</h3><p>Çıktı, etiket kağıdının bölmelerine tam oturmuyorsa mm cinsinden kaydırın (+ sağa/aşağı, − sola/yukarı). Önce "Test Sayfası" ile boş kağıda çerçeve basıp etiket kağıdının üzerine tutarak kontrol edin.</p></div><div class="align-stack"><label class="off-field">Yatay <input id="offX" type="number" step="0.5" value="0"><span>mm</span></label><label class="off-field">Dikey <input id="offY" type="number" step="0.5" value="0"><span>mm</span></label><button id="testSheetBtn" class="btn btn-outline">Test Sayfası Bas</button></div></article>
+            <article class="panel setting-row" data-admin-only>
+              <div style="width:100%"><h3>Otomatik Güvenlik Yedekleri</h3><p>Herhangi bir sıfırlama yapılmadan hemen önce sistem son verileri otomatik kaydeder ve cihaza yedek dosyası indirir. Buradaki yedekler yalnızca Fabrika Formatı ile silinir.</p>
+              <div id="snapshotList" class="snapshot-list"></div></div>
+            </article>
             <article class="panel danger-zone reset-panel" data-super-only>
               <div class="panel-head"><div><h3>Sıfırlama Formatları (Sistem Yöneticisi)</h3><p>Bu işlemler TÜM cihazları etkiler ve geri alınamaz. Öncesinde "Tam Yedek Al" önerilir.</p></div></div>
               <div class="reset-grid">
@@ -210,6 +214,13 @@
     <div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="billingModal">Vazgeç</button><button type="button" id="billSaveBtn" class="btn btn-primary">Kaydet</button></div>
   </div></div>
 
+  <div id="ekstreModal" class="modal hidden"><div class="modal-card modal-lg">
+    <div class="modal-head"><div><h3>Ürün Ekstresi</h3><p id="ekstreProductInfo"></p></div><button class="icon-btn" data-close-modal="ekstreModal">✕</button></div>
+    <div id="ekstreSummary" class="ekstre-summary"></div>
+    <div class="table-wrap ekstre-wrap"><table><thead><tr><th>Tarih · Saat</th><th>İşlem</th><th>Miktar</th><th>Nereden → Nereye</th><th>Personel</th></tr></thead><tbody id="ekstreRows"></tbody></table></div>
+    <div id="ekstreEmpty" class="empty hidden">Bu ürün için henüz hareket kaydı yok.</div>
+  </div></div>
+
   <div id="mixQrModal" class="modal hidden"><div class="modal-card modal-lg">
     <div class="modal-head"><div><h3>44'lü Etiket Bas</h3><p>Yazdırılacak ürünleri seçin, her biri için etiket adedini girin. 44'lü A4 etiket kağıdına göre dizilir.</p></div><button class="icon-btn" data-close-modal="mixQrModal">✕</button></div>
     <div class="mix-toolbar">
@@ -233,6 +244,7 @@
     <div id="scanModeStep" class="scan-mode-step">
       <button type="button" id="scanModeIn" class="scan-mode-btn in"><span>⬇</span><b>GİRİŞ</b><small>Depoya mal girişi</small></button>
       <button type="button" id="scanModeOut" class="scan-mode-btn out"><span>⬆</span><b>ÇIKIŞ</b><small>Depodan mal çıkışı</small></button>
+      <button type="button" id="scanModeTransfer" class="scan-mode-btn transfer"><span>⇄</span><b>TRANSFER</b><small>Depolar arası taşıma</small></button>
     </div>
     <div id="scanStage" class="scan-stage hidden">
       <video id="scanVideo" playsinline muted></video>
@@ -255,6 +267,7 @@
         <label class="field"><span id="quickDepotLabel">Depo</span><select id="quickDepot"><option>Ostim Depo</option><option>Yenikent Depo</option></select></label>
         <label class="field hidden" id="quickTargetField"><span>Nereye gidiyor?</span><select id="quickTarget"><option>Sondaj Makinesi 1</option><option>Sondaj Makinesi 2</option><option>Sondaj Makinesi 3</option><option>Vinç 1</option><option value="customer">Müşteriye Satış</option></select></label>
         <label class="field hidden" id="quickCustomerField"><span>Müşteri adı</span><input id="quickCustomer" placeholder="Müşteri adı girin" autocomplete="off"></label>
+        <label class="field hidden" id="quickNoteField"><span>Nereye gidiyor? / Açıklama <b style="color:#c22b2b">(zorunlu)</b></span><input id="quickNote" placeholder="Örn: Ankara şantiyesi, kule montajı için" autocomplete="off"></label>
         <label class="field"><span>Miktar</span><input id="quickQty" type="number" min="0.01" step="0.01" value="1" required></label>
         <div id="quickWarning" class="alert alert-warning hidden"></div>
         <button type="submit" id="quickSubmit" class="btn btn-primary btn-block">Kaydet</button>

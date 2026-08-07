@@ -51,7 +51,7 @@ function statusOf(p){
   if(total<=Number(p.min)*1.7) return {key:'low',label:'Azalıyor',className:'pill-low'};
   return {key:'ok',label:'Yeterli',className:'pill-ok'};
 }
-function movementClass(t){ return t==='Giriş'||t==='İade'?'pill-ok':t==='Satış'?'pill-low':'pill-critical'; }
+function movementClass(t){ return t==='Giriş'||t==='İade'?'pill-ok':t==='Transfer'?'pill-transfer':t==='Satış'?'pill-low':'pill-critical'; }
 function addNotification(title,body){ db.notifications.unshift({id:uid('n'),title,body,date:formatNow(),read:false}); db.notifications=db.notifications.slice(0,60); saveDb(); }
 
 /* ---- Bulut senkronizasyonu (Supabase) ---- */
@@ -133,10 +133,51 @@ function applyCloud(kind,rows){
 }
 async function cloudWipeTable(t){ await cloudFetch(`${t}?id=neq.__meta__`,{method:'DELETE'}); }
 async function pushCloudMeta(){ await cloudFetch(CLOUD_TABLES.users,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify([{id:'__meta__',data:{_meta:true,epochs:db.epochs||{}},updated_at:new Date().toISOString()}])}); }
+/* ---- Otomatik güvenlik yedekleri: sıfırlamadan önce veriler kaydedilir ---- */
+const SNAPSHOT_KEY='depoTakipGuvenlikYedekleri';
+function loadSnapshots(){ try{ return JSON.parse(localStorage.getItem(SNAPSHOT_KEY))||[]; }catch(e){ return []; } }
+function takeSafetySnapshot(label){
+  try{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));
+    a.download=`depo_takip_otomatik_yedek_${new Date().toISOString().replace(/[:T]/g,'-').slice(0,16)}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }catch(e){}
+  try{
+    const snaps=loadSnapshots();
+    snaps.unshift({date:formatNow(),label,data:deepClone(db)});
+    while(snaps.length>3) snaps.pop();
+    localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snaps));
+  }catch(e){
+    try{
+      const slim=deepClone(db); slim.products.forEach(p=>{ delete p.image; });
+      localStorage.setItem(SNAPSHOT_KEY,JSON.stringify([{date:formatNow(),label:label+' (görselsiz)',data:slim}]));
+    }catch(e2){}
+  }
+}
+function renderSnapshots(){
+  const el=$('#snapshotList'); if(!el) return;
+  const snaps=loadSnapshots();
+  el.innerHTML=snaps.length?snaps.map((s,i)=>`<div class="snapshot-row"><div><b>${escapeHtml(s.label)}</b><small class="td-sub">${escapeHtml(s.date)} · ${s.data?.products?.length||0} ürün, ${s.data?.movements?.length||0} hareket</small></div><button class="mini-btn" data-snap-restore="${i}">Geri Yükle</button></div>`).join(''):'<div class="empty">Henüz otomatik yedek yok. Bir sıfırlama yapıldığında son veriler otomatik olarak buraya kaydedilir.</div>';
+  $$('[data-snap-restore]').forEach(b=>b.onclick=()=>restoreSnapshot(Number(b.dataset.snapRestore)));
+}
+async function restoreSnapshot(i){
+  const snaps=loadSnapshots(); const s=snaps[i]; if(!s) return;
+  if(!confirm(`"${s.label}" (${s.date}) yedeği geri yüklensin mi? Mevcut veriler bu yedekle değiştirilecek ve tüm cihazlara yansıyacak.`))return;
+  const now=Date.now();
+  db=migrate(s.data); db.epochs={products:now,users:now,movements:now};
+  saveDb(); markAllDirty();
+  try{ if(cloudOk) await pushCloudMeta(); }catch(e){}
+  refreshAuthView();
+  if(currentUser&&isPanelUser()){ applyShellPerms(); renderAll(); renderSnapshots(); }
+  toast('Yedek geri yüklendi.');
+}
+
 async function resetMovementsFormat(){
   if(currentUser?.role!=='super_admin') return;
   if(!confirm('TÜM hareket ve muhasebe kayıtları, TÜM cihazlardan kalıcı olarak silinecek. Ürünler, stoklar ve kullanıcılar kalır. Devam edilsin mi?'))return;
   if(!confirm('Son onay: bu işlem geri alınamaz. Önce yedek aldınız mı?'))return;
+  takeSafetySnapshot('Hareket & muhasebe sıfırlama öncesi'); renderSnapshots();
   db.epochs=db.epochs||{}; db.epochs.movements=Date.now();
   dirtyIds.movements.clear(); db.movements=[];
   try{ if(cloudOk){ await cloudWipeTable(CLOUD_TABLES.movements); await pushCloudMeta(); } }catch(e){ toast('Bulut temizliği başarısız, tekrar deneyin: '+e.message); return; }
@@ -145,6 +186,7 @@ async function resetMovementsFormat(){
 function resetStocksFormat(){
   if(currentUser?.role!=='super_admin') return;
   if(!confirm('TÜM ürünlerin stok miktarları 0 yapılacak (ürün kartları kalır). Devam edilsin mi?'))return;
+  takeSafetySnapshot('Stok sıfırlama öncesi'); renderSnapshots();
   db.products.forEach(p=>{ p.ostim=0; p.yenikent=0; markDirty('products',p.id); });
   saveDb(); renderAll(); toast('Tüm stok miktarları sıfırlandı.');
 }
@@ -198,6 +240,7 @@ function goPage(page){
   if(!isPanelUser()) return;
   if(!isAdmin()&&['products','users','settings'].includes(page)) page='dashboard';
   localStorage.setItem('depoTakipLastPage',page);
+  if(page==='settings') renderSnapshots();
   $$('.page').forEach(el=>el.classList.toggle('active',el.id===page));
   $$('.side-nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
   $('#pageTitle').textContent=pageTitles[page]||'DEPO TAKİP';
@@ -234,24 +277,26 @@ function renderDashboard(){
 function renderMovements(){
   const q=normalizeText($('#movementSearch').value); const type=$('#movementType').value;
   const rows=db.movements.filter(m=>type==='all'||m.type===type).filter(m=>!q||normalizeText(`${m.product} ${m.user} ${m.source} ${m.target}`).includes(q)).slice(0,300);
-  $('#movementRows').innerHTML=rows.map(m=>{const d=splitDate(m.date);return `<tr><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.source)}</td><td>${escapeHtml(m.target)}</td></tr>`}).join('');
+  $('#movementRows').innerHTML=rows.map(m=>{const d=splitDate(m.date);return `<tr class="${m.negativeStock?'row-negative':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.source)}</td><td>${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}</td></tr>`}).join('');
   $('#movementEmpty').classList.toggle('hidden',rows.length>0);
 }
 function renderStocks(){
   const q=normalizeText($('#stockSearch').value);
   const rows=db.products.filter(p=>p.active&&!p._deleted).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
-  $('#stockRows').innerHTML=rows.map(p=>{const s=statusOf(p);return `<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b><small class="td-sub">${escapeHtml(p.category)} · ${escapeHtml(p.unit)}</small></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(p.ostim)}</td><td class="num">${formatQty(p.yenikent)}</td><td class="num"><b>${formatQty(Number(p.ostim)+Number(p.yenikent))}</b></td><td><span class="stock-pill ${s.className}">${s.label}</span></td><td><div class="row-actions"><button class="mini-btn" data-qr="${p.id}">Etiket</button><button class="mini-btn" data-quick="${p.id}">İşlem</button></div></td></tr>`}).join('');
+  $('#stockRows').innerHTML=rows.map(p=>{const s=statusOf(p);return `<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b><small class="td-sub">${escapeHtml(p.category)} · ${escapeHtml(p.unit)}</small></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(p.ostim)}</td><td class="num">${formatQty(p.yenikent)}</td><td class="num"><b>${formatQty(Number(p.ostim)+Number(p.yenikent))}</b></td><td><span class="stock-pill ${s.className}">${s.label}</span></td><td><div class="row-actions"><button class="mini-btn" data-ekstre="${p.id}">Ekstre</button><button class="mini-btn" data-qr="${p.id}">Etiket</button><button class="mini-btn" data-quick="${p.id}">İşlem</button></div></td></tr>`}).join('');
   $('#stockEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-qr]').forEach(b=>b.onclick=()=>openQr(b.dataset.qr));
   $$('[data-quick]').forEach(b=>b.onclick=()=>openQuickForProduct(b.dataset.quick));
+  $$('[data-ekstre]').forEach(b=>b.onclick=()=>openEkstre(b.dataset.ekstre));
 }
 function renderProducts(){
   const q=normalizeText($('#productAdminSearch').value);
   const rows=db.products.filter(p=>!p._deleted).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
-  $('#productRows').innerHTML=rows.map(p=>`<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td>${escapeHtml(p.category)}</td><td>${escapeHtml(p.unit)}</td><td class="num">${formatQty(p.min)}</td><td><span class="stock-pill ${p.active?'pill-ok':'pill-inactive'}">${p.active?'Aktif':'Pasif'}</span></td><td><div class="row-actions"><button class="mini-btn" data-edit-product="${p.id}">Düzenle</button><button class="mini-btn danger" data-delete-product="${p.id}">Sil</button></div></td></tr>`).join('');
+  $('#productRows').innerHTML=rows.map(p=>`<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td>${escapeHtml(p.category)}</td><td>${escapeHtml(p.unit)}</td><td class="num">${formatQty(p.min)}</td><td><span class="stock-pill ${p.active?'pill-ok':'pill-inactive'}">${p.active?'Aktif':'Pasif'}</span></td><td><div class="row-actions"><button class="mini-btn" data-ekstre="${p.id}">Ekstre</button><button class="mini-btn" data-edit-product="${p.id}">Düzenle</button><button class="mini-btn danger" data-delete-product="${p.id}">Sil</button></div></td></tr>`).join('');
   $('#productEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-edit-product]').forEach(b=>b.onclick=()=>openProductModal(b.dataset.editProduct));
   $$('[data-delete-product]').forEach(b=>b.onclick=()=>deleteProduct(b.dataset.deleteProduct));
+  $$('#productRows [data-ekstre]').forEach(b=>b.onclick=()=>openEkstre(b.dataset.ekstre));
 }
 function renderUsers(){
   const q=normalizeText($('#userSearch').value);
@@ -265,7 +310,14 @@ function renderNotifications(){
   $('#notifCount').textContent=unread; $('#notifCount').classList.toggle('hidden',unread===0);
   $('#notifList').innerHTML=db.notifications.length?db.notifications.slice(0,40).map(n=>`<article class="notif-item ${n.read?'':'unread'}"><b>${escapeHtml(n.title)}</b><p>${escapeHtml(n.body)}</p><time>${escapeHtml(n.date)}</time></article>`).join(''):'<div class="empty">Bildirim yok.</div>';
 }
-function toggleNotifPanel(){ const p=$('#notifPanel'); p.classList.toggle('hidden'); if(!p.classList.contains('hidden')) renderNotifications(); }
+function toggleNotifPanel(){
+  const p=$('#notifPanel'); p.classList.toggle('hidden');
+  if(!p.classList.contains('hidden')){
+    renderNotifications();
+    // Panel açılınca sayaç sıfırlanır (okunmamış vurgusu listede görünmeye devam eder)
+    if(db.notifications.some(n=>!n.read)){ db.notifications.forEach(n=>n.read=true); saveDb(); $('#notifCount').textContent='0'; $('#notifCount').classList.add('hidden'); }
+  }
+}
 function hideNotifPanel(){ $('#notifPanel').classList.add('hidden'); }
 
 
@@ -416,6 +468,25 @@ function printTestSheet(){
   document.body.classList.add('print-labels');
   setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
 }
+/* ---- Ürün ekstresi (hareket kartı) ---- */
+function openEkstre(id){
+  const p=productById(id); if(!p) return;
+  $('#ekstreProductInfo').textContent=`${p.name} · ${p.code}${p.category?' · '+p.category:''}`;
+  $('#ekstreSummary').innerHTML=`
+    <div class="bill-chip"><small>Ostim</small><b>${formatQty(p.ostim)}</b></div>
+    <div class="bill-chip"><small>Yenikent</small><b>${formatQty(p.yenikent)}</b></div>
+    <div class="bill-chip total"><small>Toplam</small><b>${formatQty(Number(p.ostim)+Number(p.yenikent))} ${escapeHtml(p.unit)}</b></div>`;
+  const rows=db.movements.filter(m=>m.productId===p.id).slice(0,300);
+  $('#ekstreRows').innerHTML=rows.map(m=>{
+    const d=splitDate(m.date);
+    const inc=m.type==='Giriş'||m.type==='İade';
+    const tr=m.type==='Transfer';
+    return `<tr class="${m.negativeStock?'row-negative':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td class="num"><b class="${tr?'':inc?'qty-in':'qty-out'}">${tr?'':inc?'+':'−'}${formatQty(m.qty)}</b> ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.source)} → ${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}</td><td>${escapeHtml(m.user)}</td></tr>`;
+  }).join('');
+  $('#ekstreEmpty').classList.toggle('hidden',rows.length>0);
+  openModal('ekstreModal');
+}
+
 /* ---- Etiket yazdırma (ürün seçimli, adet girmeli) ---- */
 let mixSel={}; // ürün id -> etiket adedi
 function mixProducts(){
@@ -504,7 +575,7 @@ function openQr(id){
 }
 
 /* ---- QR tarama ve hızlı işlem ---- */
-let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0, scanMode='Çıkış', scanStartAt=0, lastDecodeAt=0, torchOn=false, slowHintShown=false, pendingManual=null, scanPass=0, scanZoom=1;
+let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0, scanMode='Çıkış', scanStartAt=0, lastDecodeAt=0, torchOn=false, slowHintShown=false, pendingManual=null, scanPass=0, scanZoom=1, negativeConfirmed=false;
 
 function openScanner(){
   if(!canWrite()) return toast('Bu hesabın stok işlemi yetkisi yok.');
@@ -633,12 +704,14 @@ function populateScanResult(product){
   $('#scanProductName').textContent=product.name;
   $('#scanProductMeta').textContent=`${product.code} · ${product.category} · ${product.unit}`;
   $('#scanOstim').textContent=formatQty(product.ostim); $('#scanYenikent').textContent=formatQty(product.yenikent); $('#scanTotal').textContent=formatQty(Number(product.ostim)+Number(product.yenikent));
-  const isIn=scanMode==='Giriş';
-  const badge=$('#scanModeBadge'); badge.textContent=scanMode.toLocaleUpperCase('tr-TR'); badge.className=`stock-pill ${isIn?'pill-ok':'pill-critical'}`;
-  $('#quickDepotLabel').textContent=isIn?'Hangi depoya giriş yapılacak?':'Hangi depodan çıkılacak?';
-  $('#quickTargetField').classList.toggle('hidden',isIn);
+  const isIn=scanMode==='Giriş'; const isTransfer=scanMode==='Transfer';
+  const badge=$('#scanModeBadge'); badge.textContent=scanMode.toLocaleUpperCase('tr-TR'); badge.className=`stock-pill ${isIn?'pill-ok':isTransfer?'pill-transfer':'pill-critical'}`;
+  $('#quickDepotLabel').textContent=isIn?'Hangi depoya giriş yapılacak?':isTransfer?'Hangi depodan alınacak? (diğer depoya aktarılır)':'Hangi depodan çıkılacak?';
+  $('#quickTargetField').classList.toggle('hidden',isIn||isTransfer);
+  $('#quickNoteField').classList.toggle('hidden',isIn||isTransfer); $('#quickNote').value='';
   updateQuickCustomer();
-  $('#quickWarning').classList.add('hidden'); $('#quickQty').value=1;
+  negativeConfirmed=false;
+  const qw=$('#quickWarning'); qw.classList.add('hidden'); qw.classList.remove('warning-big'); $('#quickQty').value=1;
   showScanStep('result');
 }
 
@@ -660,18 +733,33 @@ function submitQuick(e){
   const qty=Number($('#quickQty').value); const warning=$('#quickWarning'); warning.classList.add('hidden');
   if(!qty||qty<=0) return toast('Geçerli bir miktar girin.');
   const depot=$('#quickDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
-  let type,source,target;
+  let type,source,target,outNote='';
   if(scanMode==='Giriş'){ type='Giriş'; source='Tedarikçi'; target=depot; p[key]=Number(p[key])+qty; }
+  else if(scanMode==='Transfer'){
+    const otherKey=key==='ostim'?'yenikent':'ostim';
+    const otherDepot=depot==='Ostim Depo'?'Yenikent Depo':'Ostim Depo';
+    if(Number(p[key])<qty){ warning.textContent=`Yetersiz stok: ${depot} deposunda ${formatQty(p[key])} ${p.unit} var.`; warning.classList.remove('hidden'); return; }
+    type='Transfer'; source=depot; target=otherDepot;
+    p[key]=Number(p[key])-qty; p[otherKey]=Number(p[otherKey])+qty;
+  }
   else{
+    outNote=$('#quickNote').value.trim();
+    if(!outNote) return toast('Nereye gittiğini yazmadan çıkış kaydedilemez. "Nereye gidiyor?" alanını doldurun.');
     const t=$('#quickTarget').value;
     if(t==='customer'){ const cust=$('#quickCustomer').value.trim(); if(!cust) return toast('Müşteri adını girin.'); type='Satış'; target=cust; }
     else if(t==='Vinç 1'){ type='Vinç Çıkışı'; target=t; }
     else{ type='Makine Çıkışı'; target=t; }
     source=depot;
-    if(Number(p[key])<qty){ warning.textContent=`Yetersiz stok: ${depot} deposunda ${formatQty(p[key])} ${p.unit} var.`; warning.classList.remove('hidden'); return; }
+    if(Number(p[key])<qty&&!negativeConfirmed){
+      negativeConfirmed=true;
+      warning.innerHTML=`⚠ STOK YETERSİZ!<br>${depot} deposunda <b>${formatQty(p[key])} ${p.unit}</b> var, <b>${formatQty(qty)} ${p.unit}</b> çıkış yapmak istiyorsunuz.<br>Stok eksiye düşecek. Yine de devam etmek için tekrar <b>Kaydet</b>'e basın.`;
+      warning.classList.remove('hidden'); warning.classList.add('warning-big');
+      return;
+    }
     p[key]=Number(p[key])-qty;
   }
-  const mv={id:uid('m'),date:formatNow(),ts:Date.now(),type,productId:p.id,product:p.name,qty,unit:p.unit,source,target,user:currentUser.name,userId:currentUser.id,reference:'QR',note:''};
+  const mv={id:uid('m'),date:formatNow(),ts:Date.now(),type,productId:p.id,product:p.name,qty,unit:p.unit,source,target,user:currentUser.name,userId:currentUser.id,reference:'QR',note:outNote};
+  if(OUT_TYPES.includes(type)&&Number(p[key])<0) mv.negativeStock=true;
   if(OUT_TYPES.includes(type)) mv.billing={status:'pending',invoiced:null,paid:null,unitPrice:null,note:''};
   db.movements.unshift(mv);
   markDirty('movements',mv.id); markDirty('products',p.id);
@@ -701,10 +789,12 @@ async function resetSystem(){
   if(currentUser&&currentUser.role!=='super_admin') return toast('Bu işlemi sadece Sistem Yöneticisi yapabilir.');
   if(!confirm('FABRİKA FORMATI: ürünler, kullanıcılar, hareketler ve muhasebe — HER ŞEY, TÜM cihazlardan silinecek. Emin misiniz?'))return;
   if(!confirm('Son onay: bu işlem geri alınamaz. Önce "Tam Yedek Al" yaptınız mı?'))return;
+  takeSafetySnapshot('Fabrika formatı öncesi');
   const now=Date.now();
   Object.values(dirtyIds).forEach(s=>s.clear());
   try{ if(cloudOk){ for(const t of Object.values(CLOUD_TABLES)) await cloudWipeTable(t); } }catch(e){ toast('Bulut temizliği başarısız: '+e.message); return; }
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(SNAPSHOT_KEY); // yedekler sadece fabrika formatında silinir
   db=deepClone(seed); db.epochs={products:now,users:now,movements:now};
   try{ if(cloudOk) await pushCloudMeta(); }catch(e){}
   saveDb(); markAllDirty();
@@ -719,6 +809,7 @@ function bindEvents(){
   $('#loginResetBtn').onclick=()=>{
     if(!confirm('Şifre kurtarma olmadığı için tek çözüm bu cihazdaki TÜM depo verilerini silip yeniden kurulum yapmaktır. Devam edilsin mi?'))return;
     if(!confirm('Son onay: bu işlem geri alınamaz. Veriler kalıcı olarak silinsin mi?'))return;
+    takeSafetySnapshot('Cihaz sıfırlama öncesi');
     localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SESSION_KEY); db=deepClone(seed); $('#loginPass').value=''; refreshAuthView(); toast('Veriler silindi. Yönetici hesabıyla giriş yapın.');
   };
   $('#setupRestoreBtn').onclick=()=>$('#setupRestoreInput').click();
@@ -742,6 +833,7 @@ function bindEvents(){
   $('#mixPrintBtn').onclick=printMixQr;
   $('#mixSearch').addEventListener('input',renderMixList); $('#mixSelectAll').onclick=mixSelectAllToggle;
   $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış');
+  $('#scanModeTransfer').onclick=()=>chooseScanMode('Transfer');
   $('#scanBackBtn').onclick=()=>{ pendingManual=null; showScanStep('mode'); };
   $('#manualPickBtn').onclick=openManualPick;
   $('#pickBackBtn').onclick=()=>startScanner();

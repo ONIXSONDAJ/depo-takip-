@@ -389,3 +389,23 @@ td code{background:#f2f3f5;border-radius:6px;padding:2px 7px;font-size:12px}
 .mix-summary{margin-right:auto;font-size:13px;font-weight:700;color:var(--accent)}
 .mix-shuffle{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#4a4c53;white-space:nowrap;cursor:pointer}
 .mix-shuffle input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer}
+
+/* ---- Transfer, ekstre ve otomatik yedekler ---- */
+.pill-transfer{background:#e3edff;color:#1d4fb8}
+.scan-mode-btn.transfer{grid-column:1/-1;padding:16px 12px}
+.scan-mode-btn.transfer span{color:var(--accent);font-size:30px}
+.scan-mode-btn.transfer:hover{border-color:var(--accent);background:#f2f7ff}
+.ekstre-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ekstre-wrap{max-height:52vh;overflow-y:auto;border:1px solid var(--line);border-radius:12px}
+.qty-in{color:var(--ok-tx)}
+.qty-out{color:var(--bad-tx)}
+.snapshot-list{margin-top:10px;display:grid;gap:8px}
+.snapshot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#fafbfd;flex-wrap:wrap}
+.snapshot-row b{font-size:13.5px}
+.snapshot-row small{display:block;margin-top:2px}
+
+/* ---- Eksi stok uyarisi ---- */
+#quickWarning.warning-big{border:3px solid var(--bad-tx);background:var(--bad-bg);color:var(--bad-tx);font-weight:700;font-size:15px;padding:16px;border-radius:14px;text-align:center;line-height:1.55;animation:pulseRed 1.2s infinite}
+@keyframes pulseRed{0%,100%{box-shadow:0 0 0 0 rgba(194,43,43,.35)}50%{box-shadow:0 0 0 10px rgba(194,43,43,0)}}
+tr.row-negative td{background:#fff2f2}
+tr.row-negative td:first-child{border-left:4px solid var(--bad-tx)}

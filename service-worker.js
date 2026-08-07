@@ -1,4 +1,4 @@
-﻿const CACHE='depo-takip-pro-v35';
+﻿const CACHE='depo-takip-pro-v36';
 const ASSETS=['./','./index.html','./app.css?v=26','./app.js?v=26','./qrcode.min.js?v=26','./jsqr.js?v=26','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim();});

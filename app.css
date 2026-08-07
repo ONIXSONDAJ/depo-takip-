@@ -369,3 +369,21 @@ td code{background:#f2f3f5;border-radius:6px;padding:2px 7px;font-size:12px}
 .reset-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid #f3cdcd;border-radius:12px;background:#fffafa;flex-wrap:wrap}
 .reset-row b{font-size:14px}
 .reset-row small{display:block;color:var(--muted);margin-top:3px;max-width:560px;line-height:1.45}
+
+/* ---- Karışık etiket basma ---- */
+.mix-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.mix-toolbar .search-box{flex:1;min-width:180px}
+.mix-default{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#4a4c53;white-space:nowrap}
+.mix-default input{width:64px;border:1px solid var(--line);border-radius:9px;padding:8px;text-align:center}
+.mix-list{max-height:46vh;overflow-y:auto;border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column}
+.mix-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s}
+.mix-row:last-child{border-bottom:0}
+.mix-row:hover{background:#f7f9fd}
+.mix-row.selected{background:#f0f6ff}
+.mix-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto;cursor:pointer}
+.mix-info{flex:1;min-width:0}
+.mix-info b{font-size:14px;display:block}
+.mix-qty{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#4a4c53;white-space:nowrap}
+.mix-qty input{width:70px;border:1px solid var(--line);border-radius:9px;padding:7px;text-align:center}
+.mix-actions{align-items:center}
+.mix-summary{margin-right:auto;font-size:13px;font-weight:700;color:var(--accent)}

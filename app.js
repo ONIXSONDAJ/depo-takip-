@@ -441,6 +441,86 @@ function printAllQr(){
   document.body.classList.add('print-labels');
   setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
 }
+/* ---- Karışık etiket basma (seçili ürünler, karışık sırayla) ---- */
+let mixSel={}; // ürün id -> etiket adedi
+function mixProducts(){
+  const q=normalizeText($('#mixSearch').value);
+  return db.products.filter(p=>p.active&&!p._deleted).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
+}
+function openMixQrModal(){
+  const products=db.products.filter(p=>p.active&&!p._deleted);
+  if(!products.length) return toast('Yazdırılacak ürün yok. Önce Ürünler bölümünden ürün ekleyin.');
+  mixSel={}; $('#mixSearch').value='';
+  renderMixList(); updateMixSummary();
+  openModal('mixQrModal');
+}
+function renderMixList(){
+  const rows=mixProducts();
+  $('#mixList').innerHTML=rows.length?rows.map(p=>{
+    const sel=mixSel[p.id]!==undefined;
+    return `<div class="mix-row ${sel?'selected':''}" data-mix-row="${p.id}">
+      <input type="checkbox" data-mix-check="${p.id}" ${sel?'checked':''}>
+      <div class="mix-info"><b>${escapeHtml(p.name)}</b><small class="td-sub"><code>${escapeHtml(p.code)}</code>${p.category?' · '+escapeHtml(p.category):''}</small></div>
+      <label class="mix-qty ${sel?'':'hidden'}">Adet <input type="number" min="1" max="440" value="${sel?mixSel[p.id]:''}" data-mix-qty="${p.id}"></label>
+    </div>`;
+  }).join(''):'<div class="empty">Aramaya uygun ürün yok.</div>';
+  $$('[data-mix-check]').forEach(c=>c.onchange=()=>toggleMixProduct(c.dataset.mixCheck,c.checked));
+  $$('[data-mix-row]').forEach(r=>r.onclick=e=>{
+    if(e.target.closest('input'))return;
+    const id=r.dataset.mixRow; toggleMixProduct(id,mixSel[id]===undefined);
+  });
+  $$('[data-mix-qty]').forEach(inp=>{
+    inp.onclick=e=>e.stopPropagation();
+    inp.oninput=()=>{ const v=Math.min(Math.max(Math.floor(Number(inp.value)||0),0),440); if(v>0) mixSel[inp.dataset.mixQty]=v; updateMixSummary(); };
+  });
+}
+function toggleMixProduct(id,on){
+  if(on){ mixSel[id]=Math.min(Math.max(Math.floor(Number($('#mixDefaultQty').value)||1),1),440); }
+  else delete mixSel[id];
+  renderMixList(); updateMixSummary();
+}
+function updateMixSummary(){
+  const ids=Object.keys(mixSel);
+  const total=ids.reduce((s,id)=>s+(mixSel[id]||0),0);
+  $('#mixSummary').textContent=`${ids.length} ürün · ${total} etiket (${Math.ceil(total/44)||0} sayfa)`;
+  $('#mixPrintBtn').disabled=!total;
+}
+function mixSelectAllToggle(){
+  const rows=mixProducts();
+  const allSelected=rows.length&&rows.every(p=>mixSel[p.id]!==undefined);
+  if(allSelected){ rows.forEach(p=>delete mixSel[p.id]); }
+  else{ const def=Math.min(Math.max(Math.floor(Number($('#mixDefaultQty').value)||1),1),440); rows.forEach(p=>{ if(mixSel[p.id]===undefined) mixSel[p.id]=def; }); }
+  renderMixList(); updateMixSummary();
+}
+function shuffleArray(arr){
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+function printMixQr(){
+  if(!window.QRCode) return toast('QR bileşeni yüklenemedi. İnternet bağlantısını kontrol edin.');
+  const items=[];
+  Object.keys(mixSel).forEach(id=>{ const p=productById(id); if(p){ for(let i=0;i<mixSel[id];i++) items.push(p); } });
+  if(!items.length) return toast('Önce ürün seçin.');
+  shuffleArray(items);
+  const sheet=$('#labelSheet'); sheet.innerHTML='';
+  for(let i=0;i<items.length;i+=44){
+    const pageEl=document.createElement('div'); pageEl.className='label-page';
+    items.slice(i,i+44).forEach(p=>{
+      const card=document.createElement('div'); card.className='label-card';
+      const qr=document.createElement('div'); qr.className='label-qr';
+      const txt=document.createElement('div'); txt.className='label-text';
+      const name=document.createElement('b'); name.textContent=p.name;
+      const code=document.createElement('code'); code.textContent=p.code;
+      txt.append(name,code); card.append(qr,txt); pageEl.appendChild(card);
+      new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+    });
+    applyLabelOffset(pageEl); sheet.appendChild(pageEl);
+  }
+  closeModal('mixQrModal');
+  toast(`${items.length} etiket karışık sırayla hazırlandı (${Math.ceil(items.length/44)} sayfa). Kenar boşluğu "Yok", ölçek %100 olmalı.`);
+  document.body.classList.add('print-labels');
+  setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
+}
 function openQr(id){
   const p=productById(id); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrLabelName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';
   if(window.QRCode){ new QRCode($('#qrCode'),{text:`DEPO-TAKIP|${p.code}`,width:210,height:210,colorDark:'#0d1526',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
@@ -684,6 +764,8 @@ function bindEvents(){
   $('#removeImgBtn').onclick=()=>{ productImgData=null; setProductImgPreview(); };
   $('#addUserBtn').onclick=()=>openUserModal(); $('#userForm').onsubmit=saveUser;
   $('#printQrBtn').onclick=()=>window.print(); $('#printAllQrBtn').onclick=printAllQr;
+  $('#mixQrBtn').onclick=openMixQrModal; $('#mixPrintBtn').onclick=printMixQr;
+  $('#mixSearch').addEventListener('input',renderMixList); $('#mixSelectAll').onclick=mixSelectAllToggle;
   $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış');
   $('#scanBackBtn').onclick=()=>{ pendingManual=null; showScanStep('mode'); };
   $('#manualPickBtn').onclick=openManualPick;

@@ -656,26 +656,35 @@ function shuffleArray(arr){
 }
 function printMixQr(){
   if(!window.QRCode) return toast('QR bileşeni yüklenemedi. İnternet bağlantısını kontrol edin.');
+  // Gruplar bir arada: kategoriye, sonra ada göre sırala; aynı ürünün etiketleri peş peşe
+  const ordered=Object.keys(mixSel).map(id=>productById(id)).filter(Boolean)
+    .sort((a,b)=>(a.category||'').localeCompare(b.category||'','tr')||a.name.localeCompare(b.name,'tr'));
   const items=[];
-  Object.keys(mixSel).forEach(id=>{ const p=productById(id); if(p){ for(let i=0;i<mixSel[id];i++) items.push(p); } });
+  ordered.forEach(p=>{ for(let i=0;i<(mixSel[p.id]||0);i++) items.push(p); });
   if(!items.length) return toast('Önce ürün seçin.');
-  if($('#mixShuffle').checked) shuffleArray(items);
   const sheet=$('#labelSheet'); sheet.innerHTML='';
   for(let i=0;i<items.length;i+=44){
+    const page=items.slice(i,i+44);
+    // Yukarıdan aşağıya akış: 1. sütun 1-11, 2. sütun 12-22... (kesme kolaylığı için)
+    const cells=new Array(44).fill(null);
+    page.forEach((p,k)=>{ const col=Math.floor(k/11), row=k%11; cells[row*4+col]=p; });
     const pageEl=document.createElement('div'); pageEl.className='label-page';
-    items.slice(i,i+44).forEach(p=>{
+    cells.forEach(p=>{
       const card=document.createElement('div'); card.className='label-card';
-      const qr=document.createElement('div'); qr.className='label-qr';
-      const txt=document.createElement('div'); txt.className='label-text';
-      const name=document.createElement('b'); name.textContent=p.name;
-      const code=document.createElement('code'); code.textContent=p.code;
-      txt.append(name,code); card.append(qr,txt); pageEl.appendChild(card);
-      new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+      if(p){
+        const qr=document.createElement('div'); qr.className='label-qr';
+        const txt=document.createElement('div'); txt.className='label-text';
+        const name=document.createElement('b'); name.textContent=p.name;
+        const code=document.createElement('code'); code.textContent=p.code;
+        txt.append(name,code); card.append(qr,txt);
+        new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+      }
+      pageEl.appendChild(card);
     });
     applyLabelOffset(pageEl); sheet.appendChild(pageEl);
   }
   closeModal('mixQrModal');
-  toast(`${items.length} etiket karışık sırayla hazırlandı (${Math.ceil(items.length/44)} sayfa). Kenar boşluğu "Yok", ölçek %100 olmalı.`);
+  toast(`${items.length} etiket hazırlandı (${Math.ceil(items.length/44)} sayfa) — aynı ürünler peş peşe, yukarıdan aşağıya. Kenar boşluğu "Yok", ölçek %100 olmalı.`);
   document.body.classList.add('print-labels');
   setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
 }

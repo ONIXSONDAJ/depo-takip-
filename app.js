@@ -594,6 +594,13 @@ function openEkstre(id){
 
 /* ---- Etiket yazdırma (ürün seçimli, adet girmeli) ---- */
 let mixSel={}; // ürün id -> etiket adedi
+function mixDefaultFor(p){
+  if($('#mixUseStock')?.checked){
+    const stock=Math.ceil(Number(p.ostim||0)+Number(p.yenikent||0));
+    return Math.min(Math.max(stock,1),440);
+  }
+  return Math.min(Math.max(Math.floor(Number($('#mixDefaultQty').value)||1),1),440);
+}
 function mixProducts(){
   const q=normalizeText($('#mixSearch').value);
   return db.products.filter(p=>p.active&&!p._deleted).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
@@ -611,7 +618,7 @@ function renderMixList(){
     const sel=mixSel[p.id]!==undefined;
     return `<div class="mix-row ${sel?'selected':''}" data-mix-row="${p.id}">
       <input type="checkbox" data-mix-check="${p.id}" ${sel?'checked':''}>
-      <div class="mix-info"><b>${escapeHtml(p.name)}</b><small class="td-sub"><code>${escapeHtml(p.code)}</code>${p.category?' · '+escapeHtml(p.category):''}</small></div>
+      <div class="mix-info"><b>${escapeHtml(p.name)}</b><small class="td-sub"><code>${escapeHtml(p.code)}</code> · Stok: ${formatQty(Number(p.ostim)+Number(p.yenikent))} ${escapeHtml(p.unit)}</small></div>
       <label class="mix-qty ${sel?'':'hidden'}">Adet <input type="number" min="1" max="440" value="${sel?mixSel[p.id]:''}" data-mix-qty="${p.id}"></label>
     </div>`;
   }).join(''):'<div class="empty">Aramaya uygun ürün yok.</div>';
@@ -626,7 +633,7 @@ function renderMixList(){
   });
 }
 function toggleMixProduct(id,on){
-  if(on){ mixSel[id]=Math.min(Math.max(Math.floor(Number($('#mixDefaultQty').value)||1),1),440); }
+  if(on){ const p=productById(id); mixSel[id]=p?mixDefaultFor(p):1; }
   else delete mixSel[id];
   renderMixList(); updateMixSummary();
 }
@@ -640,7 +647,7 @@ function mixSelectAllToggle(){
   const rows=mixProducts();
   const allSelected=rows.length&&rows.every(p=>mixSel[p.id]!==undefined);
   if(allSelected){ rows.forEach(p=>delete mixSel[p.id]); }
-  else{ const def=Math.min(Math.max(Math.floor(Number($('#mixDefaultQty').value)||1),1),440); rows.forEach(p=>{ if(mixSel[p.id]===undefined) mixSel[p.id]=def; }); }
+  else{ rows.forEach(p=>{ if(mixSel[p.id]===undefined) mixSel[p.id]=mixDefaultFor(p); }); }
   renderMixList(); updateMixSummary();
 }
 function shuffleArray(arr){
@@ -970,6 +977,11 @@ function bindEvents(){
   $('#removeImgBtn').onclick=()=>{ productImgData=null; setProductImgPreview(); };
   $('#addUserBtn').onclick=()=>openUserModal(); $('#userForm').onsubmit=saveUser;
   $('#printQrBtn').onclick=()=>window.print(); $('#printAllQrBtn').onclick=openMixQrModal;
+  $('#mixUseStock').onchange=()=>{
+    $('#mixDefaultWrap').style.display=$('#mixUseStock').checked?'none':'';
+    Object.keys(mixSel).forEach(id=>{ const p=productById(id); if(p) mixSel[id]=mixDefaultFor(p); });
+    renderMixList(); updateMixSummary();
+  };
   $('#mixPrintBtn').onclick=printMixQr;
   $('#mixSearch').addEventListener('input',renderMixList); $('#mixSelectAll').onclick=mixSelectAllToggle;
   $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış');

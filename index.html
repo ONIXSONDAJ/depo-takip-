@@ -12,10 +12,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=40">
-  <script defer src="./qrcode.min.js?v=40"></script>
-  <script defer src="./jsqr.js?v=40"></script>
-  <script defer src="./app.js?v=40"></script>
+  <link rel="stylesheet" href="./app.css?v=41">
+  <script defer src="./qrcode.min.js?v=41"></script>
+  <script defer src="./jsqr.js?v=41"></script>
+  <script defer src="./app.js?v=41"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -220,10 +220,10 @@
     <label class="field"><span>Ad soyad</span><input id="userNameField" required></label><label class="field"><span>Kullanıcı adı</span><input id="usernameField" required autocomplete="off"></label><label class="field"><span>Şifre</span><input id="passwordField" required autocomplete="new-password"></label><label class="field"><span>Rol</span><select id="roleField"><option value="depot">Personel (sadece QR ekranı)</option><option value="accounting">Muhasebe (fatura &amp; tahsilat)</option><option value="admin">Yönetici (tüm panel)</option></select></label><label class="field"><span>Görev</span><input id="jobField" placeholder="Ostim depo sorumlusu"></label><label class="field"><span>Durum</span><select id="userActiveField"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
   </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="userModal">Vazgeç</button><button type="submit" class="btn btn-primary">Kaydet</button></div></form></div></div>
 
-  <div id="billingModal" class="modal hidden"><div class="modal-card">
+  <div id="billingModal" class="modal hidden"><div class="modal-card modal-lg">
     <div class="modal-head"><div><h3>Muhasebe Kaydı</h3><p id="billProductInfo"></p></div><button class="icon-btn" data-close-modal="billingModal">✕</button></div>
     <div id="billMeta" class="bill-meta"></div>
-    <label class="field"><span>Birim fiyat (₺)</span><input id="billPrice" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal"></label>
+    <div id="billLines" class="bill-lines"></div>
     <div class="bill-total">Toplam tutar: <b id="billTotalTxt">—</b></div>
     <div class="seg-group"><span>Fatura</span><div class="seg"><button type="button" id="segInvYes">Kesildi</button><button type="button" id="segInvNo">Kesilmedi</button></div></div>
     <div class="seg-group"><span>Ödeme</span><div class="seg"><button type="button" id="segPaidYes">Alındı</button><button type="button" id="segPaidNo">Alınmadı · askıya al</button></div></div>

@@ -348,21 +348,49 @@ function hideNotifPanel(){ $('#notifPanel').classList.add('hidden'); }
 
 
 /* ---- Muhasebe ---- */
-let billingMovementId=null, billInv=null, billPaid=null;
+let billGroupIds=[], billInv=null, billPaid=null;
 function billingStatus(b){ return b.paid===true?'done':b.paid===false?'askida':'pending'; }
 function billingPill(s){ return s==='done'?'<span class="stock-pill pill-ok">Tamamlandı</span>':s==='askida'?'<span class="stock-pill pill-low">Askıda</span>':'<span class="stock-pill pill-inactive">Bekliyor</span>'; }
 function yesNo(v,yes,no){ return v===true?`<span class="yn ok">✓ ${yes}</span>`:v===false?`<span class="yn no">✗ ${no}</span>`:'<span class="yn">—</span>'; }
-function billingRows(){
+function billTargetKey(m){ return normalizeText(m.target).replace(/[^a-zçğıöşü0-9]/g,''); }
+function billGroupKeyOf(m){ return billTargetKey(m)+'|'+splitDate(m.date).day; }
+function groupBillStatus(movs){
+  if(movs.some(m=>billingStatus(m.billing)==='pending')) return 'pending';
+  if(movs.some(m=>billingStatus(m.billing)==='askida')) return 'askida';
+  return 'done';
+}
+function billingGroups(){
   const q=normalizeText($('#billSearch').value); const f=$('#billFilter').value;
-  return db.movements.filter(m=>m.billing&&!m.cancelled)
-    .filter(m=>f==='all'||billingStatus(m.billing)===f)
-    .filter(m=>!q||normalizeText(`${m.product} ${m.target} ${m.user}`).includes(q));
+  const groups=new Map();
+  db.movements.filter(m=>m.billing&&!m.cancelled).forEach(m=>{
+    const k=billGroupKeyOf(m);
+    if(!groups.has(k)) groups.set(k,{key:k,movs:[],ts:0});
+    const g=groups.get(k); g.movs.push(m); g.ts=Math.max(g.ts,Number(m.ts)||0);
+  });
+  let list=[...groups.values()];
+  list.forEach(g=>g.movs.sort((a,b)=>(a.ts||0)-(b.ts||0)));
+  list.sort((a,b)=>b.ts-a.ts);
+  if(f!=='all') list=list.filter(g=>groupBillStatus(g.movs)===f);
+  if(q) list=list.filter(g=>g.movs.some(m=>normalizeText(`${m.product} ${m.target} ${m.user}`).includes(q)));
+  return list;
 }
 function renderBilling(){
-  const rows=billingRows();
-  $('#billRows').innerHTML=rows.map(m=>{const b=m.billing;const s=billingStatus(b);const d=splitDate(m.date);const total=b.unitPrice?b.unitPrice*m.qty:null;
-    return `<tr class="${s==='askida'?'row-askida':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td><b>${escapeHtml(m.product)}</b><small class="td-sub">${escapeHtml(m.type)}</small></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}</td><td>${escapeHtml(m.user)}</td><td class="num">${b.unitPrice?formatQty(b.unitPrice):'—'}</td><td class="num"><b>${total?formatQty(total):'—'}</b></td><td>${yesNo(b.invoiced,'Kesildi','Kesilmedi')}</td><td>${yesNo(b.paid,'Alındı','Alınmadı')}</td><td>${billingPill(s)}</td><td>${canBill()?`<button class="mini-btn" data-bill="${m.id}">${s==='pending'?'İşle':'Düzenle'}</button>`:''}</td></tr>`;}).join('');
-  $('#billEmpty').classList.toggle('hidden',rows.length>0);
+  const groups=billingGroups();
+  $('#billRows').innerHTML=groups.map(g=>{
+    const movs=g.movs, first=movs[0], multi=movs.length>1;
+    const s=groupBillStatus(movs); const d=splitDate(first.date);
+    const priced=movs.filter(m=>m.billing.unitPrice);
+    const total=priced.length?priced.reduce((sum,m)=>sum+m.billing.unitPrice*m.qty,0):null;
+    const inv=movs.every(m=>m.billing.invoiced===true)?true:movs.every(m=>m.billing.invoiced===false)?false:null;
+    const paid=movs.every(m=>m.billing.paid===true)?true:movs.every(m=>m.billing.paid===false)?false:null;
+    const nameCell=multi
+      ?`<b>${movs.length} kalem</b><small class="td-sub">${escapeHtml(movs.slice(0,3).map(m=>m.product).join(', '))}${movs.length>3?'…':''}</small>`
+      :`<b>${escapeHtml(first.product)}</b><small class="td-sub">${escapeHtml(first.type)}</small>`;
+    const qtyCell=multi?`${movs.length} ürün`:`${formatQty(first.qty)} ${escapeHtml(first.unit)}`;
+    const unitCell=multi?'—':(first.billing.unitPrice?formatQty(first.billing.unitPrice):'—');
+    return `<tr class="${s==='askida'?'row-askida':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${nameCell}</td><td class="num">${qtyCell}</td><td>${escapeHtml(first.target)}${first.note?`<small class="td-sub">${escapeHtml(first.note)}</small>`:''}</td><td>${escapeHtml([...new Set(movs.map(m=>m.user))].join(', '))}</td><td class="num">${unitCell}</td><td class="num"><b>${total!=null?formatQty(total):'—'}</b></td><td>${yesNo(inv,'Kesildi','Kesilmedi')}</td><td>${yesNo(paid,'Alındı','Alınmadı')}</td><td>${billingPill(s)}</td><td>${canBill()?`<button class="mini-btn" data-bill="${g.key}">${s==='pending'?'İşle':'Düzenle'}</button>`:''}</td></tr>`;
+  }).join('');
+  $('#billEmpty').classList.toggle('hidden',groups.length>0);
   $$('[data-bill]').forEach(btn=>btn.onclick=()=>openBillingModal(btn.dataset.bill));
   const all=db.movements.filter(m=>m.billing&&!m.cancelled);
   const pending=all.filter(m=>billingStatus(m.billing)==='pending').length;
@@ -381,14 +409,18 @@ function renderBilling(){
     <div class="bill-chip noinv"><small>Faturasız</small><b>${formatQty(noinvSum)} ₺</b><span>${noinv.length} kayıt</span></div>
     <div class="bill-chip total"><small>GENEL TOPLAM</small><b>${formatQty(invSum+noinvSum)} ₺</b><span>faturalı + faturasız</span></div>`;
 }
-function openBillingModal(id){
-  const m=db.movements.find(x=>x.id===id); if(!m||!m.billing) return;
-  billingMovementId=id; const b=m.billing;
-  billInv=b.invoiced; billPaid=b.paid;
-  $('#billProductInfo').textContent=`${m.product} · ${formatQty(m.qty)} ${m.unit}`;
-  $('#billMeta').innerHTML=`<span>${escapeHtml(m.date)}</span><span>${escapeHtml(m.type)} → ${escapeHtml(m.target)}</span><span>Personel: ${escapeHtml(m.user)}</span>`;
-  $('#billPrice').value=b.unitPrice??'';
-  $('#billNote').value=b.note||'';
+function openBillingModal(key){
+  const movs=db.movements.filter(m=>m.billing&&!m.cancelled&&billGroupKeyOf(m)===key).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if(!movs.length) return;
+  billGroupIds=movs.map(m=>m.id);
+  const first=movs[0];
+  billInv=movs.every(m=>m.billing.invoiced===true)?true:movs.every(m=>m.billing.invoiced===false)?false:null;
+  billPaid=movs.every(m=>m.billing.paid===true)?true:movs.every(m=>m.billing.paid===false)?false:null;
+  $('#billProductInfo').textContent=movs.length>1?`${first.target} · ${movs.length} kalem`:`${first.product} · ${formatQty(first.qty)} ${first.unit}`;
+  $('#billMeta').innerHTML=`<span>${escapeHtml(splitDate(first.date).day)}</span><span>${escapeHtml(first.target)}</span><span>Personel: ${escapeHtml([...new Set(movs.map(m=>m.user))].join(', '))}</span>`;
+  $('#billLines').innerHTML=movs.map(m=>`<div class="bill-line"><div class="bl-info"><b>${escapeHtml(m.product)}</b><small>${formatQty(m.qty)} ${escapeHtml(m.unit)} · ${escapeHtml(m.type)} · ${escapeHtml(splitDate(m.date).time)}</small></div><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="birim ₺" value="${m.billing.unitPrice??''}" data-bl-price="${m.id}"><b class="bl-total" data-bl-total="${m.id}">—</b></div>`).join('');
+  $('#billNote').value=first.billing.note||'';
+  $$('[data-bl-price]').forEach(inp=>inp.oninput=updateBillTotal);
   updateBillSegs(); updateBillTotal();
   openModal('billingModal');
 }
@@ -399,21 +431,35 @@ function updateBillSegs(){
   $('#segPaidNo').classList.toggle('active',billPaid===false);
 }
 function updateBillTotal(){
-  const m=db.movements.find(x=>x.id===billingMovementId);
-  const price=Number($('#billPrice').value);
-  $('#billTotalTxt').textContent=m&&price>0?`${formatQty(price*m.qty)} ₺`:'—';
+  let grand=0, any=false;
+  billGroupIds.forEach(id=>{
+    const m=db.movements.find(x=>x.id===id);
+    const inp=document.querySelector(`[data-bl-price="${id}"]`);
+    const out=document.querySelector(`[data-bl-total="${id}"]`);
+    const price=Number(inp?.value);
+    if(m&&price>0){ const t=price*m.qty; grand+=t; any=true; if(out) out.textContent=`${formatQty(t)} ₺`; }
+    else if(out) out.textContent='—';
+  });
+  $('#billTotalTxt').textContent=any?`${formatQty(grand)} ₺`:'—';
 }
 function saveBilling(){
-  const m=db.movements.find(x=>x.id===billingMovementId); if(!m||!m.billing) return;
-  const price=Number($('#billPrice').value);
-  if(!price||price<=0) return toast('Birim fiyat girin.');
+  const movs=billGroupIds.map(id=>db.movements.find(x=>x.id===id)).filter(m=>m&&m.billing);
+  if(!movs.length) return;
+  const prices={};
+  for(const m of movs){
+    const price=Number(document.querySelector(`[data-bl-price="${m.id}"]`)?.value);
+    if(!price||price<=0) return toast(`Birim fiyat girin: ${m.product}`);
+    prices[m.id]=price;
+  }
   if(billInv===null) return toast('Fatura durumunu seçin: Kesildi veya Kesilmedi.');
   if(billPaid===null) return toast('Ödeme durumunu seçin: Alındı veya Alınmadı.');
-  m.billing={invoiced:billInv,paid:billPaid,unitPrice:price,note:$('#billNote').value.trim(),status:billPaid?'done':'askida',updatedBy:currentUser.name,updatedAt:formatNow()};
-  const total=formatQty(price*m.qty);
-  if(billPaid) addNotification(`₺ Tahsilat: ${m.product}`,`${total} ₺ — ${billInv?'faturalı':'faturasız/elden'}. (${currentUser.name})`);
-  else addNotification(`⏳ Askıda: ${m.product}`,`${total} ₺ ödeme bekleniyor — ${m.target}. (${currentUser.name})`);
-  saveDb(); markDirty('movements',m.id); closeModal('billingModal'); renderAll();
+  const note=$('#billNote').value.trim();
+  let grand=0;
+  movs.forEach(m=>{ grand+=prices[m.id]*m.qty; m.billing={invoiced:billInv,paid:billPaid,unitPrice:prices[m.id],note,status:billPaid?'done':'askida',updatedBy:currentUser.name,updatedAt:formatNow()}; markDirty('movements',m.id); });
+  const label=movs.length>1?`${movs[0].target} (${movs.length} kalem)`:movs[0].product;
+  if(billPaid) addNotification(`₺ Tahsilat: ${label}`,`${formatQty(grand)} ₺ — ${billInv?'faturalı':'faturasız/elden'}. (${currentUser.name})`);
+  else addNotification(`⏳ Askıda: ${label}`,`${formatQty(grand)} ₺ ödeme bekleniyor — ${movs[0].target}. (${currentUser.name})`);
+  saveDb(); closeModal('billingModal'); renderAll();
   toast(billPaid?'Kaydedildi: ödeme alındı olarak işaretlendi.':'Kaydedildi: ödeme askıya alındı.');
 }
 function downloadBillingCsv(){ csvDownload('muhasebe_kayitlari.csv',[['Tarih','Malzeme','İşlem','Miktar','Birim','Nereye','Personel','Birim Fiyat','Toplam','Fatura','Ödeme','Durum','Not'],...db.movements.filter(m=>m.billing).map(m=>{const b=m.billing;const s=billingStatus(b);return [m.date,m.product,m.type,m.qty,m.unit,m.target,m.user,b.unitPrice??'',b.unitPrice?b.unitPrice*m.qty:'',b.invoiced===true?'Kesildi':b.invoiced===false?'Kesilmedi':'',b.paid===true?'Alındı':b.paid===false?'Alınmadı':'',s==='done'?'Tamamlandı':s==='askida'?'Askıda':'Bekliyor',b.note||''];})]); toast('Muhasebe raporu indirildi.'); }
@@ -1009,7 +1055,6 @@ function bindEvents(){
   $('#userSearch').addEventListener('input',renderUsers);
   $('#billSearch').addEventListener('input',renderBilling); $('#billFilter').addEventListener('input',renderBilling);
   $('#billCsvBtn').onclick=downloadBillingCsv;
-  $('#billPrice').addEventListener('input',updateBillTotal);
   $('#segInvYes').onclick=()=>{billInv=true;updateBillSegs();};
   $('#segInvNo').onclick=()=>{billInv=false;updateBillSegs();};
   $('#segPaidYes').onclick=()=>{billPaid=true;updateBillSegs();};

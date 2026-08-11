@@ -1,5 +1,5 @@
-﻿const CACHE='depo-takip-pro-v49';
-const ASSETS=['./','./index.html','./app.css?v=49','./app.js?v=49','./qrcode.min.js?v=49','./jsqr.js?v=49','./manifest.webmanifest','./icon.svg'];
+﻿const CACHE='depo-takip-pro-v50';
+const ASSETS=['./','./index.html','./app.css?v=50','./app.js?v=50','./qrcode.min.js?v=50','./jsqr.js?v=50','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim();});
 self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;if(event.request.url.includes('supabase.co'))return;const bust=event.request.url.includes('app.js')||event.request.url.includes('app.css')||event.request.mode==='navigate';event.respondWith(fetch(event.request,bust?{cache:'no-cache'}:undefined).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response;}).catch(()=>caches.match(event.request).then(cached=>cached||(event.request.mode==='navigate'?caches.match('./index.html'):Response.error()))));});

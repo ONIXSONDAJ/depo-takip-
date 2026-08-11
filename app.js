@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v49';
+const APP_VERSION='v50';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -790,8 +790,8 @@ function printMixQr(){
 function openQr(id){
   const p=productById(id); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrLabelName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';
   if(window.QRCode){
-    try{ new QRCode($('#qrCode'),{text:qrPayload(p.code),width:210,height:210,colorDark:'#0d1526',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
-    catch(e){ try{ new QRCode($('#qrCode'),{text:qrPayload(p.code),width:210,height:210,colorDark:'#0d1526',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e2){ $('#qrCode').textContent='Kod çok uzun, QR üretilemedi.'; } }
+    try{ new QRCode($('#qrCode'),{text:qrPayload(p.code),width:1050,height:1050,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
+    catch(e){ try{ new QRCode($('#qrCode'),{text:qrPayload(p.code),width:1050,height:1050,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e2){ $('#qrCode').textContent='Kod çok uzun, QR üretilemedi.'; } }
   }
   else $('#qrCode').textContent='QR bileşeni yüklenemedi.';
   openModal('qrModal');

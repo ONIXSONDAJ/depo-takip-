@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v47';
+const APP_VERSION='v48';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -567,7 +567,7 @@ function printTestSheet(){
   const pageEl=document.createElement('div'); pageEl.className='label-page';
   for(let i=0;i<44;i++){ const c=document.createElement('div'); c.className='label-card test-cell'; c.textContent=i+1; pageEl.appendChild(c); }
   applyLabelOffset(pageEl); sheet.appendChild(pageEl);
-  toast('Test sayfası: boş kağıda basın, etiket kağıdının üzerine tutup hizayı kontrol edin. Ölçek %100, kenar boşluğu Yok olmalı.');
+  toast('Test sayfası yazdırılıyor — boş kağıda basıp etiket kağıdının üzerine tutarak hizayı kontrol edin.');
   document.body.classList.add('print-labels');
   setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
 }
@@ -754,7 +754,7 @@ function printMixQr(){
         if(pi>=pages.length){
           printBusy=false;
           if(qrFailed.length) toast(`⚠ ${qrFailed.length} ürünün QR'ı üretilemedi (kod çok uzun): ${qrFailed.slice(0,3).join(', ')}${qrFailed.length>3?'…':''}. Diğerleri basılıyor.`);
-          else toast(`${items.length} etiket hazırlandı (${pages.length} sayfa) — aynı ürünler peş peşe, yukarıdan aşağıya. Kenar boşluğu "Yok", ölçek %100 olmalı.`);
+          else toast(`${items.length} etiket yazdırılıyor (${pages.length} sayfa).`);
           document.body.classList.add('print-labels');
           setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },250);
           return;

@@ -1008,9 +1008,10 @@ async function saveBulk(){
   if(!isAdmin()||!bulkParsed||!bulkParsed.tally.length) return;
   if(bulkParsed.unmatched.length&&!confirm(`${bulkParsed.unmatched.length} satır eşleşmedi ve ATLANACAK. Sadece eşleşen ürünlerle devam edilsin mi?`)) return;
   const depot=$('#bulkDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
-  const t=$('#bulkTarget').value; const note=$('#bulkNote').value.trim();
+  const t=$('#bulkTarget').value; let note=$('#bulkNote').value.trim();
   let type,target;
-  if(t==='customer'){ const cust=$('#bulkCustomer').value.trim(); if(!cust) return toast('Müşteri adını girin.'); type='Satış'; target=cust; }
+  if(t==='sayim'){ type='Sayım Düzeltme'; target=depot; if(!note) note='Fazla sayım düzeltmesi'; }
+  else if(t==='customer'){ const cust=$('#bulkCustomer').value.trim(); if(!cust) return toast('Müşteri adını girin.'); type='Satış'; target=cust; }
   else if(t==='Vinç 1'){ type='Vinç Çıkışı'; target=t; }
   else{ type='Makine Çıkışı'; target=t; }
   if(!note) return toast('Açıklama alanını doldurun (nereye/neden).');
@@ -1022,13 +1023,13 @@ async function saveBulk(){
     p[key]=Number(p[key])-e.count; totalQty+=e.count;
     const mv={id:uid('m'),date:formatNow(),ts:Date.now(),type,productId:p.id,product:p.name,qty:e.count,unit:p.unit,source:depot,target,user:currentUser.name,userId:currentUser.id,reference:'TOPLU',note};
     if(Number(p[key])<0){ mv.negativeStock=true; mv.exceptionReason=`Toplu çıkış: ${note}`; }
-    mv.billing={status:'pending',invoiced:null,paid:null,unitPrice:null,note:''};
+    if(OUT_TYPES.includes(type)) mv.billing={status:'pending',invoiced:null,paid:null,unitPrice:null,note:''};
     db.movements.unshift(mv);
     markDirty('movements',mv.id); markDirty('products',p.id);
   });
   addNotification(`📋 Toplu çıkış: ${target}`,`${currentUser.name}: ${bulkParsed.tally.length} ürün, ${formatQty(totalQty)} adet — ${depot}. ${note}`);
   saveDb(); closeModal('bulkModal'); renderAll();
-  toast(`Toplu çıkış kaydedildi: ${bulkParsed.tally.length} ürün, ${formatQty(totalQty)} adet → ${target}. Muhasebe kuyruğuna eklendi.`);
+  toast(`Toplu ${type==='Sayım Düzeltme'?'sayım düzeltmesi':'çıkış'} kaydedildi: ${bulkParsed.tally.length} ürün, ${formatQty(totalQty)} adet.${OUT_TYPES.includes(type)?' Muhasebe kuyruğuna eklendi.':''}`);
 }
 /* ---- Modal / araçlar ---- */
 function openModal(id){ $('#modalOverlay').classList.remove('hidden'); $(`#${id}`).classList.remove('hidden'); }

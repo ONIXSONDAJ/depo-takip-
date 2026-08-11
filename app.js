@@ -348,7 +348,8 @@ function hideNotifPanel(){ $('#notifPanel').classList.add('hidden'); }
 
 
 /* ---- Muhasebe ---- */
-let billGroupIds=[], billInv=null, billPaid=null;
+let billGroupIds=[], billInv=null, billPaid=null, billDiscPct=false;
+function billNet(m){ const b=m.billing; if(!b||!b.unitPrice) return 0; return b.unitPrice*m.qty-(b.discount||0); }
 function billingStatus(b){ return b.paid===true?'done':b.paid===false?'askida':'pending'; }
 function billingPill(s){ return s==='done'?'<span class="stock-pill pill-ok">Tamamlandı</span>':s==='askida'?'<span class="stock-pill pill-low">Askıda</span>':'<span class="stock-pill pill-inactive">Bekliyor</span>'; }
 function yesNo(v,yes,no){ return v===true?`<span class="yn ok">✓ ${yes}</span>`:v===false?`<span class="yn no">✗ ${no}</span>`:'<span class="yn">—</span>'; }
@@ -380,7 +381,8 @@ function renderBilling(){
     const movs=g.movs, first=movs[0], multi=movs.length>1;
     const s=groupBillStatus(movs); const d=splitDate(first.date);
     const priced=movs.filter(m=>m.billing.unitPrice);
-    const total=priced.length?priced.reduce((sum,m)=>sum+m.billing.unitPrice*m.qty,0):null;
+    const total=priced.length?priced.reduce((sum,m)=>sum+billNet(m),0):null;
+    const discTotal=priced.reduce((sum,m)=>sum+(m.billing.discount||0),0);
     const inv=movs.every(m=>m.billing.invoiced===true)?true:movs.every(m=>m.billing.invoiced===false)?false:null;
     const paid=movs.every(m=>m.billing.paid===true)?true:movs.every(m=>m.billing.paid===false)?false:null;
     const nameCell=multi
@@ -388,7 +390,7 @@ function renderBilling(){
       :`<b>${escapeHtml(first.product)}</b><small class="td-sub">${escapeHtml(first.type)}</small>`;
     const qtyCell=multi?`${movs.length} ürün`:`${formatQty(first.qty)} ${escapeHtml(first.unit)}`;
     const unitCell=multi?'—':(first.billing.unitPrice?formatQty(first.billing.unitPrice):'—');
-    return `<tr class="${s==='askida'?'row-askida':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${nameCell}</td><td class="num">${qtyCell}</td><td>${escapeHtml(first.target)}${first.note?`<small class="td-sub">${escapeHtml(first.note)}</small>`:''}</td><td>${escapeHtml([...new Set(movs.map(m=>m.user))].join(', '))}</td><td class="num">${unitCell}</td><td class="num"><b>${total!=null?formatQty(total):'—'}</b></td><td>${yesNo(inv,'Kesildi','Kesilmedi')}</td><td>${yesNo(paid,'Alındı','Alınmadı')}</td><td>${billingPill(s)}</td><td>${canBill()?`<button class="mini-btn" data-bill="${g.key}">${s==='pending'?'İşle':'Düzenle'}</button>`:''}</td></tr>`;
+    return `<tr class="${s==='askida'?'row-askida':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${nameCell}</td><td class="num">${qtyCell}</td><td>${escapeHtml(first.target)}${first.note?`<small class="td-sub">${escapeHtml(first.note)}</small>`:''}</td><td>${escapeHtml([...new Set(movs.map(m=>m.user))].join(', '))}</td><td class="num">${unitCell}</td><td class="num"><b>${total!=null?formatQty(total):'—'}</b>${discTotal>0?`<small class="td-sub">İnd: -${formatQty(discTotal)}</small>`:''}</td><td>${yesNo(inv,'Kesildi','Kesilmedi')}</td><td>${yesNo(paid,'Alındı','Alınmadı')}</td><td>${billingPill(s)}</td><td>${canBill()?`<button class="mini-btn" data-bill="${g.key}">${s==='pending'?'İşle':'Düzenle'}</button>`:''}</td></tr>`;
   }).join('');
   $('#billEmpty').classList.toggle('hidden',groups.length>0);
   $$('[data-bill]').forEach(btn=>btn.onclick=()=>openBillingModal(btn.dataset.bill));
@@ -396,7 +398,7 @@ function renderBilling(){
   const pending=all.filter(m=>billingStatus(m.billing)==='pending').length;
   const askida=all.filter(m=>billingStatus(m.billing)==='askida');
   const done=all.filter(m=>billingStatus(m.billing)==='done');
-  const sum=list=>list.reduce((s,m)=>s+(m.billing.unitPrice?m.billing.unitPrice*m.qty:0),0);
+  const sum=list=>list.reduce((s,m)=>s+billNet(m),0);
   const priced=all.filter(m=>m.billing.unitPrice);
   const inv=priced.filter(m=>m.billing.invoiced===true);
   const noinv=priced.filter(m=>m.billing.invoiced===false);
@@ -420,6 +422,9 @@ function openBillingModal(key){
   $('#billMeta').innerHTML=`<span>${escapeHtml(splitDate(first.date).day)}</span><span>${escapeHtml(first.target)}</span><span>Personel: ${escapeHtml([...new Set(movs.map(m=>m.user))].join(', '))}</span>`;
   $('#billLines').innerHTML=movs.map(m=>`<div class="bill-line"><div class="bl-info"><b>${escapeHtml(m.product)}</b><small>${formatQty(m.qty)} ${escapeHtml(m.unit)} · ${escapeHtml(m.type)} · ${escapeHtml(splitDate(m.date).time)}</small></div><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="birim ₺" value="${m.billing.unitPrice??''}" data-bl-price="${m.id}"><b class="bl-total" data-bl-total="${m.id}">—</b></div>`).join('');
   $('#billNote').value=first.billing.note||'';
+  const prevDisc=movs.reduce((s,m)=>s+(m.billing.discount||0),0);
+  billDiscPct=false; $('#discTL').classList.add('active'); $('#discPct').classList.remove('active');
+  $('#billDiscount').value=prevDisc>0?prevDisc:'';
   $$('[data-bl-price]').forEach(inp=>inp.oninput=updateBillTotal);
   updateBillSegs(); updateBillTotal();
   openModal('billingModal');
@@ -430,17 +435,26 @@ function updateBillSegs(){
   $('#segPaidYes').classList.toggle('active',billPaid===true);
   $('#segPaidNo').classList.toggle('active',billPaid===false);
 }
+function billDiscountAmount(sub){
+  const v=Number($('#billDiscount').value)||0;
+  if(v<=0||sub<=0) return 0;
+  const amt=billDiscPct?sub*v/100:v;
+  return Math.min(Math.max(amt,0),sub);
+}
 function updateBillTotal(){
-  let grand=0, any=false;
+  let sub=0, any=false;
   billGroupIds.forEach(id=>{
     const m=db.movements.find(x=>x.id===id);
     const inp=document.querySelector(`[data-bl-price="${id}"]`);
     const out=document.querySelector(`[data-bl-total="${id}"]`);
     const price=Number(inp?.value);
-    if(m&&price>0){ const t=price*m.qty; grand+=t; any=true; if(out) out.textContent=`${formatQty(t)} ₺`; }
+    if(m&&price>0){ const t=price*m.qty; sub+=t; any=true; if(out) out.textContent=`${formatQty(t)} ₺`; }
     else if(out) out.textContent='—';
   });
-  $('#billTotalTxt').textContent=any?`${formatQty(grand)} ₺`:'—';
+  const disc=billDiscountAmount(sub);
+  $('#billSubTxt').textContent=any?`${formatQty(sub)} ₺`:'—';
+  $('#billDiscTxt').textContent=disc>0?`-${formatQty(disc)} ₺`:'—';
+  $('#billTotalTxt').textContent=any?`${formatQty(sub-disc)} ₺`:'—';
 }
 function saveBilling(){
   const movs=billGroupIds.map(id=>db.movements.find(x=>x.id===id)).filter(m=>m&&m.billing);
@@ -454,15 +468,25 @@ function saveBilling(){
   if(billInv===null) return toast('Fatura durumunu seçin: Kesildi veya Kesilmedi.');
   if(billPaid===null) return toast('Ödeme durumunu seçin: Alındı veya Alınmadı.');
   const note=$('#billNote').value.trim();
-  let grand=0;
-  movs.forEach(m=>{ grand+=prices[m.id]*m.qty; m.billing={invoiced:billInv,paid:billPaid,unitPrice:prices[m.id],note,status:billPaid?'done':'askida',updatedBy:currentUser.name,updatedAt:formatNow()}; markDirty('movements',m.id); });
+  const sub=movs.reduce((s,m)=>s+prices[m.id]*m.qty,0);
+  const discTotal=billDiscountAmount(sub);
+  let assigned=0;
+  movs.forEach((m,i)=>{
+    const gross=prices[m.id]*m.qty;
+    let share=i===movs.length-1?Math.round((discTotal-assigned)*100)/100:Math.round(discTotal*gross/sub*100)/100;
+    assigned+=share;
+    m.billing={invoiced:billInv,paid:billPaid,unitPrice:prices[m.id],discount:share||0,note,status:billPaid?'done':'askida',updatedBy:currentUser.name,updatedAt:formatNow()};
+    markDirty('movements',m.id);
+  });
+  const grand=sub-discTotal;
   const label=movs.length>1?`${movs[0].target} (${movs.length} kalem)`:movs[0].product;
-  if(billPaid) addNotification(`₺ Tahsilat: ${label}`,`${formatQty(grand)} ₺ — ${billInv?'faturalı':'faturasız/elden'}. (${currentUser.name})`);
-  else addNotification(`⏳ Askıda: ${label}`,`${formatQty(grand)} ₺ ödeme bekleniyor — ${movs[0].target}. (${currentUser.name})`);
+  const discNote=discTotal>0?` (indirim: -${formatQty(discTotal)} ₺)`:'';
+  if(billPaid) addNotification(`₺ Tahsilat: ${label}`,`${formatQty(grand)} ₺${discNote} — ${billInv?'faturalı':'faturasız/elden'}. (${currentUser.name})`);
+  else addNotification(`⏳ Askıda: ${label}`,`${formatQty(grand)} ₺${discNote} ödeme bekleniyor — ${movs[0].target}. (${currentUser.name})`);
   saveDb(); closeModal('billingModal'); renderAll();
   toast(billPaid?'Kaydedildi: ödeme alındı olarak işaretlendi.':'Kaydedildi: ödeme askıya alındı.');
 }
-function downloadBillingCsv(){ csvDownload('muhasebe_kayitlari.csv',[['Tarih','Malzeme','İşlem','Miktar','Birim','Nereye','Personel','Birim Fiyat','Toplam','Fatura','Ödeme','Durum','Not'],...db.movements.filter(m=>m.billing).map(m=>{const b=m.billing;const s=billingStatus(b);return [m.date,m.product,m.type,m.qty,m.unit,m.target,m.user,b.unitPrice??'',b.unitPrice?b.unitPrice*m.qty:'',b.invoiced===true?'Kesildi':b.invoiced===false?'Kesilmedi':'',b.paid===true?'Alındı':b.paid===false?'Alınmadı':'',s==='done'?'Tamamlandı':s==='askida'?'Askıda':'Bekliyor',b.note||''];})]); toast('Muhasebe raporu indirildi.'); }
+function downloadBillingCsv(){ csvDownload('muhasebe_kayitlari.csv',[['Tarih','Malzeme','İşlem','Miktar','Birim','Nereye','Personel','Birim Fiyat','Toplam','İndirim','Net Toplam','Fatura','Ödeme','Durum','Not'],...db.movements.filter(m=>m.billing).map(m=>{const b=m.billing;const s=billingStatus(b);return [m.date,m.product,m.type,m.qty,m.unit,m.target,m.user,b.unitPrice??'',b.unitPrice?b.unitPrice*m.qty:'',b.discount||'',b.unitPrice?billNet(m):'',b.invoiced===true?'Kesildi':b.invoiced===false?'Kesilmedi':'',b.paid===true?'Alındı':b.paid===false?'Alınmadı':'',s==='done'?'Tamamlandı':s==='askida'?'Askıda':'Bekliyor',b.note||''];})]); toast('Muhasebe raporu indirildi.'); }
 
 /* ---- Personel ekranı ---- */
 function renderStaffLast(){
@@ -565,8 +589,8 @@ function renderReports(){
   const machines=[...group(outs.filter(m=>m.type!=='Satış'),m=>m.target).entries()].map(([k,l])=>({name:k,count:l.length,qtyDesc:[...group(l,x=>x.product).entries()].slice(0,3).map(([pn,pl])=>`${formatQty(sumQty(pl))} ${pl[0].unit} ${pn}`).join(', ')}));
   const byUser=[...group(mv,m=>m.user).entries()].map(([k,l])=>({name:k,count:l.length,out:l.filter(x=>OUT_TYPES.includes(x.type)).length,inn:l.filter(x=>x.type==='Giriş').length,tr:l.filter(x=>x.type==='Transfer').length})).sort((a,b)=>b.count-a.count);
   const sales=outs.filter(m=>m.type==='Satış');
-  const salesTotal=sales.reduce((s,m)=>s+((m.billing?.unitPrice||0)*Number(m.qty)),0);
-  const byCustomer=[...group(sales,m=>m.target).entries()].map(([k,l])=>({name:k,count:l.length,total:l.reduce((s,m)=>s+((m.billing?.unitPrice||0)*Number(m.qty)),0)})).sort((a,b)=>b.total-a.total).slice(0,10);
+  const salesTotal=sales.reduce((s,m)=>s+billNet(m),0);
+  const byCustomer=[...group(sales,m=>m.target).entries()].map(([k,l])=>({name:k,count:l.length,total:l.reduce((s,m)=>s+billNet(m),0)})).sort((a,b)=>b.total-a.total).slice(0,10);
   const ins=mv.filter(m=>m.type==='Giriş');
   const insByProduct=[...group(ins,m=>m.product).entries()].map(([k,l])=>({name:k,qty:sumQty(l),unit:l[0].unit,count:l.length})).sort((a,b)=>b.count-a.count).slice(0,10);
   const critical=act.filter(p=>statusOf(p).key==='critical');
@@ -1139,6 +1163,9 @@ function bindEvents(){
   $('#segPaidYes').onclick=()=>{billPaid=true;updateBillSegs();};
   $('#segPaidNo').onclick=()=>{billPaid=false;updateBillSegs();};
   $('#billSaveBtn').onclick=saveBilling;
+  $('#billDiscount').addEventListener('input',updateBillTotal);
+  $('#discTL').onclick=()=>{ billDiscPct=false; $('#discTL').classList.add('active'); $('#discPct').classList.remove('active'); updateBillTotal(); };
+  $('#discPct').onclick=()=>{ billDiscPct=true; $('#discPct').classList.add('active'); $('#discTL').classList.remove('active'); updateBillTotal(); };
   $('#mBillingCard').onclick=()=>goPage('muhasebe');
   $('#stockCsvBtn').onclick=downloadStockCsv; $('#movementCsvBtn').onclick=downloadMovementCsv;
   $('#reportPeriod').onchange=renderReports; $('#reportCsvBtn').onclick=downloadReportCsv; $('#reportPdfBtn').onclick=()=>{ renderReports(); window.print(); };

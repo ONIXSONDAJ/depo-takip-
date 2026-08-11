@@ -580,3 +580,7 @@ html,body{overflow-x:clip} /* hidden yerine clip: yapiskan ust bari bozmaz */
 .disc-amt{margin-left:auto;color:var(--bad-tx);font-variant-numeric:tabular-nums}
 .bill-total.grand{font-size:15px;padding:10px 12px;background:#f2f7ff;border-radius:11px}
 .bill-total.grand b{font-size:19px;color:var(--accent)}
+
+/* ---- Sürüm etiketi ---- */
+.version-tag{position:fixed;right:10px;bottom:8px;z-index:30;font-size:11px;color:rgba(90,95,110,.55);font-variant-numeric:tabular-nums;pointer-events:none;user-select:none}
+@media print{.version-tag{display:none}}

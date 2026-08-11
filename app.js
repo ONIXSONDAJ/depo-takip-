@@ -16,6 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
+const APP_VERSION='v47';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -1242,6 +1243,7 @@ if(__missingIds.length&&!sessionStorage.getItem('depoReloadFix')){
   sessionStorage.removeItem('depoReloadFix');
 }
 try{ bindEvents(); }catch(e){ console.error('bindEvents',e); surfaceError('Kurulum hatası: '+e.message); }
+try{ $('#versionTag').textContent=APP_VERSION; }catch(e){}
 refreshAuthView();
 const savedSessionUser=userById(localStorage.getItem(SESSION_KEY)||'');
 if(savedSessionUser&&savedSessionUser.active) enterApp(savedSessionUser);

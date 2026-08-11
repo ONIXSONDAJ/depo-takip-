@@ -17,6 +17,12 @@ let currentUser = null;
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
+/* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
+const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
+function asciiFold(v){ return String(v ?? '').replace(/[çÇğĞıİöÖşŞüÜ]/g,ch=>TR_ASCII[ch]).replace(/[^\x20-\x7E]/g,'?'); }
+function qrPayload(code){ return `DEPO-TAKIP|${asciiFold(code)}`; }
+/* Hem Türkçe hem ASCII'ye çevrilmiş kodları aynı anahtara indirger — eski basılmış etiketler de okunur. */
+function qrKey(v){ return asciiFold(normalizeText(v)).replace(/\?/g,'').trim(); }
 function formatQty(n){ return Number(n).toLocaleString('tr-TR',{maximumFractionDigits:2}); }
 function formatNow(){ return new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function saveDb(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){ toast('Depolama alanı doldu. Bazı ürün görsellerini kaldırmayı deneyin.'); } }
@@ -741,12 +747,13 @@ function printMixQr(){
     printBusy=true;
     const pages=[];
     for(let i=0;i<items.length;i+=44) pages.push(items.slice(i,i+44));
-    let pi=0;
+    let pi=0; const qrFailed=[];
     const buildNext=()=>{
       try{
         if(pi>=pages.length){
           printBusy=false;
-          toast(`${items.length} etiket hazırlandı (${pages.length} sayfa) — aynı ürünler peş peşe, yukarıdan aşağıya. Kenar boşluğu "Yok", ölçek %100 olmalı.`);
+          if(qrFailed.length) toast(`⚠ ${qrFailed.length} ürünün QR'ı üretilemedi (kod çok uzun): ${qrFailed.slice(0,3).join(', ')}${qrFailed.length>3?'…':''}. Diğerleri basılıyor.`);
+          else toast(`${items.length} etiket hazırlandı (${pages.length} sayfa) — aynı ürünler peş peşe, yukarıdan aşağıya. Kenar boşluğu "Yok", ölçek %100 olmalı.`);
           document.body.classList.add('print-labels');
           setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },250);
           return;
@@ -764,7 +771,8 @@ function printMixQr(){
             const name=document.createElement('b'); name.textContent=p.name;
             const code=document.createElement('code'); code.textContent=p.code;
             txt.append(name,code); card.append(qr,txt);
-            new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+            try{ new QRCode(qr,{text:qrPayload(p.code),width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }
+            catch(e){ qr.textContent='QR sığmadı'; if(!qrFailed.includes(p.code)) qrFailed.push(p.code); }
           }
           pageEl.appendChild(card);
         });
@@ -779,7 +787,10 @@ function printMixQr(){
 }
 function openQr(id){
   const p=productById(id); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrLabelName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';
-  if(window.QRCode){ new QRCode($('#qrCode'),{text:`DEPO-TAKIP|${p.code}`,width:210,height:210,colorDark:'#0d1526',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
+  if(window.QRCode){
+    try{ new QRCode($('#qrCode'),{text:qrPayload(p.code),width:210,height:210,colorDark:'#0d1526',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H}); }
+    catch(e){ try{ new QRCode($('#qrCode'),{text:qrPayload(p.code),width:210,height:210,colorDark:'#0d1526',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e2){ $('#qrCode').textContent='Kod çok uzun, QR üretilemedi.'; } }
+  }
   else $('#qrCode').textContent='QR bileşeni yüklenemedi.';
   openModal('qrModal');
 }
@@ -895,7 +906,7 @@ function parseScanCode(text){
 }
 function handleScanResult(text){
   const code=parseScanCode(text);
-  const product=db.products.find(p=>p.active&&!p._deleted&&normalizeText(p.code)===normalizeText(code));
+  const product=db.products.find(p=>p.active&&!p._deleted&&qrKey(p.code)===qrKey(code));
   if(!product){
     if(text!==lastMissText||Date.now()-lastMissAt>2500){
       lastMissText=text; lastMissAt=Date.now();

@@ -952,6 +952,84 @@ function submitQuick(e){
   pendingManual=null; closeModal('scanModal');
 }
 
+
+/* ---- Toplu Çıkış ---- */
+let bulkParsed=null;
+function bulkNorm(s){ return normalizeText(s).replace(/\s+/g,' ').trim(); }
+function bulkMatchLine(line){
+  const nl=bulkNorm(line);
+  let best=null,bestLen=0;
+  db.products.filter(p=>p.active&&!p._deleted).forEach(p=>{
+    [p.code,p.name].forEach(key=>{
+      const nk=bulkNorm(key); if(!nk) return;
+      const idx=nl.indexOf(nk);
+      if(idx===-1) return;
+      const before=idx===0?' ':nl[idx-1];
+      const after=(idx+nk.length>=nl.length)?' ':nl[idx+nk.length];
+      if(before!==' '||after!==' ') return; // kelime sınırı: "SK415/2" vs "SK415/28" karışmasın
+      if(nk.length>bestLen){ best=p; bestLen=nk.length; }
+    });
+  });
+  return best;
+}
+function parseBulk(){
+  const lines=$('#bulkText').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const tally=new Map(); const unmatched=new Map();
+  lines.forEach(l=>{
+    const p=bulkMatchLine(l);
+    if(p){ const e=tally.get(p.id)||{p,count:0}; e.count++; tally.set(p.id,e); }
+    else unmatched.set(l,(unmatched.get(l)||0)+1);
+  });
+  bulkParsed={tally:[...tally.values()],unmatched:[...unmatched.entries()],totalLines:lines.length};
+  renderBulkPreview();
+}
+function renderBulkPreview(){
+  const box=$('#bulkPreview');
+  if(!bulkParsed||!bulkParsed.totalLines){ box.innerHTML=''; $('#bulkSaveBtn').disabled=true; $('#bulkSaveBtn').textContent='Çıkışları Kaydet'; return; }
+  const depot=$('#bulkDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
+  const rows=bulkParsed.tally.map(e=>{
+    const have=Number(e.p[key])||0; const short=have<e.count;
+    return `<div class="bulk-row ${short?'short':''}">${productThumb(e.p)}<div class="bulk-info"><b>${escapeHtml(e.p.name)}</b><small>${escapeHtml(e.p.code)} · ${depot}: ${formatQty(have)} ${escapeHtml(e.p.unit)}${short?' — ⚠ yetersiz':''}</small></div><b class="bulk-count">× ${e.count}</b></div>`;
+  }).join('');
+  const un=bulkParsed.unmatched.map(([l,n])=>`<div class="bulk-row un"><span>❓</span><div class="bulk-info"><b>${escapeHtml(l)}</b><small>eşleşmedi — ürün adını/kodunu kontrol edin</small></div><b class="bulk-count">× ${n}</b></div>`).join('');
+  const totalQty=bulkParsed.tally.reduce((s,e)=>s+e.count,0);
+  box.innerHTML=rows+un;
+  $('#bulkSaveBtn').disabled=!bulkParsed.tally.length;
+  $('#bulkSaveBtn').textContent=`Çıkışları Kaydet (${bulkParsed.tally.length} ürün · ${totalQty} adet)`;
+}
+function openBulkModal(){
+  if(!isAdmin()) return;
+  $('#bulkText').value=''; $('#bulkNote').value=''; $('#bulkCustomer').value='';
+  bulkParsed=null; renderBulkPreview(); updateBulkCustomer();
+  openModal('bulkModal');
+}
+function updateBulkCustomer(){ $('#bulkCustomerField').classList.toggle('hidden',$('#bulkTarget').value!=='customer'); }
+async function saveBulk(){
+  if(!isAdmin()||!bulkParsed||!bulkParsed.tally.length) return;
+  if(bulkParsed.unmatched.length&&!confirm(`${bulkParsed.unmatched.length} satır eşleşmedi ve ATLANACAK. Sadece eşleşen ürünlerle devam edilsin mi?`)) return;
+  const depot=$('#bulkDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
+  const t=$('#bulkTarget').value; const note=$('#bulkNote').value.trim();
+  let type,target;
+  if(t==='customer'){ const cust=$('#bulkCustomer').value.trim(); if(!cust) return toast('Müşteri adını girin.'); type='Satış'; target=cust; }
+  else if(t==='Vinç 1'){ type='Vinç Çıkışı'; target=t; }
+  else{ type='Makine Çıkışı'; target=t; }
+  if(!note) return toast('Açıklama alanını doldurun (nereye/neden).');
+  const shorts=bulkParsed.tally.filter(e=>(Number(e.p[key])||0)<e.count);
+  if(shorts.length&&!confirm(`⚠ ${shorts.length} üründe stok yetersiz, eksiye düşecek:\n${shorts.map(e=>`- ${e.p.name} (var: ${formatQty(e.p[key])}, çıkış: ${e.count})`).join('\n')}\nYine de devam edilsin mi?`)) return;
+  let totalQty=0;
+  bulkParsed.tally.forEach(e=>{
+    const p=productById(e.p.id); if(!p) return;
+    p[key]=Number(p[key])-e.count; totalQty+=e.count;
+    const mv={id:uid('m'),date:formatNow(),ts:Date.now(),type,productId:p.id,product:p.name,qty:e.count,unit:p.unit,source:depot,target,user:currentUser.name,userId:currentUser.id,reference:'TOPLU',note};
+    if(Number(p[key])<0){ mv.negativeStock=true; mv.exceptionReason=`Toplu çıkış: ${note}`; }
+    mv.billing={status:'pending',invoiced:null,paid:null,unitPrice:null,note:''};
+    db.movements.unshift(mv);
+    markDirty('movements',mv.id); markDirty('products',p.id);
+  });
+  addNotification(`📋 Toplu çıkış: ${target}`,`${currentUser.name}: ${bulkParsed.tally.length} ürün, ${formatQty(totalQty)} adet — ${depot}. ${note}`);
+  saveDb(); closeModal('bulkModal'); renderAll();
+  toast(`Toplu çıkış kaydedildi: ${bulkParsed.tally.length} ürün, ${formatQty(totalQty)} adet → ${target}. Muhasebe kuyruğuna eklendi.`);
+}
 /* ---- Modal / araçlar ---- */
 function openModal(id){ $('#modalOverlay').classList.remove('hidden'); $(`#${id}`).classList.remove('hidden'); }
 function closeModal(id){ if(id==='scanModal'){ stopScanner(); pendingManual=null; } $(`#${id}`).classList.add('hidden'); if(!$$('.modal:not(.hidden)').length) $('#modalOverlay').classList.add('hidden'); }
@@ -1069,6 +1147,11 @@ function bindEvents(){
   const off=labelOffsets(); $('#offX').value=off.x; $('#offY').value=off.y;
   $('#offX').addEventListener('input',saveLabelOffsets); $('#offY').addEventListener('input',saveLabelOffsets);
   $('#testSheetBtn').onclick=printTestSheet;
+  $('#bulkOutBtn').onclick=openBulkModal;
+  $('#bulkText').addEventListener('input',parseBulk);
+  $('#bulkDepot').addEventListener('input',()=>renderBulkPreview());
+  $('#bulkTarget').addEventListener('input',()=>{updateBulkCustomer();});
+  $('#bulkSaveBtn').onclick=saveBulk;
   $('#resetBtn').onclick=resetSystem;
   $('#resetMovementsBtn').onclick=resetMovementsFormat;
   $('#resetStocksBtn').onclick=resetStocksFormat;

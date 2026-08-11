@@ -12,10 +12,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=41">
-  <script defer src="./qrcode.min.js?v=41"></script>
-  <script defer src="./jsqr.js?v=41"></script>
-  <script defer src="./app.js?v=41"></script>
+  <link rel="stylesheet" href="./app.css?v=42">
+  <script defer src="./qrcode.min.js?v=42"></script>
+  <script defer src="./jsqr.js?v=42"></script>
+  <script defer src="./app.js?v=42"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -146,7 +146,7 @@
         </section>
 
         <section id="stocks" class="page">
-          <div class="filter-bar"><label class="search-box">⌕<input id="stockSearch" placeholder="Ürün adı veya kod ara"></label><button id="stockCsvBtn" class="btn btn-outline">CSV İndir</button></div>
+          <div class="filter-bar"><label class="search-box">⌕<input id="stockSearch" placeholder="Ürün adı veya kod ara"></label><button id="bulkOutBtn" class="btn btn-outline" data-admin-only>📋 Toplu Çıkış</button><button id="stockCsvBtn" class="btn btn-outline">CSV İndir</button></div>
           <article class="panel no-pad">
             <div class="table-wrap"><table><thead><tr><th>Malzeme</th><th>Kod</th><th>Ostim</th><th>Yenikent</th><th>Toplam</th><th>Durum</th><th></th></tr></thead><tbody id="stockRows"></tbody></table></div>
             <div id="stockEmpty" class="empty hidden">Ürün bulunamadı.</div>
@@ -256,6 +256,19 @@
   </div></div>
 
   <div id="qrModal" class="modal hidden"><div class="modal-card qr-card"><div class="modal-head"><div><h3>QR Ürün Etiketi</h3><p id="qrProductName"></p></div><button class="icon-btn" data-close-modal="qrModal">✕</button></div><div id="qrCode"></div><b id="qrLabelName" class="qr-label-name"></b><code id="qrCodeText"></code><button id="printQrBtn" class="btn btn-primary btn-block">Bu Etiketi Yazdır</button></div></div>
+
+  <div id="bulkModal" class="modal hidden"><div class="modal-card modal-lg">
+    <div class="modal-head"><div><h3>Toplu Çıkış</h3><p>Ürün listesini yapıştırın — her satır 1 adettir, aynı satırı tekrar yazmak adedi artırır. Marka adları sorun olmaz, sistem eşleştirir.</p></div><button class="icon-btn" data-close-modal="bulkModal">✕</button></div>
+    <textarea id="bulkText" class="bulk-text" rows="7" placeholder="CAPRARI MCH43-8&#10;İMPO SK 10 HP&#10;PAN 4041-4/18&#10;PAN 4041-4/18"></textarea>
+    <div class="form-grid">
+      <label class="field"><span>Hangi depodan?</span><select id="bulkDepot"><option>Ostim Depo</option><option>Yenikent Depo</option></select></label>
+      <label class="field"><span>Nereye gidiyor?</span><select id="bulkTarget"><option value="customer">Müşteriye Satış</option><option>Sondaj Makinesi 1</option><option>Sondaj Makinesi 2</option><option>Sondaj Makinesi 3</option><option>Vinç 1</option></select></label>
+      <label class="field" id="bulkCustomerField"><span>Müşteri adı</span><input id="bulkCustomer" placeholder="Müşteri adı girin" autocomplete="off"></label>
+      <label class="field"><span>Açıklama (nereye/neden)</span><input id="bulkNote" placeholder="Örn: Ahmet Bey şantiyesi" autocomplete="off"></label>
+    </div>
+    <div id="bulkPreview" class="bulk-preview"></div>
+    <div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="bulkModal">Vazgeç</button><button type="button" id="bulkSaveBtn" class="btn btn-primary" disabled>Çıkışları Kaydet</button></div>
+  </div></div>
 
   <div id="scanModal" class="modal hidden"><div class="modal-card scan-card">
     <div class="modal-head"><div><h3>QR ile İşlem</h3><p id="scanModalDesc">Ne yapacaksınız?</p></div><button class="icon-btn" data-close-modal="scanModal">✕</button></div>

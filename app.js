@@ -724,39 +724,58 @@ function shuffleArray(arr){
   for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
   return arr;
 }
+let printBusy=false;
 function printMixQr(){
-  if(!window.QRCode) return toast('QR bileşeni yüklenemedi. İnternet bağlantısını kontrol edin.');
-  // Gruplar bir arada: kategoriye, sonra ada göre sırala; aynı ürünün etiketleri peş peşe
-  const ordered=Object.keys(mixSel).map(id=>productById(id)).filter(Boolean)
-    .sort((a,b)=>(a.category||'').localeCompare(b.category||'','tr')||a.name.localeCompare(b.name,'tr'));
-  const items=[];
-  ordered.forEach(p=>{ for(let i=0;i<(mixSel[p.id]||0);i++) items.push(p); });
-  if(!items.length) return toast('Önce ürün seçin.');
-  const sheet=$('#labelSheet'); sheet.innerHTML='';
-  for(let i=0;i<items.length;i+=44){
-    const page=items.slice(i,i+44);
-    // Yukarıdan aşağıya akış: 1. sütun 1-11, 2. sütun 12-22... (kesme kolaylığı için)
-    const cells=new Array(44).fill(null);
-    page.forEach((p,k)=>{ const col=Math.floor(k/11), row=k%11; cells[row*4+col]=p; });
-    const pageEl=document.createElement('div'); pageEl.className='label-page';
-    cells.forEach(p=>{
-      const card=document.createElement('div'); card.className='label-card';
-      if(p){
-        const qr=document.createElement('div'); qr.className='label-qr';
-        const txt=document.createElement('div'); txt.className='label-text';
-        const name=document.createElement('b'); name.textContent=p.name;
-        const code=document.createElement('code'); code.textContent=p.code;
-        txt.append(name,code); card.append(qr,txt);
-        new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
-      }
-      pageEl.appendChild(card);
-    });
-    applyLabelOffset(pageEl); sheet.appendChild(pageEl);
-  }
-  closeModal('mixQrModal');
-  toast(`${items.length} etiket hazırlandı (${Math.ceil(items.length/44)} sayfa) — aynı ürünler peş peşe, yukarıdan aşağıya. Kenar boşluğu "Yok", ölçek %100 olmalı.`);
-  document.body.classList.add('print-labels');
-  setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },300);
+  try{
+    if(printBusy) return toast('Etiketler hazırlanıyor, lütfen bekleyin...');
+    if(!window.QRCode) return toast('QR bileşeni yüklenemedi. Sayfayı yenileyip (Ctrl+Shift+R) tekrar deneyin.');
+    // Gruplar bir arada: kategoriye, sonra ada göre sırala; aynı ürünün etiketleri peş peşe
+    const ordered=Object.keys(mixSel).map(id=>productById(id)).filter(Boolean)
+      .sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''),'tr')||String(a.name||'').localeCompare(String(b.name||''),'tr'));
+    const items=[];
+    ordered.forEach(p=>{ for(let i=0;i<(mixSel[p.id]||0);i++) items.push(p); });
+    if(!items.length) return toast('Önce ürün seçin.');
+    if(items.length>2200&&!confirm(`${items.length} etiket (${Math.ceil(items.length/44)} sayfa) basılacak. Hazırlık uzun sürebilir. Devam edilsin mi?`)) return;
+    const sheet=$('#labelSheet'); sheet.innerHTML='';
+    closeModal('mixQrModal');
+    printBusy=true;
+    const pages=[];
+    for(let i=0;i<items.length;i+=44) pages.push(items.slice(i,i+44));
+    let pi=0;
+    const buildNext=()=>{
+      try{
+        if(pi>=pages.length){
+          printBusy=false;
+          toast(`${items.length} etiket hazırlandı (${pages.length} sayfa) — aynı ürünler peş peşe, yukarıdan aşağıya. Kenar boşluğu "Yok", ölçek %100 olmalı.`);
+          document.body.classList.add('print-labels');
+          setTimeout(()=>{ window.print(); document.body.classList.remove('print-labels'); },250);
+          return;
+        }
+        const page=pages[pi];
+        // Yukarıdan aşağıya akış: 1. sütun 1-11, 2. sütun 12-22... (kesme kolaylığı için)
+        const cells=new Array(44).fill(null);
+        page.forEach((p,k)=>{ const col=Math.floor(k/11), row=k%11; cells[row*4+col]=p; });
+        const pageEl=document.createElement('div'); pageEl.className='label-page';
+        cells.forEach(p=>{
+          const card=document.createElement('div'); card.className='label-card';
+          if(p){
+            const qr=document.createElement('div'); qr.className='label-qr';
+            const txt=document.createElement('div'); txt.className='label-text';
+            const name=document.createElement('b'); name.textContent=p.name;
+            const code=document.createElement('code'); code.textContent=p.code;
+            txt.append(name,code); card.append(qr,txt);
+            new QRCode(qr,{text:`DEPO-TAKIP|${p.code}`,width:132,height:132,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+          }
+          pageEl.appendChild(card);
+        });
+        applyLabelOffset(pageEl); sheet.appendChild(pageEl);
+        pi++;
+        if(pages.length>3) toast(`Etiketler hazırlanıyor... sayfa ${pi}/${pages.length}`);
+        setTimeout(buildNext,0);
+      }catch(e){ printBusy=false; surfaceError('Etiket hazırlama hatası: '+e.message); }
+    };
+    buildNext();
+  }catch(e){ printBusy=false; surfaceError('Yazdırma hatası: '+e.message); }
 }
 function openQr(id){
   const p=productById(id); if(!p)return; $('#qrProductName').textContent=p.name; $('#qrLabelName').textContent=p.name; $('#qrCodeText').textContent=p.code; $('#qrCode').innerHTML='';
@@ -1185,7 +1204,33 @@ function bindEvents(){
   $('#resetStocksBtn').onclick=resetStocksFormat;
 }
 
-bindEvents();
+/* ---- Hata görünürlüğü + sürüm bütünlüğü ---- */
+let __errToastAt=0;
+function surfaceError(msg){
+  const now=Date.now(); if(now-__errToastAt<4000) return; __errToastAt=now;
+  try{ toast('⚠ Hata: '+String(msg).slice(0,150)); }catch(e){}
+}
+window.addEventListener('error',e=>surfaceError(e.message||'bilinmeyen hata'));
+window.addEventListener('unhandledrejection',e=>surfaceError((e.reason&&e.reason.message)||e.reason||'bilinmeyen hata'));
+async function clearCachesAndReload(){
+  try{
+    if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }
+    if(navigator.serviceWorker){ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r=>r.unregister())); }
+  }catch(e){}
+  location.reload();
+}
+// HTML ile app.js farklı sürümlerden geldiyse (eski önbellek) kendini onar:
+const REQUIRED_IDS=['loginForm','mixPrintBtn','mixUseStock','labelSheet','billDiscount','bulkOutBtn','resetStocksBtn','testSheetBtn'];
+const __missingIds=REQUIRED_IDS.filter(id=>!document.getElementById(id));
+if(__missingIds.length&&!sessionStorage.getItem('depoReloadFix')){
+  sessionStorage.setItem('depoReloadFix','1');
+  clearCachesAndReload();
+}else if(__missingIds.length){
+  surfaceError('Sürüm uyuşmazlığı ('+__missingIds.join(', ')+'). Ctrl+Shift+R ile yenileyin.');
+}else{
+  sessionStorage.removeItem('depoReloadFix');
+}
+try{ bindEvents(); }catch(e){ console.error('bindEvents',e); surfaceError('Kurulum hatası: '+e.message); }
 refreshAuthView();
 const savedSessionUser=userById(localStorage.getItem(SESSION_KEY)||'');
 if(savedSessionUser&&savedSessionUser.active) enterApp(savedSessionUser);

@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v48';
+const APP_VERSION='v49';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -717,7 +717,8 @@ function toggleMixProduct(id,on){
 function updateMixSummary(){
   const ids=Object.keys(mixSel);
   const total=ids.reduce((s,id)=>s+(mixSel[id]||0),0);
-  $('#mixSummary').textContent=`${ids.length} ürün · ${total} etiket (${Math.ceil(total/44)||0} sayfa)`;
+  const mode=$('#mixUseStock').checked?'her ürün stok adedince tekrarlanır':`her üründen ${Math.min(Math.max(Math.floor(Number($('#mixDefaultQty').value)||1),1),440)} adet`;
+  $('#mixSummary').textContent=`${ids.length} ürün · ${total} etiket (${Math.ceil(total/44)||0} sayfa) · ${mode}`;
   $('#mixPrintBtn').disabled=!total;
 }
 function mixSelectAllToggle(){
@@ -1172,6 +1173,11 @@ function bindEvents(){
     renderMixList(); updateMixSummary();
   };
   $('#mixPrintBtn').onclick=printMixQr;
+  $('#mixDefaultQty').addEventListener('input',()=>{
+    if($('#mixUseStock').checked) return;
+    Object.keys(mixSel).forEach(id=>{ const p=productById(id); if(p) mixSel[id]=mixDefaultFor(p); });
+    renderMixList(); updateMixSummary();
+  });
   $('#mixSearch').addEventListener('input',renderMixList); $('#mixSelectAll').onclick=mixSelectAllToggle;
   $('#scanModeIn').onclick=()=>chooseScanMode('Giriş'); $('#scanModeOut').onclick=()=>chooseScanMode('Çıkış');
   $('#scanModeTransfer').onclick=()=>chooseScanMode('Transfer');

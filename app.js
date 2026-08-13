@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v51';
+const APP_VERSION='v52';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -106,6 +106,7 @@ async function cloudSync(){
     }
     changed|=applyCloud('products',cp); changed|=applyCloud('users',cu); changed|=applyCloud('movements',cm);
     if(currentUser&&!userById(currentUser.id)){ toast('Sistem yönetici tarafından sıfırlandı, yeniden giriş yapın.'); logout(); }
+    changed|=applyHpNames();
     if(changed){
       db.movements.sort((a,b)=>(b.ts||0)-(a.ts||0));
       saveDb();
@@ -116,6 +117,24 @@ async function cloudSync(){
   }catch(e){ cloudLastError=String(e.message||e); setCloudStatus(false); }
   syncBusy=false;
   scheduleSync();
+}
+/* Kataloğa beygir (HP) bilgisi: bu kodlu ürünlerin adına HP eklenir (bir kez, sonra buluta yayılır). */
+const HP_MAP={'MC41M-1':'1 HP','MCH41-8':'1 HP','MCH415-8':'1,5 HP','MCH415M-1':'1,5 HP','MCH42-8':'2 HP','MCH42M-1':'2 HP','MCH43-8':'3 HP','MCR43-8':'3 HP','MCK44-8':'4 HP','MCR455-8':'5,5 HP','MCR475/1-8':'7,5 HP','MCR410-8':'10 HP'};
+function applyHpNames(){
+  let changed=0;
+  Object.entries(HP_MAP).forEach(([code,hp])=>{
+    const k=qrKey(code);
+    db.products.forEach(p=>{
+      if(p._deleted) return;
+      const pc=qrKey(p.code), pn=qrKey(p.name);
+      if(!(pc===k||pc.endsWith(' '+k)||pn===k||pn.endsWith(' '+k))) return;
+      if(/\d\s*hp\b/i.test(p.name)) return;
+      p.name=`${p.name} ${hp}`;
+      markDirty('products',p.id); changed=1;
+    });
+  });
+  if(changed) saveDb();
+  return changed;
 }
 function applyCloud(kind,rows){
   if(!Array.isArray(rows)) return 0;
@@ -1250,6 +1269,7 @@ if(__missingIds.length&&!sessionStorage.getItem('depoReloadFix')){
 }
 try{ bindEvents(); }catch(e){ console.error('bindEvents',e); surfaceError('Kurulum hatası: '+e.message); }
 try{ $('#versionTag').textContent=APP_VERSION; }catch(e){}
+try{ applyHpNames(); }catch(e){}
 refreshAuthView();
 const savedSessionUser=userById(localStorage.getItem(SESSION_KEY)||'');
 if(savedSessionUser&&savedSessionUser.active) enterApp(savedSessionUser);

@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v50';
+const APP_VERSION='v51';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -30,7 +30,7 @@ function saveDb(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
 function isAdmin(){ return currentUser && ['super_admin','admin'].includes(currentUser.role); }
 function isPanelUser(){ return currentUser && ['super_admin','admin','accounting'].includes(currentUser.role); }
 function canBill(){ return isPanelUser(); }
-function canWrite(){ return currentUser && ['super_admin','admin','depot','sales'].includes(currentUser.role); }
+function canWrite(){ return currentUser && ['super_admin','admin','depot','sales','accounting'].includes(currentUser.role); }
 function productById(id){ return db.products.find(p=>p.id===id); }
 function userById(id){ return db.users.find(u=>u.id===id); }
 function initials(name){ return String(name).split(/\s+/).map(x=>x[0]).filter(Boolean).slice(0,2).join('').toUpperCase(); }

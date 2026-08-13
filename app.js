@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v52';
+const APP_VERSION='v53';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -119,15 +119,31 @@ async function cloudSync(){
   scheduleSync();
 }
 /* Kataloğa beygir (HP) bilgisi: bu kodlu ürünlerin adına HP eklenir (bir kez, sonra buluta yayılır). */
-const HP_MAP={'MC41M-1':'1 HP','MCH41-8':'1 HP','MCH415-8':'1,5 HP','MCH415M-1':'1,5 HP','MCH42-8':'2 HP','MCH42M-1':'2 HP','MCH43-8':'3 HP','MCR43-8':'3 HP','MCK44-8':'4 HP','MCR455-8':'5,5 HP','MCR475/1-8':'7,5 HP','MCR410-8':'10 HP'};
+const HP_MAP={
+  /* CAPRARI MC serisi */
+  'MC41M-1':'1 HP','MCH41-8':'1 HP','MCH415-8':'1,5 HP','MCH415M-1':'1,5 HP','MCH42-8':'2 HP','MCH42M-1':'2 HP','MCH43-8':'3 HP','MCR43-8':'3 HP','MCK44-8':'4 HP','MCR455-8':'5,5 HP','MCR475/1-8':'7,5 HP','MCR410-8':'10 HP',
+  /* POLDAP 4SD serisi */
+  '4SD550S':'0,75 HP','4SD750':'1 HP','4SD750S':'1 HP','4SD750T':'1 HP','4SD1100S':'1,5 HP','4SD1100T':'1,5 HP','4SD1500S':'2 HP','4SD1500T':'2 HP','4SD2200T':'3 HP','4SD3000T':'4 HP','4SD4000T':'5,5 HP','4SD5500T':'7,5 HP','4SD7500T':'10 HP',
+  /* POLDAP HLP/HPL dalgıç serisi (HLP-HPL yazımı eşdeğer sayılır) */
+  'HPL65.5/3A-8':'5,5 HP','HPL67.5/3A-8':'7,5 HP','HPL610/3A-8':'10 HP','HPL612/3A-8':'12,5 HP','HPL615/3A-8':'15 HP','HPL617/3A-8':'17,5 HP','HPL617.5/3A-8':'17,5 HP','HPL620/3A-8':'20 HP','HPL620/3A-9':'20 HP','HPL630/3A-9':'30 HP','HPL635/3A-9':'35 HP',
+  /* İMPO H serisi */
+  'H4100M224':'1 HP','H4100T218':'1 HP','H4150M333':'1,5 HP','H4150T218':'1,5 HP','H4200T218':'2 HP','H4300M224':'3 HP','H4400T218':'4 HP','H4550T218':'5,5 HP',
+  /* İMPO T serisi */
+  'İMPO 1 T':'1 HP','İMPO 1.5 T':'1,5 HP','İMPO 2 T':'2 HP',
+  /* ATLANTİS */
+  'VQ28-2.2M':'3 HP','VQ28-2.2T':'3 HP','GRINDER 16-1.5T':'2 HP',
+  /* Diğer markalar */
+  '4SKM150':'1,5 HP','4SKM100':'1 HP'
+};
 function applyHpNames(){
   let changed=0;
   Object.entries(HP_MAP).forEach(([code,hp])=>{
-    const k=qrKey(code);
+    const keys=[qrKey(code)];
+    if(/^hpl/i.test(code)) keys.push(qrKey(code.replace(/^hpl/i,'HLP')));
     db.products.forEach(p=>{
       if(p._deleted) return;
       const pc=qrKey(p.code), pn=qrKey(p.name);
-      if(!(pc===k||pc.endsWith(' '+k)||pn===k||pn.endsWith(' '+k))) return;
+      if(!keys.some(k=>pc===k||pc.endsWith(' '+k)||pn===k||pn.endsWith(' '+k))) return;
       if(/\d\s*hp\b/i.test(p.name)) return;
       p.name=`${p.name} ${hp}`;
       markDirty('products',p.id); changed=1;

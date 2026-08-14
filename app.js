@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v54';
+const APP_VERSION='v55';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -852,21 +852,41 @@ function startSayim(){
 }
 function resumeSayim(){ closeModal('sayimModal'); openModal('scanModal'); scanMode='Sayım'; startScanner(); }
 function updateSayimBar(msg){ $('#sayimTotal').textContent=sayim.total; if(msg) $('#sayimLastTxt').textContent=msg; }
+let sayimPending=null;
 function handleSayimScan(code){
   const now=Date.now();
-  if(now<sayim.cooldownUntil) return;
-  sayim.cooldownUntil=now+1500;
+  if(sayimPending||now<sayim.cooldownUntil) return;
   const product=db.products.find(p=>p.active&&!p._deleted&&qrKey(p.code)===qrKey(code));
-  if(product){
-    sayim.counts[product.id]=(sayim.counts[product.id]||0)+1; sayim.total++;
-    updateSayimBar(`✓ ${product.name} → ${sayim.counts[product.id]}`);
-    $('#scanStatus').textContent=`✓ Sayıldı: ${product.name} (${sayim.counts[product.id]} adet). Sonraki etiketi okutun.`;
-  }else{
-    sayim.unknown[code]=(sayim.unknown[code]||0)+1;
-    updateSayimBar(`⚠ Kayıtsız: ${code}`);
-    $('#scanStatus').textContent=`⚠ Bu kod sistemde kayıtlı değil: "${code}" — rapora kayıtsız olarak eklendi.`;
-  }
+  sayimPending={code,product};
+  const cnt=product?(sayim.counts[product.id]||0):(sayim.unknown[code]||0);
+  $('#sayimConfirmTxt').textContent=product
+    ?`${product.name} sayılsın mı? (şu an: ${cnt})`
+    :`⚠ KAYITSIZ KOD: "${code}" — rapora eklensin mi?`;
+  $('#sayimConfirm').classList.remove('hidden');
+  $('#scanStatus').textContent='Onay bekleniyor — EVET veya HAYIR seçin.';
   if(navigator.vibrate) navigator.vibrate(product?60:[60,80,60]);
+}
+function confirmSayim(yes){
+  if(!sayimPending) return;
+  const {code,product}=sayimPending;
+  if(yes){
+    if(product){
+      sayim.counts[product.id]=(sayim.counts[product.id]||0)+1; sayim.total++;
+      updateSayimBar(`✓ ${product.name} → ${sayim.counts[product.id]}`);
+      $('#scanStatus').textContent=`✓ Sayıldı: ${product.name} (${sayim.counts[product.id]} adet). Sonraki etiketi okutun.`;
+    }else{
+      sayim.unknown[code]=(sayim.unknown[code]||0)+1; sayim.total++;
+      updateSayimBar(`⚠ Kayıtsız: ${code}`);
+      $('#scanStatus').textContent=`⚠ Kayıtsız kod rapora eklendi: "${code}". Sonraki etiketi okutun.`;
+    }
+    if(navigator.vibrate) navigator.vibrate(60);
+  }else{
+    $('#scanStatus').textContent='Sayılmadı. Sonraki etiketi okutun.';
+    updateSayimBar('✗ Son okuma sayılmadı');
+  }
+  sayimPending=null;
+  $('#sayimConfirm').classList.add('hidden');
+  sayim.cooldownUntil=Date.now()+(yes?800:1500);
 }
 function sayimSysOf(p){ return sayim.depot==='both'?Number(p.ostim||0)+Number(p.yenikent||0):Number(p[sayim.depot==='Ostim Depo'?'ostim':'yenikent']||0); }
 function sayimRowsData(){
@@ -898,6 +918,7 @@ function buildSayimReport(){
 }
 function finishSayim(){
   scanMode='Çıkış'; // closeModal'daki sayım kancasını tekrar tetiklememek için önce modu bırak
+  sayimPending=null; $('#sayimConfirm').classList.add('hidden');
   stopScanner(); closeModal('scanModal');
   buildSayimReport(); showSayimStep('report'); openModal('sayimModal');
 }
@@ -936,6 +957,7 @@ function showScanStep(step){
   $('#scanBackBtn').classList.toggle('hidden',step!=='scan'||isSayim);
   $('#manualPickBtn').classList.toggle('hidden',step!=='scan'||isSayim);
   $('#sayimBar').classList.toggle('hidden',!(step==='scan'&&isSayim));
+  if(!(step==='scan'&&isSayim)){ sayimPending=null; $('#sayimConfirm').classList.add('hidden'); }
   $('#scanPickStep').classList.toggle('hidden',step!=='pick');
   $('#scanResult').classList.toggle('hidden',step!=='result');
   $('#scanModalDesc').textContent=step==='mode'?'Ne yapacaksınız?':step==='scan'?`${scanMode} için malzemenin QR etiketini kameraya gösterin.`:step==='pick'?`${scanMode} için ürünü listeden seçin.`:`${scanMode} bilgilerini doldurup kaydedin.`;
@@ -1338,6 +1360,8 @@ function bindEvents(){
   $('#sayimBtn').onclick=openSayim;
   $('#sayimStartBtn').onclick=startSayim;
   $('#sayimFinishBtn').onclick=finishSayim;
+  $('#sayimYes').onclick=()=>confirmSayim(true);
+  $('#sayimNo').onclick=()=>confirmSayim(false);
   $('#sayimResumeBtn').onclick=resumeSayim;
   $('#sayimCsvBtn').onclick=sayimCsv;
   $('#sayimCloseBtn').onclick=()=>{ sayim.active=false; closeModal('sayimModal'); };

@@ -597,3 +597,9 @@ html,body{overflow-x:clip} /* hidden yerine clip: yapiskan ust bari bozmaz */
 .sayim-bar>span{flex:1;font-size:13px;color:#3d4351;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sayim-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .sayim-table{max-height:46vh;overflow:auto}
+
+/* ---- Sayım onay kutusu ---- */
+.sayim-confirm{margin-top:10px;padding:14px;border:2px solid var(--accent,#0a66ff);border-radius:14px;background:#eef4ff;text-align:center}
+.sayim-confirm>b{display:block;font-size:16px;margin-bottom:12px;line-height:1.35}
+.sayim-confirm-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sayim-confirm-btns .btn{padding:14px 10px;font-size:16px;font-weight:700}

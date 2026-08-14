@@ -12,10 +12,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=55">
-  <script defer src="./qrcode.min.js?v=55"></script>
-  <script defer src="./jsqr.js?v=55"></script>
-  <script defer src="./app.js?v=55"></script>
+  <link rel="stylesheet" href="./app.css?v=56">
+  <script defer src="./qrcode.min.js?v=56"></script>
+  <script defer src="./jsqr.js?v=56"></script>
+  <script defer src="./app.js?v=56"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -114,6 +114,7 @@
           <div class="metric-grid">
             <article class="metric-card"><small>Ostim Depo</small><strong id="mOstim">0</strong><span>ürün çeşidi</span><div class="depot-extra"><span class="depot-crit" id="mOstimCrit">0 kritik</span><span class="depot-value" id="mOstimValue" data-admin-only>₺0</span></div></article>
             <article class="metric-card"><small>Yenikent Depo</small><strong id="mYenikent">0</strong><span>ürün çeşidi</span><div class="depot-extra"><span class="depot-crit" id="mYenikentCrit">0 kritik</span><span class="depot-value" id="mYenikentValue" data-admin-only>₺0</span></div></article>
+            <article class="metric-card"><small>Ofis Depo</small><strong id="mOfis">0</strong><span>ürün çeşidi</span><div class="depot-extra"><span class="depot-crit" id="mOfisCrit">0 kritik</span><span class="depot-value" id="mOfisValue" data-admin-only>₺0</span></div></article>
             <article class="metric-card warn"><small>Kritik Ürün</small><strong id="mCritical">0</strong><span>minimum altında</span></article>
             <article class="metric-card"><small>Bugünkü İşlem</small><strong id="mToday">0</strong><span>giriş / çıkış</span></article>
             <article class="metric-card link" id="mBillingCard"><small>Muhasebe</small><strong id="mBilling">0</strong><span>bekleyen + askıda</span></article>
@@ -148,7 +149,7 @@
         <section id="stocks" class="page">
           <div class="filter-bar"><label class="search-box">⌕<input id="stockSearch" placeholder="Ürün adı veya kod ara"></label><button id="sayimBtn" class="btn btn-outline" data-admin-only>▣ Stok Sayımı</button><button id="bulkOutBtn" class="btn btn-outline" data-admin-only>📋 Toplu Çıkış</button><button id="stockCsvBtn" class="btn btn-outline">CSV İndir</button></div>
           <article class="panel no-pad">
-            <div class="table-wrap"><table><thead><tr><th>Malzeme</th><th>Kod</th><th>Ostim</th><th>Yenikent</th><th>Toplam</th><th>Durum</th><th></th></tr></thead><tbody id="stockRows"></tbody></table></div>
+            <div class="table-wrap"><table><thead><tr><th>Malzeme</th><th>Kod</th><th>Ostim</th><th>Yenikent</th><th>Ofis</th><th>Toplam</th><th>Durum</th><th></th></tr></thead><tbody id="stockRows"></tbody></table></div>
             <div id="stockEmpty" class="empty hidden">Ürün bulunamadı.</div>
           </article>
         </section>
@@ -213,7 +214,7 @@
   <div id="productModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="productModalTitle">Yeni Ürün</h3></div><button class="icon-btn" data-close-modal="productModal">✕</button></div><form id="productForm"><input id="productId" type="hidden">
   <div class="img-pick"><div id="productImgBox" class="img-box">📷</div><div class="img-btns"><button type="button" id="pickImgBtn" class="mini-btn">Fotoğraf Seç / Çek</button><button type="button" id="removeImgBtn" class="mini-btn danger hidden">Görseli Kaldır</button></div><input id="productImgInput" type="file" accept="image/*" class="hidden"></div>
   <div class="form-grid">
-    <label class="field"><span>Ürün adı</span><input id="productName" required></label><label class="field"><span>Ürün kodu</span><input id="productCode" required></label><label class="field"><span>Kategori</span><input id="productCategory" placeholder="Sondaj, hidrolik..."></label><label class="field"><span>Birim</span><select id="productUnit"><option>Adet</option><option>Metre</option><option>Litre</option><option>Kg</option><option>Takım</option><option>Kutu</option></select></label><label class="field"><span>Ostim stok</span><input id="productOstim" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Yenikent stok</span><input id="productYenikent" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Minimum stok uyarısı</span><input id="productMin" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Birim fiyat (₺, stok değeri için)</span><input id="productPrice" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Durum</span><select id="productActive"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
+    <label class="field"><span>Ürün adı</span><input id="productName" required></label><label class="field"><span>Ürün kodu</span><input id="productCode" required></label><label class="field"><span>Kategori</span><input id="productCategory" placeholder="Sondaj, hidrolik..."></label><label class="field"><span>Birim</span><select id="productUnit"><option>Adet</option><option>Metre</option><option>Litre</option><option>Kg</option><option>Takım</option><option>Kutu</option></select></label><label class="field"><span>Ostim stok</span><input id="productOstim" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Yenikent stok</span><input id="productYenikent" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Ofis stok</span><input id="productOfis" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Minimum stok uyarısı</span><input id="productMin" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Birim fiyat (₺, stok değeri için)</span><input id="productPrice" type="number" min="0" step="0.01" value="0"></label><label class="field"><span>Durum</span><select id="productActive"><option value="true">Aktif</option><option value="false">Pasif</option></select></label>
   </div><div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="productModal">Vazgeç</button><button type="submit" class="btn btn-primary">Kaydet</button></div></form></div></div>
 
   <div id="userModal" class="modal hidden"><div class="modal-card modal-lg"><div class="modal-head"><div><h3 id="userModalTitle">Yeni Kullanıcı</h3></div><button class="icon-btn" data-close-modal="userModal">✕</button></div><form id="userForm"><input id="userId" type="hidden"><div class="form-grid">
@@ -260,7 +261,7 @@
   <div id="sayimModal" class="modal hidden"><div class="modal-card modal-lg">
     <div class="modal-head"><div><h3>Stok Sayımı</h3><p id="sayimDesc">Depo seçin, rafınızdaki her ürünün etiketini tek tek okutun. Bitirince sistemle karşılaştırılır.</p></div><button class="icon-btn" data-close-modal="sayimModal">✕</button></div>
     <div id="sayimSetup">
-      <label class="field"><span>Sayılacak depo</span><select id="sayimDepot"><option>Ostim Depo</option><option>Yenikent Depo</option><option value="both">İki depo birden (toplam)</option></select></label>
+      <label class="field"><span>Sayılacak depo</span><select id="sayimDepot"><option>Ostim Depo</option><option>Yenikent Depo</option><option>Ofis Depo</option><option value="both">Tüm depolar (toplam)</option></select></label>
       <p class="muted">Her fiziksel ürün için etiketi bir kez okutun — aynı üründen 5 tane varsa 5 kez. Okumalar arasında kısa bekleme vardır, "cık" diye saydıkça ekranda görürsünüz. Sayım bitmeden sayfayı yenilemeyin.</p>
       <div class="form-actions"><button type="button" class="btn btn-outline" data-close-modal="sayimModal">Vazgeç</button><button type="button" id="sayimStartBtn" class="btn btn-primary">▶ Sayımı Başlat</button></div>
     </div>
@@ -278,7 +279,7 @@
     <div class="modal-head"><div><h3>Toplu Çıkış</h3><p>Ürün listesini yapıştırın — her satır 1 adettir, aynı satırı tekrar yazmak adedi artırır. Marka adları sorun olmaz, sistem eşleştirir.</p></div><button class="icon-btn" data-close-modal="bulkModal">✕</button></div>
     <textarea id="bulkText" class="bulk-text" rows="7" placeholder="CAPRARI MCH43-8&#10;İMPO SK 10 HP&#10;PAN 4041-4/18&#10;PAN 4041-4/18"></textarea>
     <div class="form-grid">
-      <label class="field"><span>Hangi depodan?</span><select id="bulkDepot"><option>Ostim Depo</option><option>Yenikent Depo</option></select></label>
+      <label class="field"><span>Hangi depodan?</span><select id="bulkDepot"><option>Ostim Depo</option><option>Yenikent Depo</option><option>Ofis Depo</option></select></label>
       <label class="field"><span>Nereye gidiyor?</span><select id="bulkTarget"><option value="sayim">Sayım Düzeltme (stok düşümü)</option><option value="customer">Müşteriye Satış</option><option>Sondaj Makinesi 1</option><option>Sondaj Makinesi 2</option><option>Sondaj Makinesi 3</option><option>Vinç 1</option></select></label>
       <label class="field" id="bulkCustomerField"><span>Müşteri adı</span><input id="bulkCustomer" placeholder="Müşteri adı girin" autocomplete="off"></label>
       <label class="field"><span>Açıklama (nereye/neden)</span><input id="bulkNote" placeholder="Örn: Ahmet Bey şantiyesi" autocomplete="off"></label>
@@ -315,9 +316,9 @@
     </div>
     <div id="scanResult" class="scan-result hidden">
       <div class="scan-product"><div class="product-avatar" id="scanAvatar">Ü</div><div><b id="scanProductName"></b><small id="scanProductMeta"></small></div><span id="scanModeBadge" class="stock-pill pill-ok">GİRİŞ</span></div>
-      <div class="scan-stocks"><span>Ostim: <b id="scanOstim">0</b></span><span>Yenikent: <b id="scanYenikent">0</b></span><span>Toplam: <b id="scanTotal">0</b></span></div>
+      <div class="scan-stocks"><span>Ostim: <b id="scanOstim">0</b></span><span>Yenikent: <b id="scanYenikent">0</b></span><span>Ofis: <b id="scanOfis">0</b></span><span>Toplam: <b id="scanTotal">0</b></span></div>
       <form id="quickForm">
-        <label class="field"><span id="quickDepotLabel">Depo</span><select id="quickDepot"><option>Ostim Depo</option><option>Yenikent Depo</option></select></label>
+        <label class="field"><span id="quickDepotLabel">Depo</span><select id="quickDepot"><option>Ostim Depo</option><option>Yenikent Depo</option><option>Ofis Depo</option></select></label><label class="field hidden" id="quickTransferField"><span>Hangi depoya aktarılacak?</span><select id="quickTransferTo"></select></label>
         <label class="field hidden" id="quickTargetField"><span>Nereye gidiyor?</span><select id="quickTarget"><option value="customer">Müşteriye Satış</option><option>Sondaj Makinesi 1</option><option>Sondaj Makinesi 2</option><option>Sondaj Makinesi 3</option><option>Vinç 1</option></select></label>
         <label class="field hidden" id="quickCustomerField"><span>Müşteri adı</span><input id="quickCustomer" placeholder="Müşteri adı girin" autocomplete="off"></label>
         <label class="field hidden" id="quickNoteField"><span>Nereye gidiyor? / Açıklama <b style="color:#c22b2b">(zorunlu)</b></span><input id="quickNote" placeholder="Örn: Ankara şantiyesi, kule montajı için" autocomplete="off"></label>

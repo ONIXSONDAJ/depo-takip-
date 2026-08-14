@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v55';
+const APP_VERSION='v56';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -31,6 +31,10 @@ function isAdmin(){ return currentUser && ['super_admin','admin'].includes(curre
 function isPanelUser(){ return currentUser && ['super_admin','admin','accounting'].includes(currentUser.role); }
 function canBill(){ return isPanelUser(); }
 function canWrite(){ return currentUser && ['super_admin','admin','depot','sales','accounting'].includes(currentUser.role); }
+const DEPOTS=[{name:'Ostim Depo',key:'ostim',short:'Ostim'},{name:'Yenikent Depo',key:'yenikent',short:'Yenikent'},{name:'Ofis Depo',key:'ofis',short:'Ofis'}];
+function depotKey(name){ const d=DEPOTS.find(x=>x.name===name); return d?d.key:null; }
+function stockTotal(p){ return DEPOTS.reduce((s,d)=>s+(Number(p[d.key])||0),0); }
+function normalizeDepotFields(){ db.products.forEach(p=>DEPOTS.forEach(d=>{ if(p[d.key]==null) p[d.key]=0; })); }
 function productById(id){ return db.products.find(p=>p.id===id); }
 function userById(id){ return db.users.find(u=>u.id===id); }
 function initials(name){ return String(name).split(/\s+/).map(x=>x[0]).filter(Boolean).slice(0,2).join('').toUpperCase(); }
@@ -53,7 +57,7 @@ function migrate(data){
   };
 }
 function statusOf(p){
-  const total=Number(p.ostim)+Number(p.yenikent);
+  const total=stockTotal(p);
   if(total<=Number(p.min)) return {key:'critical',label:'Kritik',className:'pill-critical'};
   if(total<=Number(p.min)*1.7) return {key:'low',label:'Azalıyor',className:'pill-low'};
   return {key:'ok',label:'Yeterli',className:'pill-ok'};
@@ -106,6 +110,7 @@ async function cloudSync(){
     }
     changed|=applyCloud('products',cp); changed|=applyCloud('users',cu); changed|=applyCloud('movements',cm);
     if(currentUser&&!userById(currentUser.id)){ toast('Sistem yönetici tarafından sıfırlandı, yeniden giriş yapın.'); logout(); }
+    normalizeDepotFields();
     changed|=applyHpNames();
     if(changed){
       db.movements.sort((a,b)=>(b.ts||0)-(a.ts||0));
@@ -222,7 +227,7 @@ function resetStocksFormat(){
   if(currentUser?.role!=='super_admin') return;
   if(!confirm('TÜM ürünlerin stok miktarları 0 yapılacak (ürün kartları kalır). Devam edilsin mi?'))return;
   takeSafetySnapshot('Stok sıfırlama öncesi'); renderSnapshots();
-  db.products.forEach(p=>{ p.ostim=0; p.yenikent=0; markDirty('products',p.id); });
+  db.products.forEach(p=>{ DEPOTS.forEach(d=>p[d.key]=0); markDirty('products',p.id); });
   saveDb(); renderAll(); toast('Tüm stok miktarları sıfırlandı.');
 }
 function splitDate(d){ const parts=String(d||'').split(' '); return {day:parts[0]||'',time:parts[1]||''}; }
@@ -295,30 +300,27 @@ function renderAll(){ if(!isPanelUser())return; renderDashboard(); renderMovemen
 
 function renderDashboard(){
   const act=db.products.filter(p=>p.active&&!p._deleted);
-  const ostim=act.reduce((s,p)=>s+Number(p.ostim),0);
-  const yenikent=act.reduce((s,p)=>s+Number(p.yenikent),0);
   const critical=act.filter(p=>statusOf(p).key==='critical');
   const midnight=new Date(); midnight.setHours(0,0,0,0);
   const today=db.movements.filter(m=>Number(m.ts)>=midnight.getTime()).length;
-  const ostimVar=act.filter(p=>Number(p.ostim)>0).length;
-  const yenikentVar=act.filter(p=>Number(p.yenikent)>0).length;
-  const ostimCrit=act.filter(p=>Number(p.min)>0&&Number(p.ostim)<=Number(p.min)).length;
-  const yenikentCrit=act.filter(p=>Number(p.min)>0&&Number(p.yenikent)<=Number(p.min)).length;
   const fmtTl=v=>'₺'+Math.round(v).toLocaleString('tr-TR');
-  const ostimVal=act.reduce((s,p)=>s+(Number(p.price)||0)*Number(p.ostim),0);
-  const yenikentVal=act.reduce((s,p)=>s+(Number(p.price)||0)*Number(p.yenikent),0);
-  $('#mOstim').textContent=ostimVar; $('#mYenikent').textContent=yenikentVar;
-  $('#mOstimCrit').textContent=`${ostimCrit} kritik`; $('#mYenikentCrit').textContent=`${yenikentCrit} kritik`;
-  $('#mOstimValue').textContent=fmtTl(ostimVal)+' stok değeri'; $('#mYenikentValue').textContent=fmtTl(yenikentVal)+' stok değeri';
+  const dstats=DEPOTS.map(d=>({d,
+    cesit:act.filter(p=>Number(p[d.key])>0).length,
+    crit:act.filter(p=>Number(p.min)>0&&(Number(p[d.key])||0)<=Number(p.min)).length,
+    val:act.reduce((s,p)=>s+(Number(p.price)||0)*(Number(p[d.key])||0),0)}));
+  [['mOstim','mOstimCrit','mOstimValue'],['mYenikent','mYenikentCrit','mYenikentValue'],['mOfis','mOfisCrit','mOfisValue']].forEach((ids,i)=>{
+    const st=dstats[i]; if(!document.getElementById(ids[0])) return;
+    $('#'+ids[0]).textContent=st.cesit; $('#'+ids[1]).textContent=`${st.crit} kritik`; $('#'+ids[2]).textContent=fmtTl(st.val)+' stok değeri';
+  });
   $('#mCritical').textContent=critical.length; $('#mToday').textContent=today;
   const open=db.movements.filter(m=>m.billing&&!m.cancelled&&billingStatus(m.billing)!=='done').length;
   $('#mBilling').textContent=open;
   const recent=db.movements.slice(0,8);
   $('#dashMovements').innerHTML=recent.map(m=>{const d=splitDate(m.date);return `<tr><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${escapeHtml(m.user)}</td><td><span class="stock-pill ${movementClass(m.type)}">${escapeHtml(m.type)}</span></td><td><b>${escapeHtml(m.product)}</b></td><td class="num">${formatQty(m.qty)} ${escapeHtml(m.unit)}</td><td>${escapeHtml(m.target)}${m.note?`<small class="td-sub">${escapeHtml(m.note)}</small>`:''}</td></tr>`}).join('');
   $('#dashMovementsEmpty').classList.toggle('hidden',recent.length>0);
-  $('#dashCritical').innerHTML=critical.length?critical.slice(0,6).map(p=>`<div class="critical-item"><div><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · Min. ${formatQty(p.min)} ${escapeHtml(p.unit)}</small></div><span class="stock-pill pill-critical">${formatQty(Number(p.ostim)+Number(p.yenikent))}</span></div>`).join(''):'<div class="empty">Kritik stok yok. 👍</div>';
-  const totalVar=Math.max(ostimVar+yenikentVar,1);
-  $('#dashBars').innerHTML=`<div class="bar-row"><div class="bar-label"><b>Ostim</b><span>${ostimVar} çeşit</span></div><div class="bar-track"><div class="bar-fill" style="width:${ostimVar/totalVar*100}%"></div></div></div><div class="bar-row"><div class="bar-label"><b>Yenikent</b><span>${yenikentVar} çeşit</span></div><div class="bar-track"><div class="bar-fill alt" style="width:${yenikentVar/totalVar*100}%"></div></div></div>`;
+  $('#dashCritical').innerHTML=critical.length?critical.slice(0,6).map(p=>`<div class="critical-item"><div><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · Min. ${formatQty(p.min)} ${escapeHtml(p.unit)}</small></div><span class="stock-pill pill-critical">${formatQty(stockTotal(p))}</span></div>`).join(''):'<div class="empty">Kritik stok yok. 👍</div>';
+  const totalVar=Math.max(dstats.reduce((s,x)=>s+x.cesit,0),1);
+  $('#dashBars').innerHTML=dstats.map((st,i)=>`<div class="bar-row"><div class="bar-label"><b>${st.d.short}</b><span>${st.cesit} çeşit</span></div><div class="bar-track"><div class="bar-fill${i===1?' alt':i===2?' o3':''}" style="width:${st.cesit/totalVar*100}%"></div></div></div>`).join('');
 }
 function renderMovements(){
   const q=normalizeText($('#movementSearch').value); const type=$('#movementType').value;
@@ -334,8 +336,8 @@ function cancelMovement(id){
   if(!confirm(`${m.date} tarihli "${m.type} · ${formatQty(m.qty)} ${m.unit} ${m.product}" işlemi iptal edilsin mi?\nİşlem silinmez; stok geri düzeltilir ve ters kayıt oluşturulur.`))return;
   const p=productById(m.productId);
   if(p){
-    const dSrc=m.source==='Ostim Depo'?'ostim':m.source==='Yenikent Depo'?'yenikent':null;
-    const dTgt=m.target==='Ostim Depo'?'ostim':m.target==='Yenikent Depo'?'yenikent':null;
+    const dSrc=depotKey(m.source);
+    const dTgt=depotKey(m.target);
     if(m.type==='Giriş'){ if(dTgt) p[dTgt]=Number(p[dTgt])-Number(m.qty); }
     else if(m.type==='Transfer'){ if(dSrc) p[dSrc]=Number(p[dSrc])+Number(m.qty); if(dTgt) p[dTgt]=Number(p[dTgt])-Number(m.qty); }
     else{ if(dSrc) p[dSrc]=Number(p[dSrc])+Number(m.qty); }
@@ -351,7 +353,7 @@ function cancelMovement(id){
 function renderStocks(){
   const q=normalizeText($('#stockSearch').value);
   const rows=db.products.filter(p=>p.active&&!p._deleted).filter(p=>!q||normalizeText(`${p.name} ${p.code} ${p.category}`).includes(q));
-  $('#stockRows').innerHTML=rows.map(p=>{const s=statusOf(p);return `<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b><small class="td-sub">${escapeHtml(p.category)} · ${escapeHtml(p.unit)}</small></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(p.ostim)}</td><td class="num">${formatQty(p.yenikent)}</td><td class="num"><b>${formatQty(Number(p.ostim)+Number(p.yenikent))}</b></td><td><span class="stock-pill ${s.className}">${s.label}</span></td><td><div class="row-actions"><button class="mini-btn" data-ekstre="${p.id}">Ekstre</button><button class="mini-btn" data-qr="${p.id}">Etiket</button><button class="mini-btn" data-quick="${p.id}">İşlem</button></div></td></tr>`}).join('');
+  $('#stockRows').innerHTML=rows.map(p=>{const s=statusOf(p);return `<tr><td><div class="cell-user">${productThumb(p)}<div><b>${escapeHtml(p.name)}</b><small class="td-sub">${escapeHtml(p.category)} · ${escapeHtml(p.unit)}</small></div></div></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(p.ostim)}</td><td class="num">${formatQty(p.yenikent)}</td><td class="num">${formatQty(p.ofis||0)}</td><td class="num"><b>${formatQty(stockTotal(p))}</b></td><td><span class="stock-pill ${s.className}">${s.label}</span></td><td><div class="row-actions"><button class="mini-btn" data-ekstre="${p.id}">Ekstre</button><button class="mini-btn" data-qr="${p.id}">Etiket</button><button class="mini-btn" data-quick="${p.id}">İşlem</button></div></td></tr>`}).join('');
   $('#stockEmpty').classList.toggle('hidden',rows.length>0);
   $$('[data-qr]').forEach(b=>b.onclick=()=>openQr(b.dataset.qr));
   $$('[data-quick]').forEach(b=>b.onclick=()=>openQuickForProduct(b.dataset.quick));
@@ -563,14 +565,14 @@ function productThumb(p,cls='thumb'){
   return p.image?`<img class="${cls}" src="${p.image}" alt="">`:`<div class="${cls} thumb-letter">${escapeHtml((p.name||'Ü')[0].toLocaleUpperCase('tr-TR'))}</div>`;
 }
 function openProductModal(id=''){
-  const p=id?productById(id):null; $('#productModalTitle').textContent=p?'Ürünü Düzenle':'Yeni Ürün'; $('#productId').value=p?.id||''; $('#productName').value=p?.name||''; $('#productCode').value=p?.code||''; $('#productCategory').value=p?.category||''; $('#productUnit').value=p?.unit||'Adet'; $('#productOstim').value=p?.ostim??0; $('#productYenikent').value=p?.yenikent??0; $('#productMin').value=p?.min??0; $('#productPrice').value=p?.price??0; $('#productActive').value=String(p?.active??true);
+  const p=id?productById(id):null; $('#productModalTitle').textContent=p?'Ürünü Düzenle':'Yeni Ürün'; $('#productId').value=p?.id||''; $('#productName').value=p?.name||''; $('#productCode').value=p?.code||''; $('#productCategory').value=p?.category||''; $('#productUnit').value=p?.unit||'Adet'; $('#productOstim').value=p?.ostim??0; $('#productYenikent').value=p?.yenikent??0; $('#productOfis').value=p?.ofis??0; $('#productMin').value=p?.min??0; $('#productPrice').value=p?.price??0; $('#productActive').value=String(p?.active??true);
   productImgData=p?.image||null; setProductImgPreview();
   openModal('productModal');
 }
 function saveProduct(e){
   e.preventDefault(); const id=$('#productId').value; const code=$('#productCode').value.trim();
   if(db.products.some(p=>!p._deleted&&normalizeText(p.code)===normalizeText(code)&&p.id!==id)) return toast('Bu ürün kodu zaten kullanılıyor.');
-  const data={name:$('#productName').value.trim(),code,category:$('#productCategory').value.trim()||'Genel',unit:$('#productUnit').value,ostim:Number($('#productOstim').value||0),yenikent:Number($('#productYenikent').value||0),min:Number($('#productMin').value||0),price:Number($('#productPrice').value||0),active:$('#productActive').value==='true',image:productImgData||undefined};
+  const data={name:$('#productName').value.trim(),code,category:$('#productCategory').value.trim()||'Genel',unit:$('#productUnit').value,ostim:Number($('#productOstim').value||0),yenikent:Number($('#productYenikent').value||0),ofis:Number($('#productOfis').value||0),min:Number($('#productMin').value||0),price:Number($('#productPrice').value||0),active:$('#productActive').value==='true',image:productImgData||undefined};
   let pid=id;
   if(id) Object.assign(productById(id),data);
   else{ pid=uid('p'); db.products.push({id:pid,...data}); }
@@ -638,10 +640,11 @@ function renderReports(){
   const critical=act.filter(p=>statusOf(p).key==='critical');
   const movedIds=new Set(mv.map(m=>m.productId));
   const dead=act.filter(p=>!movedIds.has(p.id));
-  const ostimVal=act.reduce((s,p)=>s+(Number(p.price)||0)*Number(p.ostim),0);
-  const yenikentVal=act.reduce((s,p)=>s+(Number(p.price)||0)*Number(p.yenikent),0);
+  const ostimVal=act.reduce((s,p)=>s+(Number(p.price)||0)*(Number(p.ostim)||0),0);
+  const yenikentVal=act.reduce((s,p)=>s+(Number(p.price)||0)*(Number(p.yenikent)||0),0);
+  const ofisVal=act.reduce((s,p)=>s+(Number(p.price)||0)*(Number(p.ofis)||0),0);
 
-  REPORT_DATA={periodName,byProduct,machines,byUser,sales,salesTotal,byCustomer,insByProduct,critical,dead,ostimVal,yenikentVal};
+  REPORT_DATA={periodName,byProduct,machines,byUser,sales,salesTotal,byCustomer,insByProduct,critical,dead,ostimVal,yenikentVal,ofisVal};
 
   const panel=(title,sub,bodyHtml)=>`<article class="panel"><div class="panel-head"><div><h3>${title}</h3><p>${sub}</p></div></div>${bodyHtml}</article>`;
   const table=(heads,rowsHtml,empty)=>rowsHtml?`<div class="table-wrap"><table><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`:`<div class="empty">${empty}</div>`;
@@ -651,7 +654,7 @@ function renderReports(){
       <div class="bill-chip"><small>Dönem</small><b>${escapeHtml(periodName)}</b></div>
       <div class="bill-chip"><small>Toplam İşlem</small><b>${mv.length}</b></div>
       <div class="bill-chip"><small>Satış Tutarı</small><b>${fmtTl(salesTotal)}</b></div>
-      <div class="bill-chip total"><small>Stok Değeri</small><b>${fmtTl(ostimVal+yenikentVal)}</b><span>Ostim ${fmtTl(ostimVal)} · Yenikent ${fmtTl(yenikentVal)}</span></div>
+      <div class="bill-chip total"><small>Stok Değeri</small><b>${fmtTl(ostimVal+yenikentVal+ofisVal)}</b><span>Ostim ${fmtTl(ostimVal)} · Yenikent ${fmtTl(yenikentVal)} · Ofis ${fmtTl(ofisVal)}</span></div>
     </div>
     ${panel('En Çok Kullanılan Malzemeler','İşlem sayısına göre ilk 10 · '+periodName,
       table(['Malzeme','İşlem','Toplam Miktar'],byProduct.map(r=>`<tr><td><b>${escapeHtml(r.name)}</b></td><td class="num">${r.count}</td><td class="num">${formatQty(r.qty)} ${escapeHtml(r.unit)}</td></tr>`).join(''),'Bu dönemde çıkış yok.'))}
@@ -664,9 +667,9 @@ function renderReports(){
     ${panel('Depo Girişleri','Tedarikçi alışları · '+periodName,
       table(['Malzeme','Giriş','Toplam Miktar'],insByProduct.map(r=>`<tr><td><b>${escapeHtml(r.name)}</b></td><td class="num">${r.count}</td><td class="num">${formatQty(r.qty)} ${escapeHtml(r.unit)}</td></tr>`).join(''),'Bu dönemde giriş yok.'))}
     ${panel('Kritik Stok','Şu an minimum seviyenin altında',
-      table(['Malzeme','Kod','Mevcut','Minimum'],critical.map(p=>`<tr><td><b>${escapeHtml(p.name)}</b></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(Number(p.ostim)+Number(p.yenikent))} ${escapeHtml(p.unit)}</td><td class="num">${formatQty(p.min)}</td></tr>`).join(''),'Kritik stok yok. 👍'))}
+      table(['Malzeme','Kod','Mevcut','Minimum'],critical.map(p=>`<tr><td><b>${escapeHtml(p.name)}</b></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(stockTotal(p))} ${escapeHtml(p.unit)}</td><td class="num">${formatQty(p.min)}</td></tr>`).join(''),'Kritik stok yok. 👍'))}
     ${panel('Ölü Stok',periodName+' içinde hiç hareket görmeyen ürünler',
-      table(['Malzeme','Kod','Mevcut Stok'],dead.slice(0,30).map(p=>`<tr><td><b>${escapeHtml(p.name)}</b></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(Number(p.ostim)+Number(p.yenikent))} ${escapeHtml(p.unit)}</td></tr>`).join(''),'Ölü stok yok, tüm ürünler hareket görmüş. 👍'))}
+      table(['Malzeme','Kod','Mevcut Stok'],dead.slice(0,30).map(p=>`<tr><td><b>${escapeHtml(p.name)}</b></td><td><code>${escapeHtml(p.code)}</code></td><td class="num">${formatQty(stockTotal(p))} ${escapeHtml(p.unit)}</td></tr>`).join(''),'Ölü stok yok, tüm ürünler hareket görmüş. 👍'))}
   `;
 }
 function downloadReportCsv(){
@@ -678,9 +681,9 @@ function downloadReportCsv(){
     ['PERSONEL İŞLEMLERİ'],['Personel','Toplam','Çıkış','Giriş','Transfer'],...r.byUser.map(x=>[x.name,x.count,x.out,x.inn,x.tr]),[],
     ['MÜŞTERİYE SATIŞLAR (Toplam: '+Math.round(r.salesTotal)+' TL)'],['Müşteri','Satış','Tutar (TL)'],...r.byCustomer.map(x=>[x.name,x.count,Math.round(x.total)]),[],
     ['DEPO GİRİŞLERİ'],['Malzeme','Giriş','Miktar','Birim'],...r.insByProduct.map(x=>[x.name,x.count,x.qty,x.unit]),[],
-    ['KRİTİK STOK'],['Malzeme','Kod','Mevcut','Minimum'],...r.critical.map(p=>[p.name,p.code,Number(p.ostim)+Number(p.yenikent),p.min]),[],
-    ['ÖLÜ STOK'],['Malzeme','Kod','Mevcut'],...r.dead.map(p=>[p.name,p.code,Number(p.ostim)+Number(p.yenikent)]),[],
-    ['STOK DEĞERİ'],['Ostim (TL)','Yenikent (TL)','Toplam (TL)'],[Math.round(r.ostimVal),Math.round(r.yenikentVal),Math.round(r.ostimVal+r.yenikentVal)]];
+    ['KRİTİK STOK'],['Malzeme','Kod','Mevcut','Minimum'],...r.critical.map(p=>[p.name,p.code,stockTotal(p),p.min]),[],
+    ['ÖLÜ STOK'],['Malzeme','Kod','Mevcut'],...r.dead.map(p=>[p.name,p.code,stockTotal(p)]),[],
+    ['STOK DEĞERİ'],['Ostim (TL)','Yenikent (TL)','Ofis (TL)','Toplam (TL)'],[Math.round(r.ostimVal),Math.round(r.yenikentVal),Math.round(r.ofisVal||0),Math.round(r.ostimVal+r.yenikentVal+(r.ofisVal||0))]];
   csvDownload('depo_raporu.csv',rows);
   toast('Rapor indirildi (Excel ile açabilirsiniz).');
 }
@@ -692,7 +695,8 @@ function openEkstre(id){
   $('#ekstreSummary').innerHTML=`
     <div class="bill-chip"><small>Ostim</small><b>${formatQty(p.ostim)}</b></div>
     <div class="bill-chip"><small>Yenikent</small><b>${formatQty(p.yenikent)}</b></div>
-    <div class="bill-chip total"><small>Toplam</small><b>${formatQty(Number(p.ostim)+Number(p.yenikent))} ${escapeHtml(p.unit)}</b></div>`;
+    <div class="bill-chip"><small>Ofis</small><b>${formatQty(p.ofis||0)}</b></div>
+    <div class="bill-chip total"><small>Toplam</small><b>${formatQty(stockTotal(p))} ${escapeHtml(p.unit)}</b></div>`;
   const rows=db.movements.filter(m=>m.productId===p.id).slice(0,300);
   $('#ekstreRows').innerHTML=rows.map(m=>{
     const d=splitDate(m.date);
@@ -708,7 +712,7 @@ function openEkstre(id){
 let mixSel={}; // ürün id -> etiket adedi
 function mixDefaultFor(p){
   if($('#mixUseStock')?.checked){
-    const stock=Math.ceil(Number(p.ostim||0)+Number(p.yenikent||0));
+    const stock=Math.ceil(stockTotal(p));
     return Math.min(Math.max(stock,1),440);
   }
   return Math.min(Math.max(Math.floor(Number($('#mixDefaultQty').value)||1),1),440);
@@ -730,7 +734,7 @@ function renderMixList(){
     const sel=mixSel[p.id]!==undefined;
     return `<div class="mix-row ${sel?'selected':''}" data-mix-row="${p.id}">
       <input type="checkbox" data-mix-check="${p.id}" ${sel?'checked':''}>
-      <div class="mix-info"><b>${escapeHtml(p.name)}</b><small class="td-sub"><code>${escapeHtml(p.code)}</code> · Stok: ${formatQty(Number(p.ostim)+Number(p.yenikent))} ${escapeHtml(p.unit)}</small></div>
+      <div class="mix-info"><b>${escapeHtml(p.name)}</b><small class="td-sub"><code>${escapeHtml(p.code)}</code> · Stok: ${formatQty(stockTotal(p))} ${escapeHtml(p.unit)}</small></div>
       <label class="mix-qty ${sel?'':'hidden'}">Adet <input type="number" min="1" max="440" value="${sel?mixSel[p.id]:''}" data-mix-qty="${p.id}"></label>
     </div>`;
   }).join(''):'<div class="empty">Aramaya uygun ürün yok.</div>';
@@ -888,7 +892,7 @@ function confirmSayim(yes){
   $('#sayimConfirm').classList.add('hidden');
   sayim.cooldownUntil=Date.now()+(yes?800:1500);
 }
-function sayimSysOf(p){ return sayim.depot==='both'?Number(p.ostim||0)+Number(p.yenikent||0):Number(p[sayim.depot==='Ostim Depo'?'ostim':'yenikent']||0); }
+function sayimSysOf(p){ return sayim.depot==='both'?stockTotal(p):Number(p[depotKey(sayim.depot)]||0); }
 function sayimRowsData(){
   const rows=[];
   db.products.filter(p=>p.active&&!p._deleted).forEach(p=>{
@@ -1062,11 +1066,13 @@ function populateScanResult(product){
   $('#scanAvatar').innerHTML=product.image?`<img src="${product.image}" alt="">`:escapeHtml((product.name||'Ü')[0]);
   $('#scanProductName').textContent=product.name;
   $('#scanProductMeta').textContent=`${product.code} · ${product.category} · ${product.unit}`;
-  $('#scanOstim').textContent=formatQty(product.ostim); $('#scanYenikent').textContent=formatQty(product.yenikent); $('#scanTotal').textContent=formatQty(Number(product.ostim)+Number(product.yenikent));
+  $('#scanOstim').textContent=formatQty(product.ostim); $('#scanYenikent').textContent=formatQty(product.yenikent); $('#scanOfis').textContent=formatQty(product.ofis||0); $('#scanTotal').textContent=formatQty(stockTotal(product));
   const isIn=scanMode==='Giriş'; const isTransfer=scanMode==='Transfer';
   const badge=$('#scanModeBadge'); badge.textContent=scanMode.toLocaleUpperCase('tr-TR'); badge.className=`stock-pill ${isIn?'pill-ok':isTransfer?'pill-transfer':'pill-critical'}`;
-  $('#quickDepotLabel').textContent=isIn?'Hangi depoya giriş yapılacak?':isTransfer?'Hangi depodan alınacak? (diğer depoya aktarılır)':'Hangi depodan çıkılacak?';
+  $('#quickDepotLabel').textContent=isIn?'Hangi depoya giriş yapılacak?':isTransfer?'Hangi depodan alınacak?':'Hangi depodan çıkılacak?';
   $('#quickTargetField').classList.toggle('hidden',isIn||isTransfer);
+  $('#quickTransferField').classList.toggle('hidden',!isTransfer);
+  if(isTransfer) refreshTransferOptions();
   $('#quickNoteField').classList.toggle('hidden',isIn||isTransfer); $('#quickNote').value='';
   $('#quickReasonField').classList.add('hidden'); $('#quickReason').value='';
   $('#quickTarget').selectedIndex=0; // her zaman "Müşteriye Satış" ile başla
@@ -1080,8 +1086,14 @@ function openManualPick(){ showScanStep('pick'); $('#pickSearch').value=''; rend
 function renderPickList(){
   const q=normalizeText($('#pickSearch').value);
   const rows=db.products.filter(p=>p.active&&!p._deleted).filter(p=>!q||normalizeText(`${p.name} ${p.code}`).includes(q)).slice(0,30);
-  $('#pickList').innerHTML=rows.length?rows.map(p=>`<button type="button" class="pick-item" data-pick="${p.id}">${productThumb(p,'thumb')}<span><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · Ostim ${formatQty(p.ostim)} · Yenikent ${formatQty(p.yenikent)}</small></span></button>`).join(''):'<div class="empty">Ürün bulunamadı.</div>';
+  $('#pickList').innerHTML=rows.length?rows.map(p=>`<button type="button" class="pick-item" data-pick="${p.id}">${productThumb(p,'thumb')}<span><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.code)} · Ostim ${formatQty(p.ostim)} · Yenikent ${formatQty(p.yenikent)} · Ofis ${formatQty(p.ofis||0)}</small></span></button>`).join(''):'<div class="empty">Ürün bulunamadı.</div>';
   $$('[data-pick]').forEach(b=>b.onclick=()=>{ const p=productById(b.dataset.pick); if(p) populateScanResult(p); });
+}
+function refreshTransferOptions(){
+  const src=$('#quickDepot').value;
+  const sel=$('#quickTransferTo'); const cur=sel.value;
+  sel.innerHTML=DEPOTS.filter(d=>d.name!==src).map(d=>`<option>${d.name}</option>`).join('');
+  if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
 }
 function updateQuickCustomer(){
   const show=scanMode==='Çıkış'&&$('#quickTarget').value==='customer';
@@ -1093,15 +1105,17 @@ function submitQuick(e){
   const p=productById(scannedProduct.id); if(!p) return;
   const qty=Number($('#quickQty').value); const warning=$('#quickWarning'); warning.classList.add('hidden');
   if(!qty||qty<=0) return toast('Geçerli bir miktar girin.');
-  const depot=$('#quickDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
+  const depot=$('#quickDepot').value; const key=depotKey(depot);
+  if(!key) return toast('Depo seçin.');
   let type,source,target,outNote='',exceptionReason='';
-  if(scanMode==='Giriş'){ type='Giriş'; source='Tedarikçi'; target=depot; p[key]=Number(p[key])+qty; }
+  if(scanMode==='Giriş'){ type='Giriş'; source='Tedarikçi'; target=depot; p[key]=Number(p[key]||0)+qty; }
   else if(scanMode==='Transfer'){
-    const otherKey=key==='ostim'?'yenikent':'ostim';
-    const otherDepot=depot==='Ostim Depo'?'Yenikent Depo':'Ostim Depo';
+    const otherDepot=$('#quickTransferTo').value;
+    const otherKey=depotKey(otherDepot);
+    if(!otherKey||otherDepot===depot) return toast('Aktarılacak depoyu seçin.');
     if(Number(p[key])<qty){ warning.textContent=`Yetersiz stok: ${depot} deposunda ${formatQty(p[key])} ${p.unit} var.`; warning.classList.remove('hidden'); return; }
     type='Transfer'; source=depot; target=otherDepot;
-    p[key]=Number(p[key])-qty; p[otherKey]=Number(p[otherKey])+qty;
+    p[key]=Number(p[key]||0)-qty; p[otherKey]=Number(p[otherKey]||0)+qty;
   }
   else{
     outNote=$('#quickNote').value.trim();
@@ -1136,7 +1150,7 @@ function submitQuick(e){
   db.movements.unshift(mv);
   markDirty('movements',mv.id); markDirty('products',p.id);
   addNotification(`${type}: ${p.name}`,`${currentUser.name}, ${formatQty(qty)} ${p.unit} ${p.name} — ${source} → ${target}`);
-  if(scanMode!=='Giriş'&&statusOf(p).key==='critical') addNotification('⚠ Kritik stok uyarısı',`${p.name} minimum seviyenin altına düştü (kalan: ${formatQty(Number(p.ostim)+Number(p.yenikent))} ${p.unit}).`);
+  if(scanMode!=='Giriş'&&statusOf(p).key==='critical') addNotification('⚠ Kritik stok uyarısı',`${p.name} minimum seviyenin altına düştü (kalan: ${formatQty(stockTotal(p))} ${p.unit}).`);
   saveDb();
   toast(`Kaydedildi: ${formatQty(qty)} ${p.unit} ${p.name} · ${type}.`);
   $('#quickCustomer').value='';
@@ -1178,7 +1192,7 @@ function parseBulk(){
 function renderBulkPreview(){
   const box=$('#bulkPreview');
   if(!bulkParsed||!bulkParsed.totalLines){ box.innerHTML=''; $('#bulkSaveBtn').disabled=true; $('#bulkSaveBtn').textContent='Çıkışları Kaydet'; return; }
-  const depot=$('#bulkDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
+  const depot=$('#bulkDepot').value; const key=depotKey(depot);
   const rows=bulkParsed.tally.map(e=>{
     const have=Number(e.p[key])||0; const short=have<e.count;
     return `<div class="bulk-row ${short?'short':''}">${productThumb(e.p)}<div class="bulk-info"><b>${escapeHtml(e.p.name)}</b><small>${escapeHtml(e.p.code)} · ${depot}: ${formatQty(have)} ${escapeHtml(e.p.unit)}${short?' — ⚠ yetersiz':''}</small></div><b class="bulk-count">× ${e.count}</b></div>`;
@@ -1199,7 +1213,7 @@ function updateBulkCustomer(){ $('#bulkCustomerField').classList.toggle('hidden'
 async function saveBulk(){
   if(!isAdmin()||!bulkParsed||!bulkParsed.tally.length) return;
   if(bulkParsed.unmatched.length&&!confirm(`${bulkParsed.unmatched.length} satır eşleşmedi ve ATLANACAK. Sadece eşleşen ürünlerle devam edilsin mi?`)) return;
-  const depot=$('#bulkDepot').value; const key=depot==='Ostim Depo'?'ostim':'yenikent';
+  const depot=$('#bulkDepot').value; const key=depotKey(depot);
   const t=$('#bulkTarget').value; let note=$('#bulkNote').value.trim();
   let type,target;
   if(t==='sayim'){ type='Sayım Düzeltme'; target=depot; if(!note) note='Fazla sayım düzeltmesi'; }
@@ -1239,7 +1253,7 @@ function closeModal(id){
 function csvDownload(filename,rows){
   const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(';')).join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
 }
-function downloadStockCsv(){ csvDownload('depo_stoklari.csv',[['Ürün','Kod','Kategori','Birim','Ostim','Yenikent','Toplam','Minimum','Durum'],...db.products.map(p=>[p.name,p.code,p.category,p.unit,p.ostim,p.yenikent,Number(p.ostim)+Number(p.yenikent),p.min,p.active?'Aktif':'Pasif'])]); toast('Stok raporu indirildi.'); }
+function downloadStockCsv(){ csvDownload('depo_stoklari.csv',[['Ürün','Kod','Kategori','Birim','Ostim','Yenikent','Ofis','Toplam','Minimum','Durum'],...db.products.map(p=>[p.name,p.code,p.category,p.unit,p.ostim,p.yenikent,p.ofis||0,stockTotal(p),p.min,p.active?'Aktif':'Pasif'])]); toast('Stok raporu indirildi.'); }
 function downloadMovementCsv(){ csvDownload('depo_hareketleri.csv',[['Tarih','İşlem','Ürün','Miktar','Birim','Nereden','Nereye','Personel'],...db.movements.map(m=>[m.date,m.type,m.product,m.qty,m.unit,m.source,m.target,m.user])]); toast('Hareket raporu indirildi.'); }
 function downloadBackup(){
   // Güvenlik: şifreler yedek dosyasına dahil edilmez
@@ -1332,7 +1346,7 @@ function bindEvents(){
   $('#pickSearch').addEventListener('input',renderPickList);
   $('#torchBtn').onclick=toggleTorch;
   $('#zoomBtn').onclick=()=>{ const next=scanZoom>=3?1:scanZoom>=2?3:2; applyZoom(next); };
-  $('#quickForm').onsubmit=submitQuick; $('#quickTarget').onchange=updateQuickCustomer;
+  $('#quickForm').onsubmit=submitQuick; $('#quickTarget').onchange=updateQuickCustomer; $('#quickDepot').onchange=refreshTransferOptions;
   $('#rescanBtn').onclick=()=>{ pendingManual=null; startScanner(); };
   $('#stockSearch').addEventListener('input',renderStocks);
   $('#movementSearch').addEventListener('input',renderMovements); $('#movementType').addEventListener('input',renderMovements);
@@ -1403,7 +1417,7 @@ if(__missingIds.length&&!sessionStorage.getItem('depoReloadFix')){
 }
 try{ bindEvents(); }catch(e){ console.error('bindEvents',e); surfaceError('Kurulum hatası: '+e.message); }
 try{ $('#versionTag').textContent=APP_VERSION; }catch(e){}
-try{ applyHpNames(); }catch(e){}
+try{ normalizeDepotFields(); applyHpNames(); }catch(e){}
 refreshAuthView();
 const savedSessionUser=userById(localStorage.getItem(SESSION_KEY)||'');
 if(savedSessionUser&&savedSessionUser.active) enterApp(savedSessionUser);

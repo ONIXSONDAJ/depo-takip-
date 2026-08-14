@@ -603,3 +603,6 @@ html,body{overflow-x:clip} /* hidden yerine clip: yapiskan ust bari bozmaz */
 .sayim-confirm>b{display:block;font-size:16px;margin-bottom:12px;line-height:1.35}
 .sayim-confirm-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .sayim-confirm-btns .btn{padding:14px 10px;font-size:16px;font-weight:700}
+
+/* ---- Üçüncü depo (Ofis) çubuğu ---- */
+.bar-fill.o3{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}

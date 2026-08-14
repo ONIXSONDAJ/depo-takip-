@@ -590,3 +590,10 @@ html,body{overflow-x:clip} /* hidden yerine clip: yapiskan ust bari bozmaz */
 /* ---- Sürüm etiketi ---- */
 .version-tag{position:fixed;right:10px;bottom:8px;z-index:30;font-size:11px;color:rgba(90,95,110,.55);font-variant-numeric:tabular-nums;pointer-events:none;user-select:none}
 @media print{.version-tag{display:none}}
+
+/* ---- Stok sayımı ---- */
+.sayim-bar{display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#f6f8fb}
+.sayim-bar>b{font-size:24px;min-width:36px;text-align:center;font-variant-numeric:tabular-nums;color:var(--accent,#0a66ff)}
+.sayim-bar>span{flex:1;font-size:13px;color:#3d4351;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sayim-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.sayim-table{max-height:46vh;overflow:auto}

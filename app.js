@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v53';
+const APP_VERSION='v54';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -832,6 +832,82 @@ function openQr(id){
   openModal('qrModal');
 }
 
+/* ---- Stok sayımı ---- */
+let sayim={active:false,depot:'Ostim Depo',counts:{},unknown:{},cooldownUntil:0,total:0};
+function openSayim(){
+  if(!isAdmin()) return toast('Stok sayımını sadece yönetici yapabilir.');
+  if(sayim.active&&sayim.total>0){ buildSayimReport(); showSayimStep('report'); openModal('sayimModal'); return; }
+  showSayimStep('setup'); openModal('sayimModal');
+}
+function showSayimStep(step){
+  $('#sayimSetup').classList.toggle('hidden',step!=='setup');
+  $('#sayimReport').classList.toggle('hidden',step!=='report');
+  if(step==='setup') $('#sayimDesc').textContent='Depo seçin, rafınızdaki her ürünün etiketini tek tek okutun. Bitirince sistemle karşılaştırılır.';
+}
+function startSayim(){
+  sayim={active:true,depot:$('#sayimDepot').value,counts:{},unknown:{},cooldownUntil:0,total:0};
+  closeModal('sayimModal');
+  openModal('scanModal'); scanMode='Sayım'; startScanner();
+  updateSayimBar('Etiketleri art arda okutun');
+}
+function resumeSayim(){ closeModal('sayimModal'); openModal('scanModal'); scanMode='Sayım'; startScanner(); }
+function updateSayimBar(msg){ $('#sayimTotal').textContent=sayim.total; if(msg) $('#sayimLastTxt').textContent=msg; }
+function handleSayimScan(code){
+  const now=Date.now();
+  if(now<sayim.cooldownUntil) return;
+  sayim.cooldownUntil=now+1500;
+  const product=db.products.find(p=>p.active&&!p._deleted&&qrKey(p.code)===qrKey(code));
+  if(product){
+    sayim.counts[product.id]=(sayim.counts[product.id]||0)+1; sayim.total++;
+    updateSayimBar(`✓ ${product.name} → ${sayim.counts[product.id]}`);
+    $('#scanStatus').textContent=`✓ Sayıldı: ${product.name} (${sayim.counts[product.id]} adet). Sonraki etiketi okutun.`;
+  }else{
+    sayim.unknown[code]=(sayim.unknown[code]||0)+1;
+    updateSayimBar(`⚠ Kayıtsız: ${code}`);
+    $('#scanStatus').textContent=`⚠ Bu kod sistemde kayıtlı değil: "${code}" — rapora kayıtsız olarak eklendi.`;
+  }
+  if(navigator.vibrate) navigator.vibrate(product?60:[60,80,60]);
+}
+function sayimSysOf(p){ return sayim.depot==='both'?Number(p.ostim||0)+Number(p.yenikent||0):Number(p[sayim.depot==='Ostim Depo'?'ostim':'yenikent']||0); }
+function sayimRowsData(){
+  const rows=[];
+  db.products.filter(p=>p.active&&!p._deleted).forEach(p=>{
+    const sys=sayimSysOf(p), cnt=sayim.counts[p.id]||0;
+    if(sys===0&&cnt===0) return;
+    rows.push({p,sys,cnt,diff:cnt-sys});
+  });
+  rows.sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff)||a.p.name.localeCompare(b.p.name,'tr'));
+  return rows;
+}
+function buildSayimReport(){
+  const rows=sayimRowsData();
+  const eksik=rows.filter(r=>r.diff<0), fazla=rows.filter(r=>r.diff>0), tam=rows.filter(r=>r.diff===0);
+  const unknownEntries=Object.entries(sayim.unknown);
+  $('#sayimSummary').innerHTML=`
+    <div class="bill-chip"><small>Okutulan</small><b>${sayim.total}</b><span>etiket</span></div>
+    <div class="bill-chip ok"><small>Tam</small><b>${tam.length}</b><span>ürün</span></div>
+    <div class="bill-chip warn"><small>Eksik</small><b>${eksik.length}</b><span>ürün</span></div>
+    <div class="bill-chip inv"><small>Fazla</small><b>${fazla.length}</b><span>ürün</span></div>`;
+  $('#sayimRows').innerHTML=rows.map(r=>{
+    const durum=r.diff===0?'<span class="stock-pill pill-ok">Tam</span>':r.diff<0?`<span class="stock-pill pill-low">${formatQty(-r.diff)} eksik</span>`:`<span class="stock-pill pill-inactive">${formatQty(r.diff)} fazla</span>`;
+    return `<tr class="${r.diff<0?'row-askida':''}"><td><b>${escapeHtml(r.p.name)}</b><small class="td-sub"><code>${escapeHtml(r.p.code)}</code></small></td><td class="num">${formatQty(r.sys)}</td><td class="num">${formatQty(r.cnt)}</td><td class="num"><b>${r.diff>0?'+':''}${formatQty(r.diff)}</b></td><td>${durum}</td></tr>`;
+  }).join('')||'<tr><td colspan="5">Karşılaştırılacak ürün yok.</td></tr>';
+  if(unknownEntries.length){ $('#sayimUnknown').classList.remove('hidden'); $('#sayimUnknown').innerHTML='⚠ Kayıtsız kod okutuldu: '+unknownEntries.map(([c,n])=>`<code>${escapeHtml(c)}</code> ×${n}`).join(', '); }
+  else $('#sayimUnknown').classList.add('hidden');
+  $('#sayimDesc').textContent=`${sayim.depot==='both'?'İki depo (toplam)':sayim.depot} — sistem stoğu ile karşılaştırma. Eksikler üstte.`;
+}
+function finishSayim(){
+  scanMode='Çıkış'; // closeModal'daki sayım kancasını tekrar tetiklememek için önce modu bırak
+  stopScanner(); closeModal('scanModal');
+  buildSayimReport(); showSayimStep('report'); openModal('sayimModal');
+}
+function sayimCsv(){
+  const rows=[['Ürün','Kod','Sistem','Sayılan','Fark','Durum'],
+    ...sayimRowsData().map(r=>[r.p.name,r.p.code,r.sys,r.cnt,r.diff,r.diff===0?'Tam':r.diff<0?'Eksik':'Fazla'])];
+  Object.entries(sayim.unknown).forEach(([c,n])=>rows.push([`KAYITSIZ KOD`,c,'',n,'','Kayıtsız']));
+  csvDownload('stok_sayimi.csv',rows); toast('Sayım raporu indirildi.');
+}
+
 /* ---- QR tarama ve hızlı işlem ---- */
 let scanStream=null, scanRafId=null, scanActive=false, scannedProduct=null, scanDetector=null, scanCanvas=null, lastMissText='', lastMissAt=0, scanMode='Çıkış', scanStartAt=0, lastDecodeAt=0, torchOn=false, slowHintShown=false, pendingManual=null, scanPass=0, scanZoom=1, negativeConfirmed=false;
 
@@ -856,8 +932,10 @@ function showScanStep(step){
   $('#scanModeStep').classList.toggle('hidden',step!=='mode');
   $('#scanStage').classList.toggle('hidden',step!=='scan');
   $('#scanStatus').classList.toggle('hidden',step!=='scan');
-  $('#scanBackBtn').classList.toggle('hidden',step!=='scan');
-  $('#manualPickBtn').classList.toggle('hidden',step!=='scan');
+  const isSayim=scanMode==='Sayım';
+  $('#scanBackBtn').classList.toggle('hidden',step!=='scan'||isSayim);
+  $('#manualPickBtn').classList.toggle('hidden',step!=='scan'||isSayim);
+  $('#sayimBar').classList.toggle('hidden',!(step==='scan'&&isSayim));
   $('#scanPickStep').classList.toggle('hidden',step!=='pick');
   $('#scanResult').classList.toggle('hidden',step!=='result');
   $('#scanModalDesc').textContent=step==='mode'?'Ne yapacaksınız?':step==='scan'?`${scanMode} için malzemenin QR etiketini kameraya gösterin.`:step==='pick'?`${scanMode} için ürünü listeden seçin.`:`${scanMode} bilgilerini doldurup kaydedin.`;
@@ -942,6 +1020,7 @@ function parseScanCode(text){
   return raw;
 }
 function handleScanResult(text){
+  if(scanMode==='Sayım'){ handleSayimScan(parseScanCode(text)); return false; }
   const code=parseScanCode(text);
   const product=db.products.find(p=>p.active&&!p._deleted&&qrKey(p.code)===qrKey(code));
   if(!product){
@@ -1124,7 +1203,16 @@ async function saveBulk(){
 }
 /* ---- Modal / araçlar ---- */
 function openModal(id){ $('#modalOverlay').classList.remove('hidden'); $(`#${id}`).classList.remove('hidden'); }
-function closeModal(id){ if(id==='scanModal'){ stopScanner(); pendingManual=null; } $(`#${id}`).classList.add('hidden'); if(!$$('.modal:not(.hidden)').length) $('#modalOverlay').classList.add('hidden'); }
+function closeModal(id){
+  if(id==='scanModal'){
+    stopScanner(); pendingManual=null;
+    if(scanMode==='Sayım'&&sayim.active&&!$('#scanModal').classList.contains('hidden')){
+      $('#scanModal').classList.add('hidden');
+      finishSayim(); return;
+    }
+  }
+  $(`#${id}`).classList.add('hidden'); if(!$$('.modal:not(.hidden)').length) $('#modalOverlay').classList.add('hidden');
+}
 
 function csvDownload(filename,rows){
   const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(';')).join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
@@ -1247,6 +1335,12 @@ function bindEvents(){
   const off=labelOffsets(); $('#offX').value=off.x; $('#offY').value=off.y;
   $('#offX').addEventListener('input',saveLabelOffsets); $('#offY').addEventListener('input',saveLabelOffsets);
   $('#testSheetBtn').onclick=printTestSheet;
+  $('#sayimBtn').onclick=openSayim;
+  $('#sayimStartBtn').onclick=startSayim;
+  $('#sayimFinishBtn').onclick=finishSayim;
+  $('#sayimResumeBtn').onclick=resumeSayim;
+  $('#sayimCsvBtn').onclick=sayimCsv;
+  $('#sayimCloseBtn').onclick=()=>{ sayim.active=false; closeModal('sayimModal'); };
   $('#bulkOutBtn').onclick=openBulkModal;
   $('#bulkText').addEventListener('input',parseBulk);
   $('#bulkDepot').addEventListener('input',()=>renderBulkPreview());
@@ -1273,7 +1367,7 @@ async function clearCachesAndReload(){
   location.reload();
 }
 // HTML ile app.js farklı sürümlerden geldiyse (eski önbellek) kendini onar:
-const REQUIRED_IDS=['loginForm','mixPrintBtn','mixUseStock','labelSheet','billDiscount','bulkOutBtn','resetStocksBtn','testSheetBtn'];
+const REQUIRED_IDS=['loginForm','mixPrintBtn','mixUseStock','labelSheet','billDiscount','bulkOutBtn','resetStocksBtn','testSheetBtn','sayimBtn'];
 const __missingIds=REQUIRED_IDS.filter(id=>!document.getElementById(id));
 if(__missingIds.length&&!sessionStorage.getItem('depoReloadFix')){
   sessionStorage.setItem('depoReloadFix','1');

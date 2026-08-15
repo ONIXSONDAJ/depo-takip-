@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v56';
+const APP_VERSION='v57';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -258,6 +258,7 @@ function enterApp(user){
     applyShellPerms();
     $('#currentName').textContent=user.name; $('#currentRole').textContent=roleNames[user.role]; $('#avatar').textContent=initials(user.name);
     renderAll(); goPage(localStorage.getItem('depoTakipLastPage')||'dashboard');
+    if(isAdmin()&&sayim.active&&sayim.total>0) setTimeout(()=>toast(`Yarım kalmış stok sayımınız var (${sayim.total} etiket okutuldu). Stok › Stok Sayımı ile devam edin.`),800);
   }else{
     $('#appView').classList.add('hidden'); $('#staffView').classList.remove('hidden');
     $('#staffName').textContent=user.name;
@@ -837,7 +838,11 @@ function openQr(id){
 }
 
 /* ---- Stok sayımı ---- */
-let sayim={active:false,depot:'Ostim Depo',counts:{},unknown:{},cooldownUntil:0,total:0};
+let sayim={active:false,depot:'Ostim Depo',counts:{},unknown:{},cooldownUntil:0,total:0,lastCode:'',lastAt:0};
+const SAYIM_KEY='depoTakipSayim';
+function saveSayim(){ try{ localStorage.setItem(SAYIM_KEY,JSON.stringify(sayim)); }catch(e){} }
+function clearSayim(){ sayim.active=false; try{ localStorage.removeItem(SAYIM_KEY); }catch(e){} }
+function restoreSayim(){ try{ const s=JSON.parse(localStorage.getItem(SAYIM_KEY)); if(s&&s.active){ sayim=Object.assign(sayim,s,{cooldownUntil:0}); } }catch(e){} }
 function openSayim(){
   if(!isAdmin()) return toast('Stok sayımını sadece yönetici yapabilir.');
   if(sayim.active&&sayim.total>0){ buildSayimReport(); showSayimStep('report'); openModal('sayimModal'); return; }
@@ -849,7 +854,8 @@ function showSayimStep(step){
   if(step==='setup') $('#sayimDesc').textContent='Depo seçin, rafınızdaki her ürünün etiketini tek tek okutun. Bitirince sistemle karşılaştırılır.';
 }
 function startSayim(){
-  sayim={active:true,depot:$('#sayimDepot').value,counts:{},unknown:{},cooldownUntil:0,total:0};
+  sayim={active:true,depot:$('#sayimDepot').value,counts:{},unknown:{},cooldownUntil:0,total:0,lastCode:'',lastAt:0};
+  saveSayim();
   closeModal('sayimModal');
   openModal('scanModal'); scanMode='Sayım'; startScanner();
   updateSayimBar('Etiketleri art arda okutun');
@@ -863,9 +869,11 @@ function handleSayimScan(code){
   const product=db.products.find(p=>p.active&&!p._deleted&&qrKey(p.code)===qrKey(code));
   sayimPending={code,product};
   const cnt=product?(sayim.counts[product.id]||0):(sayim.unknown[code]||0);
-  $('#sayimConfirmTxt').textContent=product
+  const repeat=sayim.lastCode&&qrKey(sayim.lastCode)===qrKey(code)&&now-sayim.lastAt<6000;
+  $('#sayimConfirmTxt').textContent=(product
     ?`${product.name} sayılsın mı? (şu an: ${cnt})`
-    :`⚠ KAYITSIZ KOD: "${code}" — rapora eklensin mi?`;
+    :`⚠ KAYITSIZ KOD: "${code}" — rapora eklensin mi?`)
+    +(repeat?' — ⚠ DİKKAT: AZ ÖNCE BUNU SAYDINIZ! Yeni bir kutu değilse HAYIR deyin.':'');
   $('#sayimConfirm').classList.remove('hidden');
   $('#scanStatus').textContent='Onay bekleniyor — EVET veya HAYIR seçin.';
   if(navigator.vibrate) navigator.vibrate(product?60:[60,80,60]);
@@ -888,9 +896,11 @@ function confirmSayim(yes){
     $('#scanStatus').textContent='Sayılmadı. Sonraki etiketi okutun.';
     updateSayimBar('✗ Son okuma sayılmadı');
   }
+  if(yes){ sayim.lastCode=code; sayim.lastAt=Date.now(); }
   sayimPending=null;
   $('#sayimConfirm').classList.add('hidden');
   sayim.cooldownUntil=Date.now()+(yes?800:1500);
+  saveSayim();
 }
 function sayimSysOf(p){ return sayim.depot==='both'?stockTotal(p):Number(p[depotKey(sayim.depot)]||0); }
 function sayimRowsData(){
@@ -1015,7 +1025,19 @@ async function scanLoop(){
   const video=$('#scanVideo'); let text=null;
   if(video.readyState>=2&&video.videoWidth){
     if(scanDetector){
-      try{ const codes=await scanDetector.detect(video); if(codes.length) text=codes[0].rawValue; }catch(e){ scanDetector=null; }
+      try{
+        const codes=await scanDetector.detect(video);
+        if(codes.length===1) text=codes[0].rawValue;
+        else if(codes.length>1){
+          if(scanMode==='Sayım'&&!sayimPending){ $('#scanStatus').textContent='⚠ Kadrajda birden fazla etiket görünüyor — sayılacak TEK etikete yaklaşın.'; }
+          else if(scanMode!=='Sayım'){
+            const cx=video.videoWidth/2, cy=video.videoHeight/2;
+            let best=null,bd=Infinity;
+            codes.forEach(c=>{ const b=c.boundingBox||{x:0,y:0,width:0,height:0}; const d=(b.x+b.width/2-cx)**2+(b.y+b.height/2-cy)**2; if(d<bd){bd=d;best=c;} });
+            if(best) text=best.rawValue;
+          }
+        }
+      }catch(e){ scanDetector=null; }
     }else if(window.jsQR&&Date.now()-lastDecodeAt>110){
       lastDecodeAt=Date.now();
       scanCanvas=scanCanvas||document.createElement('canvas');
@@ -1378,7 +1400,7 @@ function bindEvents(){
   $('#sayimNo').onclick=()=>confirmSayim(false);
   $('#sayimResumeBtn').onclick=resumeSayim;
   $('#sayimCsvBtn').onclick=sayimCsv;
-  $('#sayimCloseBtn').onclick=()=>{ sayim.active=false; closeModal('sayimModal'); };
+  $('#sayimCloseBtn').onclick=()=>{ clearSayim(); closeModal('sayimModal'); };
   $('#bulkOutBtn').onclick=openBulkModal;
   $('#bulkText').addEventListener('input',parseBulk);
   $('#bulkDepot').addEventListener('input',()=>renderBulkPreview());
@@ -1418,6 +1440,7 @@ if(__missingIds.length&&!sessionStorage.getItem('depoReloadFix')){
 try{ bindEvents(); }catch(e){ console.error('bindEvents',e); surfaceError('Kurulum hatası: '+e.message); }
 try{ $('#versionTag').textContent=APP_VERSION; }catch(e){}
 try{ normalizeDepotFields(); applyHpNames(); }catch(e){}
+try{ restoreSayim(); }catch(e){}
 refreshAuthView();
 const savedSessionUser=userById(localStorage.getItem(SESSION_KEY)||'');
 if(savedSessionUser&&savedSessionUser.active) enterApp(savedSessionUser);

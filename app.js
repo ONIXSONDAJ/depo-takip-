@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v57';
+const APP_VERSION='v58';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -936,6 +936,30 @@ function finishSayim(){
   stopScanner(); closeModal('scanModal');
   buildSayimReport(); showSayimStep('report'); openModal('sayimModal');
 }
+function applySayim(){
+  if(!isAdmin()) return toast('Bu işlemi sadece yönetici yapabilir.');
+  if(sayim.depot==='both') return toast('Farkları uygulamak için sayımı TEK depo seçerek yapın (Ostim, Yenikent veya Ofis). "Tüm depolar" sayımı sadece rapor içindir.');
+  const key=depotKey(sayim.depot); if(!key) return;
+  const rows=sayimRowsData().filter(r=>r.diff!==0);
+  if(!rows.length) return toast('Uygulanacak fark yok — her şey zaten tam. 👍');
+  if(!confirm(`${rows.length} ürünün ${sayim.depot} stoğu sayım sonucuna eşitlenecek (sistemdeki sayı → sizin saydığınız sayı). Her düzeltme hareket kaydına işlenir. Devam edilsin mi?`)) return;
+  takeSafetySnapshot('Sayım farkları uygulanmadan önce');
+  const now=formatNow();
+  rows.forEach(r=>{
+    const p=productById(r.p.id); if(!p) return;
+    p[key]=r.cnt;
+    const inc=r.diff>0;
+    const mv={id:uid('m'),date:now,ts:Date.now(),type:'Sayım Düzeltme',productId:p.id,product:p.name,qty:Math.abs(r.diff),unit:p.unit,
+      source:inc?'Sayım Fazlası':sayim.depot,target:inc?sayim.depot:'Sayım Eksiği',user:currentUser.name,userId:currentUser.id,reference:'SAYIM',
+      note:`Stok sayımı: sistem ${formatQty(r.sys)} → sayılan ${formatQty(r.cnt)}`};
+    db.movements.unshift(mv);
+    markDirty('products',p.id); markDirty('movements',mv.id);
+  });
+  addNotification('✎ Sayım farkları uygulandı',`${rows.length} ürünün ${sayim.depot} stoğu sayıma göre düzeltildi. (${currentUser.name})`);
+  saveDb(); saveSayim(); scheduleSync(300); renderAll();
+  buildSayimReport();
+  toast(`${rows.length} ürünün stoğu sayım sonucuna eşitlendi. Sistem oturdu. 👍`);
+}
 function sayimCsv(){
   const rows=[['Ürün','Kod','Sistem','Sayılan','Fark','Durum'],
     ...sayimRowsData().map(r=>[r.p.name,r.p.code,r.sys,r.cnt,r.diff,r.diff===0?'Tam':r.diff<0?'Eksik':'Fazla'])];
@@ -1400,6 +1424,7 @@ function bindEvents(){
   $('#sayimNo').onclick=()=>confirmSayim(false);
   $('#sayimResumeBtn').onclick=resumeSayim;
   $('#sayimCsvBtn').onclick=sayimCsv;
+  $('#sayimApplyBtn').onclick=applySayim;
   $('#sayimCloseBtn').onclick=()=>{ clearSayim(); closeModal('sayimModal'); };
   $('#bulkOutBtn').onclick=openBulkModal;
   $('#bulkText').addEventListener('input',parseBulk);

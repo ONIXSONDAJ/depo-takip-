@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v58';
+const APP_VERSION='v59';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -915,15 +915,17 @@ function sayimRowsData(){
 }
 function buildSayimReport(){
   const rows=sayimRowsData();
-  const eksik=rows.filter(r=>r.diff<0), fazla=rows.filter(r=>r.diff>0), tam=rows.filter(r=>r.diff===0);
+  const nostock=rows.filter(r=>r.sys<0);
+  const eksik=rows.filter(r=>r.diff<0&&r.sys>=0), fazla=rows.filter(r=>r.diff>0&&r.sys>=0), tam=rows.filter(r=>r.diff===0);
   const unknownEntries=Object.entries(sayim.unknown);
   $('#sayimSummary').innerHTML=`
     <div class="bill-chip"><small>Okutulan</small><b>${sayim.total}</b><span>etiket</span></div>
     <div class="bill-chip ok"><small>Tam</small><b>${tam.length}</b><span>ürün</span></div>
     <div class="bill-chip warn"><small>Eksik</small><b>${eksik.length}</b><span>ürün</span></div>
-    <div class="bill-chip inv"><small>Fazla</small><b>${fazla.length}</b><span>ürün</span></div>`;
+    <div class="bill-chip inv"><small>Fazla</small><b>${fazla.length}</b><span>ürün</span></div>
+    ${nostock.length?`<div class="bill-chip"><small>Stok girilmemiş</small><b>${nostock.length}</b><span>eksi stoklu</span></div>`:''}`;
   $('#sayimRows').innerHTML=rows.map(r=>{
-    const durum=r.diff===0?'<span class="stock-pill pill-ok">Tam</span>':r.diff<0?`<span class="stock-pill pill-low">${formatQty(-r.diff)} eksik</span>`:`<span class="stock-pill pill-inactive">${formatQty(r.diff)} fazla</span>`;
+    const durum=r.sys<0?'<span class="stock-pill pill-inactive">Stok girilmemiş</span>':r.diff===0?'<span class="stock-pill pill-ok">Tam</span>':r.diff<0?`<span class="stock-pill pill-low">${formatQty(-r.diff)} eksik</span>`:`<span class="stock-pill pill-inactive">${formatQty(r.diff)} fazla</span>`;
     return `<tr class="${r.diff<0?'row-askida':''}"><td><b>${escapeHtml(r.p.name)}</b><small class="td-sub"><code>${escapeHtml(r.p.code)}</code></small></td><td class="num">${formatQty(r.sys)}</td><td class="num">${formatQty(r.cnt)}</td><td class="num"><b>${r.diff>0?'+':''}${formatQty(r.diff)}</b></td><td>${durum}</td></tr>`;
   }).join('')||'<tr><td colspan="5">Karşılaştırılacak ürün yok.</td></tr>';
   if(unknownEntries.length){ $('#sayimUnknown').classList.remove('hidden'); $('#sayimUnknown').innerHTML='⚠ Kayıtsız kod okutuldu: '+unknownEntries.map(([c,n])=>`<code>${escapeHtml(c)}</code> ×${n}`).join(', '); }
@@ -940,9 +942,11 @@ function applySayim(){
   if(!isAdmin()) return toast('Bu işlemi sadece yönetici yapabilir.');
   if(sayim.depot==='both') return toast('Farkları uygulamak için sayımı TEK depo seçerek yapın (Ostim, Yenikent veya Ofis). "Tüm depolar" sayımı sadece rapor içindir.');
   const key=depotKey(sayim.depot); if(!key) return;
-  const rows=sayimRowsData().filter(r=>r.diff!==0);
-  if(!rows.length) return toast('Uygulanacak fark yok — her şey zaten tam. 👍');
-  if(!confirm(`${rows.length} ürünün ${sayim.depot} stoğu sayım sonucuna eşitlenecek (sistemdeki sayı → sizin saydığınız sayı). Her düzeltme hareket kaydına işlenir. Devam edilsin mi?`)) return;
+  const all=sayimRowsData().filter(r=>r.diff!==0);
+  const skipped=all.filter(r=>r.sys<0).length;
+  const rows=all.filter(r=>r.sys>=0);
+  if(!rows.length) return toast(skipped?'Farkı olan tüm ürünler eksi stoklu — stok girişleri yapılmadan onlara dokunulmaz.':'Uygulanacak fark yok — her şey zaten tam. 👍');
+  if(!confirm(`${rows.length} ürünün ${sayim.depot} stoğu sayım sonucuna eşitlenecek (sistemdeki sayı → sizin saydığınız sayı).${skipped?` Eksi stoklu ${skipped} ürüne DOKUNULMAYACAK (stok girişleri yapılmadı).`:''} Her düzeltme hareket kaydına işlenir. Devam edilsin mi?`)) return;
   takeSafetySnapshot('Sayım farkları uygulanmadan önce');
   const now=formatNow();
   rows.forEach(r=>{
@@ -958,11 +962,11 @@ function applySayim(){
   addNotification('✎ Sayım farkları uygulandı',`${rows.length} ürünün ${sayim.depot} stoğu sayıma göre düzeltildi. (${currentUser.name})`);
   saveDb(); saveSayim(); scheduleSync(300); renderAll();
   buildSayimReport();
-  toast(`${rows.length} ürünün stoğu sayım sonucuna eşitlendi. Sistem oturdu. 👍`);
+  toast(`${rows.length} ürünün stoğu sayım sonucuna eşitlendi.${skipped?` Eksi stoklu ${skipped} ürün atlandı.`:''} 👍`);
 }
 function sayimCsv(){
   const rows=[['Ürün','Kod','Sistem','Sayılan','Fark','Durum'],
-    ...sayimRowsData().map(r=>[r.p.name,r.p.code,r.sys,r.cnt,r.diff,r.diff===0?'Tam':r.diff<0?'Eksik':'Fazla'])];
+    ...sayimRowsData().map(r=>[r.p.name,r.p.code,r.sys,r.cnt,r.diff,r.sys<0?'Stok girilmemiş':r.diff===0?'Tam':r.diff<0?'Eksik':'Fazla'])];
   Object.entries(sayim.unknown).forEach(([c,n])=>rows.push([`KAYITSIZ KOD`,c,'',n,'','Kayıtsız']));
   csvDownload('stok_sayimi.csv',rows); toast('Sayım raporu indirildi.');
 }

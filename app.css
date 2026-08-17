@@ -612,3 +612,7 @@ html,body{overflow-x:clip} /* hidden yerine clip: yapiskan ust bari bozmaz */
 #billVatRow .vat-pct{font-weight:700;color:#4a4c53}
 #billVatRow.vat-off{opacity:.45}
 #billVatRow.vat-off input{pointer-events:none}
+
+/* ---- KDV çipi ---- */
+.bill-chip.vat{border-color:#f2c14e;background:#fdf8ec}
+.bill-chip.vat b{color:#a97600}

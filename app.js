@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v60';
+const APP_VERSION='v61';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -452,12 +452,14 @@ function renderBilling(){
   const inv=priced.filter(m=>m.billing.invoiced===true);
   const noinv=priced.filter(m=>m.billing.invoiced===false);
   const invSum=sum(inv), noinvSum=sum(noinv);
+  const vatSum=priced.reduce((s,m)=>s+(billGrand(m)-billNet(m)),0);
   $('#billSummary').innerHTML=`
     <div class="bill-chip"><small>Bekleyen</small><b>${pending}</b></div>
     <div class="bill-chip warn"><small>Askıda</small><b>${askida.length}</b><span>${formatQty(sum(askida))} ₺</span></div>
     <div class="bill-chip ok"><small>Tahsil edilen</small><b>${done.length}</b><span>${formatQty(sum(done))} ₺</span></div>
     <div class="bill-chip inv"><small>Faturalı</small><b>${formatQty(invSum)} ₺</b><span>${inv.length} kayıt</span></div>
     <div class="bill-chip noinv"><small>Faturasız</small><b>${formatQty(noinvSum)} ₺</b><span>${noinv.length} kayıt</span></div>
+    <div class="bill-chip vat"><small>KDV</small><b>${formatQty(vatSum)} ₺</b><span>faturalılardan</span></div>
     <div class="bill-chip total"><small>GENEL TOPLAM</small><b>${formatQty(invSum+noinvSum)} ₺</b><span>faturalı + faturasız</span></div>`;
 }
 function openBillingModal(key){

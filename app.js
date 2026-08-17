@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v59';
+const APP_VERSION='v60';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -395,6 +395,7 @@ function hideNotifPanel(){ $('#notifPanel').classList.add('hidden'); }
 /* ---- Muhasebe ---- */
 let billGroupIds=[], billInv=null, billPaid=null, billDiscPct=false;
 function billNet(m){ const b=m.billing; if(!b||!b.unitPrice) return 0; return b.unitPrice*m.qty-(b.discount||0); }
+function billGrand(m){ const b=m.billing; return billNet(m)*(1+((Number(b?.vatPct)||0)/100)); }
 function billingStatus(b){ return b.paid===true?'done':b.paid===false?'askida':'pending'; }
 function billingPill(s){ return s==='done'?'<span class="stock-pill pill-ok">Tamamlandı</span>':s==='askida'?'<span class="stock-pill pill-low">Askıda</span>':'<span class="stock-pill pill-inactive">Bekliyor</span>'; }
 function yesNo(v,yes,no){ return v===true?`<span class="yn ok">✓ ${yes}</span>`:v===false?`<span class="yn no">✗ ${no}</span>`:'<span class="yn">—</span>'; }
@@ -426,8 +427,11 @@ function renderBilling(){
     const movs=g.movs, first=movs[0], multi=movs.length>1;
     const s=groupBillStatus(movs); const d=splitDate(first.date);
     const priced=movs.filter(m=>m.billing.unitPrice);
-    const total=priced.length?priced.reduce((sum,m)=>sum+billNet(m),0):null;
+    const total=priced.length?priced.reduce((sum,m)=>sum+billGrand(m),0):null;
+    const netTotal=priced.length?priced.reduce((sum,m)=>sum+billNet(m),0):null;
     const discTotal=priced.reduce((sum,m)=>sum+(m.billing.discount||0),0);
+    const vatTotal=priced.reduce((sum,m)=>sum+(billGrand(m)-billNet(m)),0);
+    const vatPctTxt=priced.length&&priced[0].billing.vatPct?`%${priced[0].billing.vatPct}`:'';
     const inv=movs.every(m=>m.billing.invoiced===true)?true:movs.every(m=>m.billing.invoiced===false)?false:null;
     const paid=movs.every(m=>m.billing.paid===true)?true:movs.every(m=>m.billing.paid===false)?false:null;
     const nameCell=multi
@@ -435,7 +439,7 @@ function renderBilling(){
       :`<b>${escapeHtml(first.product)}</b><small class="td-sub">${escapeHtml(first.type)}</small>`;
     const qtyCell=multi?`${movs.length} ürün`:`${formatQty(first.qty)} ${escapeHtml(first.unit)}`;
     const unitCell=multi?'—':(first.billing.unitPrice?formatQty(first.billing.unitPrice):'—');
-    return `<tr class="${s==='askida'?'row-askida':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${nameCell}</td><td class="num">${qtyCell}</td><td>${escapeHtml(first.target)}${first.note?`<small class="td-sub">${escapeHtml(first.note)}</small>`:''}</td><td>${escapeHtml([...new Set(movs.map(m=>m.user))].join(', '))}</td><td class="num">${unitCell}</td><td class="num"><b>${total!=null?formatQty(total):'—'}</b>${discTotal>0?`<small class="td-sub">İnd: -${formatQty(discTotal)}</small>`:''}</td><td>${yesNo(inv,'Kesildi','Kesilmedi')}</td><td>${yesNo(paid,'Alındı','Alınmadı')}</td><td>${billingPill(s)}</td><td>${canBill()?`<button class="mini-btn" data-bill="${g.key}">${s==='pending'?'İşle':'Düzenle'}</button>`:''}</td></tr>`;
+    return `<tr class="${s==='askida'?'row-askida':''}"><td><b>${escapeHtml(d.time)}</b><small class="td-sub">${escapeHtml(d.day)}</small></td><td>${nameCell}</td><td class="num">${qtyCell}</td><td>${escapeHtml(first.target)}${first.note?`<small class="td-sub">${escapeHtml(first.note)}</small>`:''}</td><td>${escapeHtml([...new Set(movs.map(m=>m.user))].join(', '))}</td><td class="num">${unitCell}</td><td class="num">${netTotal!=null?formatQty(netTotal):'—'}${discTotal>0?`<small class="td-sub">İnd: -${formatQty(discTotal)}</small>`:''}</td><td class="num">${vatTotal>0?`<b>${formatQty(vatTotal)}</b><small class="td-sub">${vatPctTxt}</small>`:'—'}</td><td class="num"><b>${total!=null?formatQty(total):'—'}</b></td><td>${yesNo(inv,'Kesildi','Kesilmedi')}</td><td>${yesNo(paid,'Alındı','Alınmadı')}</td><td>${billingPill(s)}</td><td>${canBill()?`<button class="mini-btn" data-bill="${g.key}">${s==='pending'?'İşle':'Düzenle'}</button>`:''}</td></tr>`;
   }).join('');
   $('#billEmpty').classList.toggle('hidden',groups.length>0);
   $$('[data-bill]').forEach(btn=>btn.onclick=()=>openBillingModal(btn.dataset.bill));
@@ -443,7 +447,7 @@ function renderBilling(){
   const pending=all.filter(m=>billingStatus(m.billing)==='pending').length;
   const askida=all.filter(m=>billingStatus(m.billing)==='askida');
   const done=all.filter(m=>billingStatus(m.billing)==='done');
-  const sum=list=>list.reduce((s,m)=>s+billNet(m),0);
+  const sum=list=>list.reduce((s,m)=>s+billGrand(m),0);
   const priced=all.filter(m=>m.billing.unitPrice);
   const inv=priced.filter(m=>m.billing.invoiced===true);
   const noinv=priced.filter(m=>m.billing.invoiced===false);
@@ -470,6 +474,7 @@ function openBillingModal(key){
   const prevDisc=movs.reduce((s,m)=>s+(m.billing.discount||0),0);
   billDiscPct=false; $('#discTL').classList.add('active'); $('#discPct').classList.remove('active');
   $('#billDiscount').value=prevDisc>0?prevDisc:'';
+  $('#billVat').value=first.billing.vatPct??20;
   $$('[data-bl-price]').forEach(inp=>inp.oninput=updateBillTotal);
   updateBillSegs(); updateBillTotal();
   openModal('billingModal');
@@ -497,9 +502,14 @@ function updateBillTotal(){
     else if(out) out.textContent='—';
   });
   const disc=billDiscountAmount(sub);
+  const net=sub-disc;
+  const vatPct=billInv===true?(Number($('#billVat').value)||0):0;
+  const vat=net*vatPct/100;
+  $('#billVatRow').classList.toggle('vat-off',billInv!==true);
   $('#billSubTxt').textContent=any?`${formatQty(sub)} ₺`:'—';
   $('#billDiscTxt').textContent=disc>0?`-${formatQty(disc)} ₺`:'—';
-  $('#billTotalTxt').textContent=any?`${formatQty(sub-disc)} ₺`:'—';
+  $('#billVatTxt').textContent=billInv===true?(any?`+${formatQty(vat)} ₺`:'—'):'yok (faturasız)';
+  $('#billTotalTxt').textContent=any?`${formatQty(net+vat)} ₺`:'—';
 }
 function saveBilling(){
   const movs=billGroupIds.map(id=>db.movements.find(x=>x.id===id)).filter(m=>m&&m.billing);
@@ -520,18 +530,20 @@ function saveBilling(){
     const gross=prices[m.id]*m.qty;
     let share=i===movs.length-1?Math.round((discTotal-assigned)*100)/100:Math.round(discTotal*gross/sub*100)/100;
     assigned+=share;
-    m.billing={invoiced:billInv,paid:billPaid,unitPrice:prices[m.id],discount:share||0,note,status:billPaid?'done':'askida',updatedBy:currentUser.name,updatedAt:formatNow()};
+    m.billing={invoiced:billInv,paid:billPaid,unitPrice:prices[m.id],discount:share||0,vatPct:billInv===true?(Number($('#billVat').value)||0):0,note,status:billPaid?'done':'askida',updatedBy:currentUser.name,updatedAt:formatNow()};
     markDirty('movements',m.id);
   });
-  const grand=sub-discTotal;
+  const vatPct=billInv===true?(Number($('#billVat').value)||0):0;
+  const vatAmt=(sub-discTotal)*vatPct/100;
+  const grand=sub-discTotal+vatAmt;
   const label=movs.length>1?`${movs[0].target} (${movs.length} kalem)`:movs[0].product;
-  const discNote=discTotal>0?` (indirim: -${formatQty(discTotal)} ₺)`:'';
+  const discNote=(discTotal>0?` (indirim: -${formatQty(discTotal)} ₺)`:'')+(vatAmt>0?` (KDV %${vatPct} dahil)`:'');
   if(billPaid) addNotification(`₺ Tahsilat: ${label}`,`${formatQty(grand)} ₺${discNote} — ${billInv?'faturalı':'faturasız/elden'}. (${currentUser.name})`);
   else addNotification(`⏳ Askıda: ${label}`,`${formatQty(grand)} ₺${discNote} ödeme bekleniyor — ${movs[0].target}. (${currentUser.name})`);
   saveDb(); closeModal('billingModal'); renderAll();
   toast(billPaid?'Kaydedildi: ödeme alındı olarak işaretlendi.':'Kaydedildi: ödeme askıya alındı.');
 }
-function downloadBillingCsv(){ csvDownload('muhasebe_kayitlari.csv',[['Tarih','Malzeme','İşlem','Miktar','Birim','Nereye','Personel','Birim Fiyat','Toplam','İndirim','Net Toplam','Fatura','Ödeme','Durum','Not'],...db.movements.filter(m=>m.billing).map(m=>{const b=m.billing;const s=billingStatus(b);return [m.date,m.product,m.type,m.qty,m.unit,m.target,m.user,b.unitPrice??'',b.unitPrice?b.unitPrice*m.qty:'',b.discount||'',b.unitPrice?billNet(m):'',b.invoiced===true?'Kesildi':b.invoiced===false?'Kesilmedi':'',b.paid===true?'Alındı':b.paid===false?'Alınmadı':'',s==='done'?'Tamamlandı':s==='askida'?'Askıda':'Bekliyor',b.note||''];})]); toast('Muhasebe raporu indirildi.'); }
+function downloadBillingCsv(){ csvDownload('muhasebe_kayitlari.csv',[['Tarih','Malzeme','İşlem','Miktar','Birim','Nereye','Personel','Birim Fiyat','Toplam','İndirim','Net Toplam','KDV %','KDV Tutarı','Genel Toplam','Fatura','Ödeme','Durum','Not'],...db.movements.filter(m=>m.billing).map(m=>{const b=m.billing;const s=billingStatus(b);return [m.date,m.product,m.type,m.qty,m.unit,m.target,m.user,b.unitPrice??'',b.unitPrice?b.unitPrice*m.qty:'',b.discount||'',b.unitPrice?billNet(m):'',b.vatPct||0,b.unitPrice?Math.round((billGrand(m)-billNet(m))*100)/100:'',b.unitPrice?Math.round(billGrand(m)*100)/100:'',b.invoiced===true?'Kesildi':b.invoiced===false?'Kesilmedi':'',b.paid===true?'Alındı':b.paid===false?'Alınmadı':'',s==='done'?'Tamamlandı':s==='askida'?'Askıda':'Bekliyor',b.note||''];})]); toast('Muhasebe raporu indirildi.'); }
 
 /* ---- Personel ekranı ---- */
 function renderStaffLast(){
@@ -634,8 +646,8 @@ function renderReports(){
   const machines=[...group(outs.filter(m=>m.type!=='Satış'),m=>m.target).entries()].map(([k,l])=>({name:k,count:l.length,qtyDesc:[...group(l,x=>x.product).entries()].slice(0,3).map(([pn,pl])=>`${formatQty(sumQty(pl))} ${pl[0].unit} ${pn}`).join(', ')}));
   const byUser=[...group(mv,m=>m.user).entries()].map(([k,l])=>({name:k,count:l.length,out:l.filter(x=>OUT_TYPES.includes(x.type)).length,inn:l.filter(x=>x.type==='Giriş').length,tr:l.filter(x=>x.type==='Transfer').length})).sort((a,b)=>b.count-a.count);
   const sales=outs.filter(m=>m.type==='Satış');
-  const salesTotal=sales.reduce((s,m)=>s+billNet(m),0);
-  const byCustomer=[...group(sales,m=>m.target).entries()].map(([k,l])=>({name:k,count:l.length,total:l.reduce((s,m)=>s+billNet(m),0)})).sort((a,b)=>b.total-a.total).slice(0,10);
+  const salesTotal=sales.reduce((s,m)=>s+billGrand(m),0);
+  const byCustomer=[...group(sales,m=>m.target).entries()].map(([k,l])=>({name:k,count:l.length,total:l.reduce((s,m)=>s+billGrand(m),0)})).sort((a,b)=>b.total-a.total).slice(0,10);
   const ins=mv.filter(m=>m.type==='Giriş');
   const insByProduct=[...group(ins,m=>m.product).entries()].map(([k,l])=>({name:k,qty:sumQty(l),unit:l[0].unit,count:l.length})).sort((a,b)=>b.count-a.count).slice(0,10);
   const critical=act.filter(p=>statusOf(p).key==='critical');
@@ -1404,12 +1416,12 @@ function bindEvents(){
   $('#userSearch').addEventListener('input',renderUsers);
   $('#billSearch').addEventListener('input',renderBilling); $('#billFilter').addEventListener('input',renderBilling);
   $('#billCsvBtn').onclick=downloadBillingCsv;
-  $('#segInvYes').onclick=()=>{billInv=true;updateBillSegs();};
-  $('#segInvNo').onclick=()=>{billInv=false;updateBillSegs();};
+  $('#segInvYes').onclick=()=>{billInv=true;updateBillSegs();updateBillTotal();};
+  $('#segInvNo').onclick=()=>{billInv=false;updateBillSegs();updateBillTotal();};
   $('#segPaidYes').onclick=()=>{billPaid=true;updateBillSegs();};
   $('#segPaidNo').onclick=()=>{billPaid=false;updateBillSegs();};
   $('#billSaveBtn').onclick=saveBilling;
-  $('#billDiscount').addEventListener('input',updateBillTotal);
+  $('#billDiscount').addEventListener('input',updateBillTotal); $('#billVat').addEventListener('input',updateBillTotal);
   $('#discTL').onclick=()=>{ billDiscPct=false; $('#discTL').classList.add('active'); $('#discPct').classList.remove('active'); updateBillTotal(); };
   $('#discPct').onclick=()=>{ billDiscPct=true; $('#discPct').classList.add('active'); $('#discTL').classList.remove('active'); updateBillTotal(); };
   $('#mBillingCard').onclick=()=>goPage('muhasebe');

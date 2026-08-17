@@ -606,3 +606,9 @@ html,body{overflow-x:clip} /* hidden yerine clip: yapiskan ust bari bozmaz */
 
 /* ---- Üçüncü depo (Ofis) çubuğu ---- */
 .bar-fill.o3{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}
+
+/* ---- KDV satırı ---- */
+#billVatRow input{width:70px}
+#billVatRow .vat-pct{font-weight:700;color:#4a4c53}
+#billVatRow.vat-off{opacity:.45}
+#billVatRow.vat-off input{pointer-events:none}

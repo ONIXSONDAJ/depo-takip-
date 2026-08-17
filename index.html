@@ -12,10 +12,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./app.css?v=61">
-  <script defer src="./qrcode.min.js?v=61"></script>
-  <script defer src="./jsqr.js?v=61"></script>
-  <script defer src="./app.js?v=61"></script>
+  <link rel="stylesheet" href="./app.css?v=62">
+  <script defer src="./qrcode.min.js?v=62"></script>
+  <script defer src="./jsqr.js?v=62"></script>
+  <script defer src="./app.js?v=62"></script>
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -224,6 +224,7 @@
   <div id="billingModal" class="modal hidden"><div class="modal-card modal-lg">
     <div class="modal-head"><div><h3>Muhasebe Kaydı</h3><p id="billProductInfo"></p></div><button class="icon-btn" data-close-modal="billingModal">✕</button></div>
     <div id="billMeta" class="bill-meta"></div>
+    <label class="field"><span>Müşteri / Nereye</span><input id="billTarget" autocomplete="off" placeholder="Müşteri adı"></label>
     <div id="billLines" class="bill-lines"></div>
     <div class="bill-total">Ara toplam: <b id="billSubTxt">—</b></div>
     <div class="bill-discount"><span>İndirim</span><input id="billDiscount" type="number" min="0" step="0.01" placeholder="0" inputmode="decimal"><div class="seg mini"><button type="button" id="discTL" class="active">₺</button><button type="button" id="discPct">%</button></div><b id="billDiscTxt" class="disc-amt">—</b></div>

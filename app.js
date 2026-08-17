@@ -16,7 +16,7 @@ let currentUser = null;
 
 function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 function uid(p){ return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
-const APP_VERSION='v61';
+const APP_VERSION='v62';
 function normalizeText(v){ return String(v ?? '').toLocaleLowerCase('tr-TR').trim(); }
 /* QR içeriği daima ASCII olmalı: kütüphane Türkçe karakterlerde kapasiteyi yanlış hesaplayıp "code length overflow" veriyor. */
 const TR_ASCII={'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
@@ -473,6 +473,7 @@ function openBillingModal(key){
   $('#billMeta').innerHTML=`<span>${escapeHtml(splitDate(first.date).day)}</span><span>${escapeHtml(first.target)}</span><span>Personel: ${escapeHtml([...new Set(movs.map(m=>m.user))].join(', '))}</span>`;
   $('#billLines').innerHTML=movs.map(m=>`<div class="bill-line"><div class="bl-info"><b>${escapeHtml(m.product)}</b><small>${formatQty(m.qty)} ${escapeHtml(m.unit)} · ${escapeHtml(m.type)} · ${escapeHtml(splitDate(m.date).time)}</small></div><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="birim ₺" value="${m.billing.unitPrice??''}" data-bl-price="${m.id}"><b class="bl-total" data-bl-total="${m.id}">—</b></div>`).join('');
   $('#billNote').value=first.billing.note||'';
+  $('#billTarget').value=first.target||'';
   const prevDisc=movs.reduce((s,m)=>s+(m.billing.discount||0),0);
   billDiscPct=false; $('#discTL').classList.add('active'); $('#discPct').classList.remove('active');
   $('#billDiscount').value=prevDisc>0?prevDisc:'';
@@ -525,6 +526,8 @@ function saveBilling(){
   if(billInv===null) return toast('Fatura durumunu seçin: Kesildi veya Kesilmedi.');
   if(billPaid===null) return toast('Ödeme durumunu seçin: Alındı veya Alınmadı.');
   const note=$('#billNote').value.trim();
+  const newTarget=$('#billTarget').value.trim();
+  if(newTarget) movs.forEach(m=>{ m.target=newTarget; });
   const sub=movs.reduce((s,m)=>s+prices[m.id]*m.qty,0);
   const discTotal=billDiscountAmount(sub);
   let assigned=0;
